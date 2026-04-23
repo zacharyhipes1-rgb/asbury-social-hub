@@ -1,0 +1,17 @@
+export const DEALERSHIPS = [
+  { id: 'nalley-honda',          name: 'Nalley Honda',          location: 'College Park, GA',   brand: 'Honda'     },
+  { id: 'nalley-bmw',            name: 'Nalley BMW',            location: 'Union City, GA',     brand: 'BMW'       },
+  { id: 'nalley-lexus',          name: 'Nalley Lexus',          location: 'Stone Mountain, GA', brand: 'Lexus'     },
+  { id: 'nalley-acura',          name: 'Nalley Acura',          location: 'Marietta, GA',       brand: 'Acura'     },
+  { id: 'david-mcdavid-honda',   name: 'David McDavid Honda',   location: 'Irving, TX',         brand: 'Honda'     },
+  { id: 'david-mcdavid-acura',   name: 'David McDavid Acura',   location: 'Irving, TX',         brand: 'Acura'     },
+  { id: 'coggin-honda',          name: 'Coggin Honda',          location: 'Jacksonville, FL',   brand: 'Honda'     },
+  { id: 'coggin-toyota',         name: 'Coggin Toyota',         location: 'Orange Park, FL',    brand: 'Toyota'    },
+  { id: 'coggin-bmw',            name: 'Coggin BMW',            location: 'Fort Lauderdale, FL',brand: 'BMW'       },
+  { id: 'crown-honda',           name: 'Crown Honda',           location: 'Dublin, OH',         brand: 'Honda'     },
+  { id: 'crown-acura',           name: 'Crown Acura',           location: 'Dublin, OH',         brand: 'Acura'     },
+  { id: 'north-point-bmw',       name: 'North Point BMW',       location: 'Alpharetta, GA',     brand: 'BMW'       },
+  { id: 'plaza-bmw',             name: 'Plaza BMW',             location: 'Kansas City, MO',    brand: 'BMW'       },
+  { id: 'courtesy-acura',        name: 'Courtesy Acura',        location: 'Scottsdale, AZ',     brand: 'Acura'     },
+  { id: 'asbury-corporate',      name: 'Asbury Corporate',      location: 'Duluth, GA',         brand: 'Corporate' },
+]
