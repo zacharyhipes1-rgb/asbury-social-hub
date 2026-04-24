@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Users, UserPlus, Shield, Eye, AtSign, MoreVertical, Search, X, Check, Pencil, UserX, UserCheck } from 'lucide-react'
+import { Users, UserPlus, Shield, Eye, AtSign, MoreVertical, Search, X, Check, Pencil, UserX, UserCheck, Trash2, AlertTriangle } from 'lucide-react'
 import { useUsers } from '../context/UsersContext'
+import { useAuth } from '../context/AuthContext'
 import { RoleBadge } from '../components/common/Badge'
 
 const ROLE_OPTIONS = [
@@ -124,8 +125,42 @@ function UserFormModal({ user, onClose, onSave }) {
   )
 }
 
-function UserRow({ user, onEdit, onToggle }) {
-  const [menuOpen, setMenuOpen] = useState(false)
+function DeleteConfirmModal({ user, onClose, onConfirm }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="p-6">
+          <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={22} className="text-red-600" />
+          </div>
+          <h2 className="text-base font-bold text-slate-900 text-center">Delete Team Member?</h2>
+          <p className="text-sm text-slate-500 text-center mt-2">
+            <span className="font-semibold text-slate-700">{user.name}</span> will be permanently removed.
+            Their submitted posts will remain but their account will be gone.
+          </p>
+          <p className="text-xs text-red-600 text-center mt-2 font-medium">This cannot be undone.</p>
+        </div>
+        <div className="flex gap-2 px-6 pb-6">
+          <button onClick={onClose}
+            className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin }) {
+  const canDelete = !isCurrentUser && !isLastAdmin
+  const deleteTitle = isCurrentUser ? "You can't delete your own account"
+    : isLastAdmin ? "Can't delete the only admin account"
+    : 'Delete user permanently'
+
   return (
     <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors group">
       <td className="px-5 py-4">
@@ -157,7 +192,7 @@ function UserRow({ user, onEdit, onToggle }) {
         </span>
       </td>
       <td className="px-5 py-4">
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={() => onEdit(user)}
             className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors" title="Edit">
             <Pencil size={14} />
@@ -165,10 +200,21 @@ function UserRow({ user, onEdit, onToggle }) {
           <button onClick={() => onToggle(user)}
             className={`p-1.5 rounded-lg transition-colors ${
               user.active
-                ? 'hover:bg-red-50 text-slate-400 hover:text-red-600'
+                ? 'hover:bg-amber-50 text-slate-400 hover:text-amber-600'
                 : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
             }`} title={user.active ? 'Deactivate' : 'Reactivate'}>
             {user.active ? <UserX size={14} /> : <UserCheck size={14} />}
+          </button>
+          <button
+            onClick={() => canDelete && onDelete(user)}
+            disabled={!canDelete}
+            title={deleteTitle}
+            className={`p-1.5 rounded-lg transition-colors ${
+              canDelete
+                ? 'hover:bg-red-50 text-slate-400 hover:text-red-600 cursor-pointer'
+                : 'text-slate-200 cursor-not-allowed'
+            }`}>
+            <Trash2 size={14} />
           </button>
         </div>
       </td>
@@ -177,10 +223,12 @@ function UserRow({ user, onEdit, onToggle }) {
 }
 
 export default function UsersPage() {
-  const { users, addUser, updateUser, deactivateUser, reactivateUser } = useUsers()
+  const { users, addUser, updateUser, deactivateUser, reactivateUser, deleteUser } = useUsers()
+  const { currentUser } = useAuth()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
-  const [modal, setModal] = useState(null) // null | { mode: 'add' } | { mode: 'edit', user }
+  const [modal, setModal] = useState(null)        // null | { mode: 'add' } | { mode: 'edit', user }
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const filtered = users.filter(u => {
     const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
@@ -205,12 +253,16 @@ export default function UsersPage() {
   }
 
   const handleToggle = (user) => {
-    if (user.active) {
-      deactivateUser(user.id)
-    } else {
-      reactivateUser(user.id)
-    }
+    if (user.active) deactivateUser(user.id)
+    else reactivateUser(user.id)
   }
+
+  const handleDeleteConfirm = () => {
+    if (deleteTarget) deleteUser(deleteTarget.id)
+    setDeleteTarget(null)
+  }
+
+  const adminCount = users.filter(u => u.role === 'admin').length
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -301,7 +353,15 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ) : filtered.map(user => (
-                <UserRow key={user.id} user={user} onEdit={u => setModal({ mode: 'edit', user: u })} onToggle={handleToggle} />
+                <UserRow
+                  key={user.id}
+                  user={user}
+                  onEdit={u => setModal({ mode: 'edit', user: u })}
+                  onToggle={handleToggle}
+                  onDelete={setDeleteTarget}
+                  isCurrentUser={user.id === currentUser?.id}
+                  isLastAdmin={user.role === 'admin' && adminCount === 1}
+                />
               ))}
             </tbody>
           </table>
@@ -313,6 +373,13 @@ export default function UsersPage() {
           user={modal.mode === 'edit' ? modal.user : null}
           onClose={() => setModal(null)}
           onSave={handleSave}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          user={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
         />
       )}
     </div>

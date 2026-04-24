@@ -72,6 +72,9 @@ export function UsersProvider({ children }) {
   const reactivateUser = (id) =>
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active: true } : u)))
 
+  const deleteUser = (id) =>
+    setUsers((prev) => prev.filter((u) => u.id !== id))
+
   const getUserByEmail = (email) =>
     users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
 
@@ -92,6 +95,7 @@ export function UsersProvider({ children }) {
         updateUser,
         deactivateUser,
         reactivateUser,
+        deleteUser,
         getUserByEmail,
         getUserById,
         getActiveUsers,
