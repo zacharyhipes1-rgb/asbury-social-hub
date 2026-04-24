@@ -13,10 +13,7 @@ export function UsersProvider({ children }) {
   const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    // Build a lookup of defaultPassword and canonical fields for each MOCK_USER
-    const MOCK_MAP = Object.fromEntries(MOCK_USERS.map(u => [u.email.toLowerCase(), u]))
-
-    const initFromScratch = () =>
+    const seedFromMock = () =>
       Promise.all(
         MOCK_USERS.map(async (u) => ({
           ...u,
@@ -25,49 +22,47 @@ export function UsersProvider({ children }) {
           created_at: '2026-01-15T09:00:00.000Z',
         }))
       ).then((hashed) => { setUsers(hashed); setInitialized(true) })
+        .catch(() => { setUsers([]); setInitialized(true) })
 
     try {
       const saved = localStorage.getItem('asbury_users')
-      if (!saved) { initFromScratch(); return }
+      if (!saved) { seedFromMock(); return }
 
       const parsed = JSON.parse(saved)
 
-      // Keep only real team members, then refresh their passwords + canonical fields
+      // Strip fake users — keep only real team member emails
       const realEmails = new Set(MOCK_USERS.map(u => u.email.toLowerCase()))
-      const cleaned = parsed.filter(u => realEmails.has(u.email.toLowerCase()))
+      const cleaned = parsed.filter(u => realEmails.has(u.email?.toLowerCase()))
 
-      // For every kept user, always re-hash from MOCK default so demo passwords never go stale
-      Promise.all(
-        cleaned.map(async (u) => {
-          const mock = MOCK_MAP[u.email.toLowerCase()]
-          return {
-            ...u,
-            // Refresh canonical fields from MOCK_USERS
-            name: mock.name,
-            role: mock.role,
-            title: mock.title,
-            initials: mock.initials,
-            // Always re-hash so Demo2026! never breaks
-            password_hash: await hashPassword(mock.defaultPassword),
-            active: u.active ?? true,
-          }
-        })
-      ).then(async (refreshed) => {
-        const existingEmails = new Set(refreshed.map(u => u.email.toLowerCase()))
-        const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
-        const newUsers = await Promise.all(
+      // Patch stale titles
+      const TITLE_PATCHES = { 'zhipes@asburyauto.com': 'SEO | AEO Strategist' }
+      const patched = cleaned.map(u => {
+        const fix = TITLE_PATCHES[u.email.toLowerCase()]
+        return fix && u.title !== fix ? { ...u, title: fix } : u
+      })
+
+      // Add any MOCK_USERS not yet in localStorage (always re-hashes their passwords)
+      const existingEmails = new Set(patched.map(u => u.email.toLowerCase()))
+      const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
+
+      if (missing.length > 0) {
+        Promise.all(
           missing.map(async (u) => ({
             ...u,
             password_hash: await hashPassword(u.defaultPassword),
             active: true,
             created_at: '2026-01-15T09:00:00.000Z',
           }))
-        )
-        setUsers([...newUsers, ...refreshed])
+        ).then((newUsers) => {
+          setUsers([...newUsers, ...patched])
+          setInitialized(true)
+        }).catch(() => seedFromMock())
+      } else {
+        setUsers(patched)
         setInitialized(true)
-      })
+      }
     } catch {
-      initFromScratch()
+      seedFromMock()
     }
   }, [])
 
