@@ -1,7 +1,7 @@
 export const MOCK_USERS = [
   {
     id: 'zach-hipes',
-    email: 'zach.hipes@foundfirst.io',
+    email: 'zhipes@asburyauto.com',
     name: 'Zach Hipes',
     role: 'admin',
     title: 'Founder, Found First',
