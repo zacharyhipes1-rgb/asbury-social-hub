@@ -18,6 +18,14 @@ export function UsersProvider({ children }) {
       const parsed = JSON.parse(saved)
       const existingEmails = new Set(parsed.map(u => u.email.toLowerCase()))
       const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
+
+      // Patch stale titles for existing users (e.g. wrong title from old seed)
+      const TITLE_PATCHES = { 'zhipes@asburyauto.com': 'SEO | AEO Strategist' }
+      const patched = parsed.map(u => {
+        const fix = TITLE_PATCHES[u.email.toLowerCase()]
+        return fix && u.title !== fix ? { ...u, title: fix } : u
+      })
+
       if (missing.length > 0) {
         Promise.all(
           missing.map(async (u) => ({
@@ -27,11 +35,11 @@ export function UsersProvider({ children }) {
             created_at: '2026-01-15T09:00:00.000Z',
           }))
         ).then((newUsers) => {
-          setUsers([...newUsers, ...parsed])
+          setUsers([...newUsers, ...patched])
           setInitialized(true)
         })
       } else {
-        setUsers(parsed)
+        setUsers(patched)
         setInitialized(true)
       }
     } else {
