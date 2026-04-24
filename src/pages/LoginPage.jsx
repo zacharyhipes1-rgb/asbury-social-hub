@@ -1,21 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useUsers } from '../context/UsersContext'
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Zap } from 'lucide-react'
 
-const DEMO_ACCOUNTS = [
-  { name: 'Chad Mitchell', role: 'Manager (Admin)',  email: 'chad.mitchell@asburyauto.com',  password: 'Admin2026!'  },
-  { name: 'Sarah Johnson', role: 'Social Media',     email: 'sarah.johnson@asburyauto.com',  password: 'Social2026!' },
-  { name: 'Emily Chen',    role: 'Stakeholder View', email: 'emily.chen@asburyauto.com',      password: 'View2026!'   },
+// Anchors: emails + passwords stay fixed; names/titles come from live user data
+const DEMO_ANCHORS = [
+  { email: 'chad.mitchell@asburyauto.com',  password: 'Admin2026!',  fallbackRole: 'Admin'        },
+  { email: 'sarah.johnson@asburyauto.com',  password: 'Social2026!', fallbackRole: 'Social Media' },
+  { email: 'emily.chen@asburyauto.com',     password: 'View2026!',   fallbackRole: 'View Only'    },
 ]
 
 export default function LoginPage() {
   const { login, currentUser, loginError, authLoaded } = useAuth()
+  const { getUserByEmail } = useUsers()
   const navigate = useNavigate()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading]   = useState(false)
+
+  const demoAccounts = DEMO_ANCHORS.map(anchor => {
+    const user = getUserByEmail(anchor.email)
+    return user ? { ...anchor, name: user.name, role: user.title || anchor.fallbackRole } : null
+  }).filter(Boolean)
 
   useEffect(() => {
     if (currentUser) navigate('/', { replace: true })
@@ -133,7 +141,7 @@ export default function LoginPage() {
         <div className="mt-4 rounded-2xl border border-white/10 p-4" style={{ background: 'rgba(255,255,255,0.03)' }}>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Demo accounts — click to fill</p>
           <div className="space-y-1.5">
-            {DEMO_ACCOUNTS.map((acc) => (
+            {demoAccounts.map((acc) => (
               <button
                 key={acc.email}
                 type="button"
