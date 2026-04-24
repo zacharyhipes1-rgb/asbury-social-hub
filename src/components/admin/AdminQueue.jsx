@@ -134,7 +134,7 @@ export default function AdminQueue() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
@@ -143,24 +143,23 @@ export default function AdminQueue() {
           { label: 'Needs Revision', count: flaggedCount,   color: 'text-orange-600', bg: 'bg-orange-50',  border: 'border-orange-200' },
           { label: 'Published',      count: publishedCount, color: 'text-blue-600',   bg: 'bg-blue-50',    border: 'border-blue-200' },
         ].map(stat => (
-          <div key={stat.label} className={`rounded-xl border ${stat.border} ${stat.bg} px-5 py-4`}>
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.count}</p>
-            <p className="text-sm text-slate-600 mt-0.5">{stat.label}</p>
+          <div key={stat.label} className={`rounded-xl border ${stat.border} ${stat.bg} px-4 py-3 sm:px-5 sm:py-4`}>
+            <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.count}</p>
+            <p className="text-xs sm:text-sm text-slate-600 mt-0.5">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Filter size={14} className="text-slate-400" />
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
+      <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 mb-4">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center gap-1 flex-wrap">
+            <Filter size={13} className="text-slate-400 mr-1" />
             {STATUS_FILTERS.map(f => (
               <button
                 key={f.value}
                 onClick={() => setStatusFilter(f.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                   statusFilter === f.value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -168,15 +167,15 @@ export default function AdminQueue() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2 ml-auto flex-wrap">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
               <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search posts…"
-                className="pl-7 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-slate-400 w-40"
+                className="w-full pl-7 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-slate-400"
               />
             </div>
             <select

@@ -103,7 +103,7 @@ function FileDropZone({ onFile, currentFile, contentType }) {
           onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }}
           onClick={() => inputRef.current?.click()}
           className={`
-            cursor-pointer border-2 border-dashed rounded-xl p-8 text-center transition-all
+            cursor-pointer border-2 border-dashed rounded-xl p-5 sm:p-8 text-center transition-all
             ${dragging ? 'border-slate-400 bg-slate-50' : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50'}
           `}
         >
@@ -245,8 +245,8 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
   const valid = data.caption.trim().length > 0 && (isTextOnly || data.file_name)
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="mb-5 sm:mb-6">
         <h3 className="text-lg font-semibold text-slate-900">Upload & Caption</h3>
         <p className="text-sm text-slate-500 mt-1">
           Add your media file, write the caption, and include any hashtags. This is what the team will review.
@@ -321,10 +321,10 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-8 flex items-center justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-6 sm:mt-8 flex items-center justify-between">
         <button
           onClick={onPrev}
-          className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
+          className="flex items-center gap-2 px-4 sm:px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
         >
           <ChevronLeft size={16} />
           Back
@@ -332,7 +332,7 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
         <button
           onClick={onNext}
           disabled={!valid}
-          className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
+          className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           Continue to Scheduling

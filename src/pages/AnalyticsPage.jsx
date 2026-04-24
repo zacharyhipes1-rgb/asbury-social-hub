@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
   const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">

@@ -41,7 +41,7 @@ function ReviewRow({ label, value }) {
   if (!value) return null
   return (
     <div className="flex gap-3 py-2.5 border-b border-slate-100 last:border-0">
-      <span className="text-sm text-slate-500 w-36 flex-shrink-0">{label}</span>
+      <span className="text-sm text-slate-500 w-28 sm:w-36 flex-shrink-0">{label}</span>
       <span className="text-sm text-slate-900 flex-1">{value}</span>
     </div>
   )
@@ -65,8 +65,8 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
   const reasonLabel   = POSTING_REASONS.find(r => r.value === data.posting_reason)?.label
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="mb-5 sm:mb-6">
         <h3 className="text-lg font-semibold text-slate-900">Details & Review</h3>
         <p className="text-sm text-slate-500 mt-1">
           Provide scheduling and context, then review before submitting for approval.
@@ -215,10 +215,10 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
         </p>
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-6 flex items-center justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-6 flex items-center justify-between">
         <button
           onClick={onPrev}
-          className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
+          className="flex items-center gap-2 px-4 sm:px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
         >
           <ChevronLeft size={16} />
           Back
@@ -226,7 +226,7 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
         <button
           onClick={onSubmit}
           disabled={!valid || isSubmitting}
-          className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-xl font-medium text-sm
+          className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-green-600 text-white rounded-xl font-medium text-sm
             hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           {isSubmitting ? (

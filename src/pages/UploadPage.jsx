@@ -8,8 +8,8 @@ export default function UploadPage() {
   if (!isSocialMedia) return <Navigate to="/" replace />
 
   return (
-    <div className="p-6">
-      <div className="max-w-3xl mx-auto mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="max-w-3xl mx-auto mb-4 sm:mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Upload Content</h1>
         <p className="text-slate-500 mt-1 text-sm">
           Stage a new post for manager review. Complete all required steps — your submission will appear in the approval queue once submitted.

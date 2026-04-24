@@ -12,7 +12,7 @@ export default function StepIndicator({ currentStep }) {
   const current = STEPS.find(s => s.number === currentStep)
 
   return (
-    <div className="px-6 pt-5 pb-4 border-b border-slate-200 bg-white">
+    <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-slate-200 bg-white">
       {/* Step dots */}
       <div className="flex items-center">
         {STEPS.map((step, index) => {

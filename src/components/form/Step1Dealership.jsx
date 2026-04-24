@@ -91,8 +91,8 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
   const brandOrder = ['Honda', 'BMW', 'Lexus', 'Acura', 'Toyota', 'Corporate']
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="mb-5 sm:mb-6">
         <h3 className="text-lg font-semibold text-slate-900">Select Dealership</h3>
         <p className="text-sm text-slate-500 mt-1">
           Choose the dealership this content is being created for. Each dealership has its own content calendar and approval workflow.
@@ -140,15 +140,17 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
 
       {selected && <ContentBrief dealershipId={selected} />}
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-8 flex justify-end">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-6 sm:mt-8 flex justify-end">
         <button
           onClick={onNext}
           disabled={!selected}
-          className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
+          className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          {selected ? `Continue with ${DEALERSHIPS.find(d => d.id === selected)?.name}` : 'Continue'}
-          <ChevronRight size={16} />
+          <span className="truncate max-w-[160px] sm:max-w-none">
+            {selected ? `Continue with ${DEALERSHIPS.find(d => d.id === selected)?.name}` : 'Continue'}
+          </span>
+          <ChevronRight size={16} className="flex-shrink-0" />
         </button>
       </div>
     </div>

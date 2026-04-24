@@ -190,7 +190,7 @@ export default function CalendarView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 bg-white border-b border-slate-200 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-slate-200 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => viewMode === 'week' ? setWeekStart(subWeeks(weekStart, 1)) : setMonthDate(subMonths(monthDate, 1))}
@@ -249,7 +249,7 @@ export default function CalendarView() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-6 py-2 bg-slate-50 border-b border-slate-200 flex-shrink-0 flex-wrap">
+      <div className="flex items-center gap-3 px-4 sm:px-6 py-2 bg-slate-50 border-b border-slate-200 flex-shrink-0 flex-wrap overflow-x-auto">
         {[
           { color: '#1877F2', label: 'Facebook' },
           { color: '#E1306C', label: 'Instagram' },

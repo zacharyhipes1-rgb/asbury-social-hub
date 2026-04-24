@@ -37,8 +37,8 @@ export default function Step3ContentType({ data, onUpdate, onNext, onPrev }) {
   if (!platform) return null
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-4 sm:p-6">
+      <div className="mb-5 sm:mb-6">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-xs font-bold"
             style={{ backgroundColor: platform.color }}>
@@ -105,10 +105,10 @@ export default function Step3ContentType({ data, onUpdate, onNext, onPrev }) {
         })}
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-8 flex items-center justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-6 sm:mt-8 flex items-center justify-between">
         <button
           onClick={onPrev}
-          className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
+          className="flex items-center gap-2 px-4 sm:px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
         >
           <ChevronLeft size={16} />
           Back
@@ -116,7 +116,7 @@ export default function Step3ContentType({ data, onUpdate, onNext, onPrev }) {
         <button
           onClick={onNext}
           disabled={!selected}
-          className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
+          className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           {selected ? `Continue with ${platform.contentTypes.find(c => c.id === selected)?.name}` : 'Continue'}

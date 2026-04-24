@@ -19,16 +19,16 @@ const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText
 
 function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to }) {
   const inner = (
-    <div className={`bg-white rounded-2xl border border-slate-100 p-5 shadow-sm transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
+    <div className={`bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-sm transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
       <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${bgGradient}`}>
-          <Icon size={18} className="text-white" />
+        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${bgGradient}`}>
+          <Icon size={16} className="text-white" />
         </div>
         {to && <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />}
       </div>
-      <p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p>
-      <p className="text-sm font-medium text-slate-700 mt-1">{label}</p>
-      {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+      <p className={`text-2xl sm:text-3xl font-bold tracking-tight ${color}`}>{value}</p>
+      <p className="text-xs sm:text-sm font-medium text-slate-700 mt-1">{label}</p>
+      {subtitle && <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">{subtitle}</p>}
     </div>
   )
   return to ? <Link to={to}>{inner}</Link> : inner
@@ -151,7 +151,7 @@ export default function DashboardPage() {
   const firstName = currentUser?.name?.split(' ')[0] || 'there'
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Welcome */}
       <div className="mb-7">
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -166,17 +166,17 @@ export default function DashboardPage() {
       {isSocialMedia && (
         <Link
           to="/upload"
-          className="group flex items-center gap-5 p-6 rounded-2xl text-white mb-6 transition-all hover:opacity-95 hover:shadow-2xl"
+          className="group flex items-center gap-3 sm:gap-5 p-4 sm:p-6 rounded-2xl text-white mb-6 transition-all hover:opacity-95 hover:shadow-2xl"
           style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 60%, #6366f1 100%)', boxShadow: '0 8px 32px rgba(99,102,241,0.30)' }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
-            <Upload size={24} />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
+            <Upload size={20} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-lg leading-tight">Upload New Content</p>
-            <p className="text-sm text-indigo-200 mt-0.5">Submit a post for team review — takes less than 2 minutes</p>
+            <p className="font-bold text-base sm:text-lg leading-tight">Upload New Content</p>
+            <p className="text-xs sm:text-sm text-indigo-200 mt-0.5">Submit a post for team review — less than 2 minutes</p>
           </div>
-          <div className="flex-shrink-0 flex items-center gap-2 bg-white/15 px-4 py-2.5 rounded-xl group-hover:bg-white/25 transition-colors">
+          <div className="hidden sm:flex flex-shrink-0 items-center gap-2 bg-white/15 px-4 py-2.5 rounded-xl group-hover:bg-white/25 transition-colors">
             <span className="text-sm font-semibold">Get started</span>
             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
           </div>
@@ -347,7 +347,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Dealership', 'Platform', 'Type', 'Caption', 'Uploaded by', 'Scheduled', 'Status'].map((h) => (

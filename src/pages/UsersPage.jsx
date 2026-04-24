@@ -66,7 +66,7 @@ function UserFormModal({ user, onClose, onSave }) {
           {error && (
             <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>
           )}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Full Name *</label>
               <input value={form.name} onChange={e => set('name', e.target.value)}
@@ -276,7 +276,7 @@ export default function UsersPage() {
   }, {})
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-7">
         <div>
