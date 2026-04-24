@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Users, TrendingUp, Briefcase, Heart } from 'lucide-react'
+import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react'
 import { PLATFORMS } from '../../data/platforms'
 
 const PLATFORM_META = {
@@ -56,7 +56,12 @@ export default function Step2Platform({ data, onUpdate, onNext, onPrev }) {
               onClick={() => handleSelect(platform.id)}
               className={`
                 text-left p-5 rounded-xl border-2 transition-all
-                ${isSelected ? 'border-2 shadow-md' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}
+                ${isSelected
+                  ? 'border-2 shadow-md'
+                  : selected
+                    ? 'border-slate-200 bg-white opacity-40 hover:opacity-70 hover:border-slate-300'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                }
               `}
               style={isSelected ? {
                 borderColor: platform.color,
@@ -91,7 +96,7 @@ export default function Step2Platform({ data, onUpdate, onNext, onPrev }) {
         })}
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-8 flex items-center justify-between">
         <button
           onClick={onPrev}
           className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
@@ -105,7 +110,7 @@ export default function Step2Platform({ data, onUpdate, onNext, onPrev }) {
           className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          Continue
+          {selected ? `Continue with ${PLATFORMS.find(p => p.id === selected)?.name}` : 'Continue'}
           <ChevronRight size={16} />
         </button>
       </div>

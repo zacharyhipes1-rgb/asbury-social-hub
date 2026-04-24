@@ -67,7 +67,12 @@ export default function Step3ContentType({ data, onUpdate, onNext, onPrev }) {
               onClick={() => onUpdate({ content_type: ct.id })}
               className={`
                 text-left p-4 rounded-xl border-2 transition-all
-                ${isSelected ? 'border-2 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}
+                ${isSelected
+                  ? 'border-2 shadow-sm'
+                  : selected
+                    ? 'border-slate-200 bg-white opacity-40 hover:opacity-70 hover:border-slate-300'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }
               `}
               style={isSelected ? { borderColor: platform.color, backgroundColor: platform.lightBg } : {}}
             >
@@ -100,7 +105,7 @@ export default function Step3ContentType({ data, onUpdate, onNext, onPrev }) {
         })}
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-8 flex items-center justify-between">
         <button
           onClick={onPrev}
           className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
@@ -114,7 +119,7 @@ export default function Step3ContentType({ data, onUpdate, onNext, onPrev }) {
           className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          Continue
+          {selected ? `Continue with ${platform.contentTypes.find(c => c.id === selected)?.name}` : 'Continue'}
           <ChevronRight size={16} />
         </button>
       </div>

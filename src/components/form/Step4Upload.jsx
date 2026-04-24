@@ -321,7 +321,7 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
         )}
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-8 flex items-center justify-between">
         <button
           onClick={onPrev}
           className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"
@@ -335,7 +335,7 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
           className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          Continue
+          Continue to Scheduling
           <ChevronRight size={16} />
         </button>
       </div>

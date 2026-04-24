@@ -215,7 +215,7 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
         </p>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-6 flex items-center justify-between">
         <button
           onClick={onPrev}
           className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-medium text-sm hover:bg-slate-50 transition-all"

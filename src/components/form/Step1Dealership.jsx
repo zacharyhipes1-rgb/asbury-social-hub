@@ -116,7 +116,9 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
                       flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
                       ${selected === d.id
                         ? 'border-slate-900 bg-slate-900 text-white'
-                        : 'border-slate-200 bg-white text-slate-900 hover:border-slate-400'
+                        : selected
+                          ? 'border-slate-200 bg-white text-slate-400 opacity-40 hover:opacity-70 hover:border-slate-300'
+                          : 'border-slate-200 bg-white text-slate-900 hover:border-slate-400'
                       }
                     `}
                   >
@@ -138,14 +140,14 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
 
       {selected && <ContentBrief dealershipId={selected} />}
 
-      <div className="mt-8 flex justify-end">
+      <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-6 px-6 py-4 mt-8 flex justify-end">
         <button
           onClick={onNext}
           disabled={!selected}
           className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          Continue
+          {selected ? `Continue with ${DEALERSHIPS.find(d => d.id === selected)?.name}` : 'Continue'}
           <ChevronRight size={16} />
         </button>
       </div>
