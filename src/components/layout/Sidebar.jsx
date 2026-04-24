@@ -69,7 +69,7 @@ export default function Sidebar({ onClose }) {
         <NavItem to="/calendar" icon={CalendarDays} label="Content Calendar" onClick={onClose} />
         <NavItem to="/analytics" icon={BarChart2} label="Analytics" onClick={onClose} />
 
-        {isSocialMedia && !isAdmin && (
+        {isSocialMedia && (
           <>
             <SectionLabel>Content</SectionLabel>
             <NavItem to="/upload" icon={Upload} label="Upload Content" onClick={onClose} />
