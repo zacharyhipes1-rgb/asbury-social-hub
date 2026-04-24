@@ -134,24 +134,24 @@ export default function AdminQueue() {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto">
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Pending Review', count: pendingCount,   color: 'text-amber-600',  bg: 'bg-amber-50',   border: 'border-amber-200' },
           { label: 'Approved',       count: approvedCount,  color: 'text-green-600',  bg: 'bg-green-50',   border: 'border-green-200' },
           { label: 'Needs Revision', count: flaggedCount,   color: 'text-orange-600', bg: 'bg-orange-50',  border: 'border-orange-200' },
           { label: 'Published',      count: publishedCount, color: 'text-blue-600',   bg: 'bg-blue-50',    border: 'border-blue-200' },
         ].map(stat => (
-          <div key={stat.label} className={`rounded-xl border ${stat.border} ${stat.bg} px-4 py-3 sm:px-5 sm:py-4`}>
-            <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>{stat.count}</p>
-            <p className="text-xs sm:text-sm text-slate-600 mt-0.5">{stat.label}</p>
+          <div key={stat.label} className={`rounded-2xl border ${stat.border} ${stat.bg} px-5 py-5 sm:px-6 sm:py-6`}>
+            <p className={`text-3xl sm:text-4xl font-bold tracking-tight ${stat.color}`}>{stat.count}</p>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 font-medium">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 mb-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 mb-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-1 flex-wrap">
             <Filter size={13} className="text-slate-400 mr-1" />
@@ -199,7 +199,7 @@ export default function AdminQueue() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
             <CheckCircle size={32} className="mx-auto text-slate-300 mb-3" />
@@ -209,85 +209,96 @@ export default function AdminQueue() {
         ) : (
           <div className="overflow-x-auto scrollbar-thin">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-slate-50/80 border-b border-slate-200">
                 <tr>
-                  {['Dealership', 'Platform', 'Content', 'Caption', 'Uploader', 'Scheduled', 'Status', 'Actions'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                  {['Dealership', 'Platform & Type', 'Caption', 'Uploader', 'Scheduled', 'Status', 'Actions'].map(h => (
+                    <th key={h} className="px-5 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filtered.map(post => {
-                  const dealership  = DEALERSHIPS.find(d => d.id === post.dealership_id)
-                  const ct          = getContentType(post.platform, post.content_type)
-                  const ContentIcon = ICON_MAP[ct?.icon] || File
+                  const dealership   = DEALERSHIPS.find(d => d.id === post.dealership_id)
+                  const ct           = getContentType(post.platform, post.content_type)
+                  const ContentIcon  = ICON_MAP[ct?.icon] || File
                   const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
 
                   return (
-                    <tr key={post.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-slate-900 whitespace-nowrap">{dealership?.name}</p>
-                        <p className="text-xs text-slate-400">{dealership?.location}</p>
+                    <tr key={post.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors group">
+
+                      {/* Dealership */}
+                      <td className="px-5 py-4">
+                        <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">{dealership?.name}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{dealership?.location}</p>
                       </td>
-                      <td className="px-4 py-3">
+
+                      {/* Platform + content type merged */}
+                      <td className="px-5 py-4">
                         <PlatformBadge platformId={post.platform} compact />
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 whitespace-nowrap">
-                          <ContentIcon size={12} />
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-400 mt-1.5">
+                          <ContentIcon size={11} />
                           {ct?.name}
                         </span>
                       </td>
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <p className="text-sm text-slate-700 truncate" title={post.caption}>
-                          {post.caption?.slice(0, 55)}{post.caption?.length > 55 ? '...' : ''}
+
+                      {/* Caption */}
+                      <td className="px-5 py-4 max-w-[220px]">
+                        <p className="text-sm text-slate-700 truncate leading-relaxed" title={post.caption}>
+                          {post.caption?.slice(0, 60)}{post.caption?.length > 60 ? '…' : ''}
                         </p>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+
+                      {/* Uploader — name only, no email */}
+                      <td className="px-5 py-4 whitespace-nowrap">
                         <p className="text-sm text-slate-700">{uploaderName}</p>
-                        <p className="text-xs text-slate-400">{post.uploaded_by}</p>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
+
+                      {/* Scheduled */}
+                      <td className="px-5 py-4 text-sm text-slate-500 whitespace-nowrap">
                         {formatDate(post.scheduled_for)}
                       </td>
-                      <td className="px-4 py-3">
+
+                      {/* Status */}
+                      <td className="px-5 py-4">
                         <StatusBadge status={post.approval_status} compact />
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
+
+                      {/* Actions */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-0.5">
                           <button onClick={() => setViewPost(post)} title="View details"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                            className="p-2 rounded-lg text-slate-300 hover:text-slate-700 hover:bg-slate-100 transition-colors">
                             <Eye size={15} />
                           </button>
                           {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                             <button onClick={() => handleAction(post, 'approve')} title="Approve"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
+                              className="p-2 rounded-lg text-slate-300 hover:text-green-600 hover:bg-green-50 transition-colors">
                               <CheckCircle size={15} />
                             </button>
                           )}
                           {post.approval_status === 'approved' && (
                             <button onClick={() => handlePublish(post)} title="Mark as Published"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                              className="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                               <Send size={15} />
                             </button>
                           )}
                           {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                             <button onClick={() => handleAction(post, 'flag')} title="Request revision"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                              className="p-2 rounded-lg text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-colors">
                               <AlertTriangle size={15} />
                             </button>
                           )}
                           {post.approval_status !== 'deleted' && (
                             <button onClick={() => setClonePost(post)} title="Clone to another dealership"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                              className="p-2 rounded-lg text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
                               <Copy size={15} />
                             </button>
                           )}
                           {post.approval_status !== 'deleted' && (
                             <button onClick={() => handleAction(post, 'delete')} title="Delete"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                              className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors">
                               <Trash2 size={15} />
                             </button>
                           )}
