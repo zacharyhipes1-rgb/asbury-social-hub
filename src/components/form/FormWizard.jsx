@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { usePosts } from '../../context/PostsContext'
 import { useToast } from '../../context/ToastContext'
@@ -28,6 +28,7 @@ const INITIAL_FORM = {
   posting_reason: '',
   optimal_posting_time: '',
   scheduled_for: '',
+  content_pillar: '',
 }
 
 const DEMO_FORM = {
@@ -48,16 +49,25 @@ const DEMO_FORM = {
 }
 
 export default function FormWizard() {
-  const params = new URLSearchParams(window.location.search)
-  const demoStep = parseInt(params.get('demo') || '0')
-  const [step, setStep] = useState(demoStep >= 1 && demoStep <= 5 ? demoStep : 1)
-  const [formData, setFormData] = useState(demoStep >= 2 ? DEMO_FORM : INITIAL_FORM)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [searchParams] = useSearchParams()
+  const demoStep = parseInt(searchParams.get('demo') || '0')
+  const editPostId = searchParams.get('edit')
+
   const { currentUser } = useAuth()
-  const { addPost } = usePosts()
+  const { addPost, updatePost, getPostById } = usePosts()
   const { addToast } = useToast()
   const { getAdmins, getSocialTeam } = useUsers()
   const navigate = useNavigate()
+
+  // If editing a flagged post, pre-fill with its data
+  const editingPost = editPostId ? getPostById(editPostId) : null
+  const initialData = editingPost
+    ? { ...INITIAL_FORM, ...editingPost }
+    : demoStep >= 2 ? DEMO_FORM : INITIAL_FORM
+
+  const [step, setStep] = useState(demoStep >= 1 && demoStep <= 5 ? demoStep : 1)
+  const [formData, setFormData] = useState(initialData)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const updateForm = (updates) => setFormData((prev) => ({ ...prev, ...updates }))
 
@@ -65,18 +75,27 @@ export default function FormWizard() {
     setIsSubmitting(true)
     await new Promise((r) => setTimeout(r, 600))
 
-    const post = addPost({
-      ...formData,
-      uploaded_by:      currentUser.email,
-      uploaded_by_name: currentUser.name,
-    })
+    if (editingPost) {
+      // Resubmit — update existing post and reset to pending
+      updatePost(editingPost.id, {
+        ...formData,
+        uploaded_by:      currentUser.email,
+        uploaded_by_name: currentUser.name,
+      })
+      addToast('Post updated and resubmitted for approval.', 'success')
+    } else {
+      const post = addPost({
+        ...formData,
+        uploaded_by:      currentUser.email,
+        uploaded_by_name: currentUser.name,
+      })
+      const admins     = getAdmins()
+      const socialTeam = getSocialTeam()
+      const admin      = admins[0] || { name: 'Chad Mitchell', email: 'chad.mitchell@asburyauto.com' }
+      notifyNewUpload({ post, uploader: currentUser, socialTeam, admin }).catch(() => {})
+      addToast('Content submitted — your team has been notified.', 'success')
+    }
 
-    const admins     = getAdmins()
-    const socialTeam = getSocialTeam()
-    const admin      = admins[0] || { name: 'Chad Mitchell', email: 'chad.mitchell@asburyauto.com' }
-    notifyNewUpload({ post, uploader: currentUser, socialTeam, admin }).catch(() => {})
-
-    addToast('Content submitted — your team has been notified.', 'success')
     setIsSubmitting(false)
     navigate('/')
   }

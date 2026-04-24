@@ -1,10 +1,11 @@
 import { getPlatform } from '../../data/platforms'
 
 const STATUS_CONFIG = {
-  pending:  { label: 'Pending Review', dot: 'bg-amber-400',   text: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200/80' },
-  approved: { label: 'Approved',       dot: 'bg-emerald-400', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200/80' },
-  flagged:  { label: 'Needs Revision', dot: 'bg-orange-400',  text: 'text-orange-700',  bg: 'bg-orange-50',  border: 'border-orange-200/80' },
-  deleted:  { label: 'Deleted',        dot: 'bg-slate-300',   text: 'text-slate-500',   bg: 'bg-slate-50',   border: 'border-slate-200' },
+  pending:   { label: 'Pending Review', dot: 'bg-amber-400',   text: 'text-amber-700',   bg: 'bg-amber-50',   border: 'border-amber-200/80' },
+  approved:  { label: 'Approved',       dot: 'bg-emerald-400', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200/80' },
+  flagged:   { label: 'Needs Revision', dot: 'bg-orange-400',  text: 'text-orange-700',  bg: 'bg-orange-50',  border: 'border-orange-200/80' },
+  deleted:   { label: 'Deleted',        dot: 'bg-slate-300',   text: 'text-slate-500',   bg: 'bg-slate-50',   border: 'border-slate-200' },
+  published: { label: 'Published',      dot: 'bg-blue-400',    text: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200/80' },
 }
 
 const ROLE_CONFIG = {

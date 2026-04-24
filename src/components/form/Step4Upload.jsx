@@ -1,5 +1,12 @@
 import { useState, useRef } from 'react'
-import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader } from 'lucide-react'
+import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader, Bookmark, BookmarkCheck } from 'lucide-react'
+
+function getPresets() {
+  try { return JSON.parse(localStorage.getItem('asbury_hashtag_presets') || '{}') } catch { return {} }
+}
+function savePresets(presets) {
+  localStorage.setItem('asbury_hashtag_presets', JSON.stringify(presets))
+}
 
 function getCloudinaryConfig() {
   try { return JSON.parse(localStorage.getItem('asbury_cloudinary_config') || '{}') } catch { return {} }
@@ -128,8 +135,11 @@ function FileDropZone({ onFile, currentFile, contentType }) {
   )
 }
 
-function HashtagInput({ value, onChange }) {
+function HashtagInput({ value, onChange, dealershipId }) {
   const [input, setInput] = useState('')
+  const [saved, setSaved] = useState(false)
+  const presets = getPresets()
+  const hasPresets = dealershipId && presets[dealershipId]?.length > 0
 
   const addTag = (raw) => {
     const tag = raw.trim().replace(/^#/, '')
@@ -152,12 +162,50 @@ function HashtagInput({ value, onChange }) {
     }
   }
 
+  const loadPresets = () => {
+    if (!dealershipId) return
+    const preset = presets[dealershipId] || []
+    const merged = [...new Set([...value, ...preset])]
+    onChange(merged)
+  }
+
+  const saveAsPreset = () => {
+    if (!dealershipId || value.length === 0) return
+    const updated = { ...presets, [dealershipId]: [...value] }
+    savePresets(updated)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-        Hashtags
-        <span className="ml-2 text-xs font-normal text-slate-400">Improves discoverability across platforms</span>
-      </label>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="block text-sm font-medium text-slate-700">
+          Hashtags
+          <span className="ml-2 text-xs font-normal text-slate-400">Improves discoverability across platforms</span>
+        </label>
+        <div className="flex items-center gap-1.5">
+          {hasPresets && (
+            <button
+              type="button"
+              onClick={loadPresets}
+              className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            >
+              <Bookmark size={11} />
+              Load presets
+            </button>
+          )}
+          {value.length > 0 && (
+            <button
+              type="button"
+              onClick={saveAsPreset}
+              className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 font-medium transition-colors"
+            >
+              {saved ? <><BookmarkCheck size={11} className="text-green-600" /><span className="text-green-600">Saved!</span></> : <><BookmarkCheck size={11} />Save as preset</>}
+            </button>
+          )}
+        </div>
+      </div>
       <div className="flex flex-wrap gap-1.5 p-3 border border-slate-300 rounded-xl min-h-[48px] focus-within:border-slate-500 focus-within:ring-2 focus-within:ring-slate-200 transition-all bg-white">
         {value.map(tag => (
           <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 text-sm rounded-lg font-medium">
@@ -182,9 +230,17 @@ function HashtagInput({ value, onChange }) {
   )
 }
 
+const PLATFORM_CAPTION = {
+  instagram: { limit: 2200, soft: 125, tip: 'First 125 chars show in feed before "more" — lead with the hook.' },
+  facebook:  { limit: 63206, soft: 480, tip: 'Under 480 chars shows without a "See More" cutoff in the news feed.' },
+  tiktok:    { limit: 2200, soft: 150, tip: 'TikTok audiences skim — keep it punchy, under 150 chars.' },
+  linkedin:  { limit: 3000, soft: 700, tip: 'LinkedIn readers engage with longer copy — 700+ chars can perform well here.' },
+}
+
 export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
   const isTextOnly = ['text_post', 'text_caption', 'text_update'].includes(data.content_type)
   const needsAltText = ['single_image', 'carousel', 'stories'].includes(data.content_type)
+  const platformCaption = PLATFORM_CAPTION[data.platform] || { limit: 2200, soft: 2200, tip: null }
 
   const valid = data.caption.trim().length > 0 && (isTextOnly || data.file_name)
 
@@ -216,15 +272,24 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
             value={data.caption}
             onChange={(e) => onUpdate({ caption: e.target.value })}
             rows={4}
-            maxLength={2200}
+            maxLength={platformCaption.limit}
             placeholder="Enter your post caption here..."
             className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm text-slate-900 placeholder:text-slate-400
               focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200 transition-all resize-none"
           />
-          <div className="flex justify-between mt-1">
-            <p className="text-xs text-slate-400">Compelling captions drive more engagement and clicks.</p>
-            <p className={`text-xs ${data.caption.length > 2000 ? 'text-amber-500' : 'text-slate-400'}`}>
-              {data.caption.length}/2200
+          <div className="flex justify-between mt-1 gap-4">
+            <div className="flex-1">
+              {platformCaption.tip && (
+                <p className="text-xs text-indigo-600">
+                  <span className="font-medium">Tip:</span> {platformCaption.tip}
+                </p>
+              )}
+            </div>
+            <p className={`text-xs flex-shrink-0 ${
+              data.caption.length > platformCaption.soft ? 'text-amber-500 font-medium' : 'text-slate-400'
+            }`}>
+              {data.caption.length}/{platformCaption.limit}
+              {data.caption.length > platformCaption.soft && ` · over ${platformCaption.soft} soft limit`}
             </p>
           </div>
         </div>
@@ -232,6 +297,7 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
         <HashtagInput
           value={data.hashtags}
           onChange={(tags) => onUpdate({ hashtags: tags })}
+          dealershipId={data.dealership_id}
         />
 
         {needsAltText && (

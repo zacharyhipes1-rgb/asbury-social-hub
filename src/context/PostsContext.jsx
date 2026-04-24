@@ -39,6 +39,20 @@ function postsReducer(state, action) {
           : p
       )
 
+    case 'PUBLISH_POST':
+      return state.map(p =>
+        p.id === action.id
+          ? { ...p, approval_status: 'published', published_at: new Date().toISOString() }
+          : p
+      )
+
+    case 'UPDATE_POST':
+      return state.map(p =>
+        p.id === action.id
+          ? { ...p, ...action.updates, approval_status: 'pending', chad_notes: null, chad_action_at: null }
+          : p
+      )
+
     default:
       return state
   }
@@ -85,6 +99,12 @@ export function PostsProvider({ children }) {
   const reschedulePost = (id, date) =>
     dispatch({ type: 'RESCHEDULE_POST', id, date })
 
+  const publishPost = (id) =>
+    dispatch({ type: 'PUBLISH_POST', id })
+
+  const updatePost = (id, updates) =>
+    dispatch({ type: 'UPDATE_POST', id, updates })
+
   const getPostsByDealership = (dealershipId) =>
     posts.filter(p => p.dealership_id === dealershipId && p.approval_status !== 'deleted')
 
@@ -102,6 +122,8 @@ export function PostsProvider({ children }) {
       flagPost,
       deletePost,
       reschedulePost,
+      publishPost,
+      updatePost,
       getPostsByDealership,
       getPendingPosts,
       getPostById,

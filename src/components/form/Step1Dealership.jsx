@@ -1,5 +1,78 @@
-import { MapPin, ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { MapPin, ChevronRight, BookOpen, Edit2, Check, X } from 'lucide-react'
 import { DEALERSHIPS } from '../../data/dealerships'
+import { useAuth } from '../../context/AuthContext'
+
+function getBriefs() {
+  try { return JSON.parse(localStorage.getItem('asbury_dealership_briefs') || '{}') } catch { return {} }
+}
+function saveBriefs(briefs) {
+  localStorage.setItem('asbury_dealership_briefs', JSON.stringify(briefs))
+}
+
+function ContentBrief({ dealershipId }) {
+  const { isAdmin } = useAuth()
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [briefs, setBriefs] = useState(getBriefs)
+
+  useEffect(() => { setDraft(briefs[dealershipId] || '') }, [dealershipId, briefs])
+
+  const save = () => {
+    const updated = { ...briefs, [dealershipId]: draft.trim() }
+    saveBriefs(updated)
+    setBriefs(updated)
+    setEditing(false)
+  }
+
+  const brief = briefs[dealershipId]
+
+  if (!brief && !isAdmin) return null
+
+  return (
+    <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3.5">
+      <div className="flex items-start gap-2">
+        <BookOpen size={13} className="text-indigo-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider">Content Brief</p>
+            {isAdmin && !editing && (
+              <button onClick={() => setEditing(true)} className="p-0.5 rounded text-indigo-400 hover:text-indigo-700 transition-colors">
+                <Edit2 size={11} />
+              </button>
+            )}
+          </div>
+          {editing ? (
+            <>
+              <textarea
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                rows={3}
+                placeholder="Describe this dealership's content focus, tone, key messages, or anything the social media team needs to know before creating content..."
+                className="w-full text-xs text-slate-700 border border-indigo-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:border-indigo-400 resize-none"
+                autoFocus
+              />
+              <div className="flex gap-1.5 mt-1.5 justify-end">
+                <button onClick={() => { setDraft(brief || ''); setEditing(false) }} className="flex items-center gap-1 px-2.5 py-1 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50">
+                  <X size={10} /> Cancel
+                </button>
+                <button onClick={save} className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                  <Check size={10} /> Save
+                </button>
+              </div>
+            </>
+          ) : brief ? (
+            <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{brief}</p>
+          ) : (
+            <button onClick={() => setEditing(true)} className="text-xs text-indigo-500 hover:text-indigo-700 underline underline-offset-2">
+              Add a content brief for this dealership…
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Step1Dealership({ data, onUpdate, onNext }) {
   const selected = data.dealership_id
@@ -62,6 +135,8 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
           )
         })}
       </div>
+
+      {selected && <ContentBrief dealershipId={selected} />}
 
       <div className="mt-8 flex justify-end">
         <button

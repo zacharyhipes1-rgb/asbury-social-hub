@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
-  CheckCircle, AlertTriangle, Trash2, Eye, Filter,
-  Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File
+  CheckCircle, AlertTriangle, Trash2, Eye, Filter, Send,
+  Image, Video, Layout, Type, Calendar, Circle, Music,
+  FileText, BookOpen, File, Search, Copy, X
 } from 'lucide-react'
 import { usePosts } from '../../context/PostsContext'
 import { useToast } from '../../context/ToastContext'
@@ -16,51 +18,113 @@ import NotificationModal from './NotificationModal'
 const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File }
 
 const STATUS_FILTERS = [
-  { value: 'all',      label: 'All'       },
-  { value: 'pending',  label: 'Pending'   },
-  { value: 'approved', label: 'Approved'  },
-  { value: 'flagged',  label: 'Flagged'   },
-  { value: 'deleted',  label: 'Deleted'   },
+  { value: 'all',       label: 'All'       },
+  { value: 'pending',   label: 'Pending'   },
+  { value: 'approved',  label: 'Approved'  },
+  { value: 'flagged',   label: 'Flagged'   },
+  { value: 'published', label: 'Published' },
+  { value: 'deleted',   label: 'Deleted'   },
 ]
 
+function CloneModal({ post, onClose, onClone }) {
+  const [targetId, setTargetId] = useState('')
+  const others = DEALERSHIPS.filter(d => d.id !== post.dealership_id)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-slate-900">Clone to Another Dealership</h3>
+          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-700"><X size={16} /></button>
+        </div>
+        <p className="text-sm text-slate-500 mb-4">
+          Creates a copy of this post for a different dealership. Caption, hashtags, and media carry over. Status resets to Pending.
+        </p>
+        <select
+          value={targetId}
+          onChange={e => setTargetId(e.target.value)}
+          className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-slate-400 bg-white mb-4"
+        >
+          <option value="">Select dealership…</option>
+          {others.map(d => <option key={d.id} value={d.id}>{d.name} — {d.location}</option>)}
+        </select>
+        <div className="flex gap-2 justify-end">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">Cancel</button>
+          <button
+            disabled={!targetId}
+            onClick={() => onClone(targetId)}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Clone Post
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminQueue() {
-  const { posts, approvePost, flagPost, deletePost } = usePosts()
+  const { posts, approvePost, flagPost, deletePost, publishPost, addPost } = usePosts()
   const { addToast } = useToast()
   const { getUserByEmail } = useUsers()
+  const navigate = useNavigate()
 
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [platformFilter, setPlatformFilter] = useState('all')
+  const [statusFilter, setStatusFilter]       = useState('all')
+  const [platformFilter, setPlatformFilter]   = useState('all')
   const [dealershipFilter, setDealershipFilter] = useState('all')
+  const [search, setSearch]                   = useState('')
 
-  const [viewPost, setViewPost] = useState(null)
+  const [viewPost, setViewPost]       = useState(null)
   const [actionState, setActionState] = useState({ post: null, action: null })
+  const [clonePost, setClonePost]     = useState(null)
 
   const filtered = posts.filter(p => {
     if (statusFilter !== 'all' && p.approval_status !== statusFilter) return false
     if (platformFilter !== 'all' && p.platform !== platformFilter) return false
     if (dealershipFilter !== 'all' && p.dealership_id !== dealershipFilter) return false
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      const d = DEALERSHIPS.find(x => x.id === p.dealership_id)
+      const name = getUserByEmail(p.uploaded_by)?.name || p.uploaded_by_name || ''
+      if (!d?.name.toLowerCase().includes(q) && !p.caption?.toLowerCase().includes(q) && !name.toLowerCase().includes(q)) return false
+    }
     return true
   }).sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))
 
-  const pendingCount = posts.filter(p => p.approval_status === 'pending').length
-  const approvedCount = posts.filter(p => p.approval_status === 'approved').length
-  const flaggedCount = posts.filter(p => p.approval_status === 'flagged').length
+  const pendingCount   = posts.filter(p => p.approval_status === 'pending').length
+  const approvedCount  = posts.filter(p => p.approval_status === 'approved').length
+  const flaggedCount   = posts.filter(p => p.approval_status === 'flagged').length
+  const publishedCount = posts.filter(p => p.approval_status === 'published').length
 
   const handleAction = (post, action) => setActionState({ post, action })
 
   const handleConfirm = (notes) => {
     const { post, action } = actionState
     if (!post) return
+    const dealershipName = DEALERSHIPS.find(d => d.id === post.dealership_id)?.name
+    const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
     if (action === 'approve') {
       approvePost(post.id, notes)
-      addToast(`Approved: ${getPlatform(post.platform)?.name} post for ${DEALERSHIPS.find(d => d.id === post.dealership_id)?.name}`, 'success')
+      addToast(`Approved: ${getPlatform(post.platform)?.name} post for ${dealershipName}`, 'success')
     } else if (action === 'flag') {
       flagPost(post.id, notes)
-      addToast(`Revision requested for ${getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name}'s post.`, 'warning')
+      addToast(`Revision requested for ${uploaderName}'s post.`, 'warning')
     } else if (action === 'delete') {
       deletePost(post.id)
       addToast(`Post removed from queue.`, 'error')
     }
+  }
+
+  const handlePublish = (post) => {
+    publishPost(post.id)
+    addToast(`Marked as published: ${getPlatform(post.platform)?.name} · ${DEALERSHIPS.find(d => d.id === post.dealership_id)?.name}`, 'success')
+  }
+
+  const handleClone = (targetDealershipId) => {
+    const { dealership_id, approval_status, chad_notes, chad_action_at, uploaded_at, id, ...rest } = clonePost
+    addPost({ ...rest, dealership_id: targetDealershipId })
+    const targetName = DEALERSHIPS.find(d => d.id === targetDealershipId)?.name
+    addToast(`Cloned to ${targetName} — ready for review.`, 'success')
+    setClonePost(null)
   }
 
   const formatDate = (dateStr) => {
@@ -71,11 +135,12 @@ export default function AdminQueue() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Pending Review', count: pendingCount,  color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-amber-200' },
-          { label: 'Approved',       count: approvedCount, color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-200' },
-          { label: 'Needs Revision', count: flaggedCount,  color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200'},
+          { label: 'Pending Review', count: pendingCount,   color: 'text-amber-600',  bg: 'bg-amber-50',   border: 'border-amber-200' },
+          { label: 'Approved',       count: approvedCount,  color: 'text-green-600',  bg: 'bg-green-50',   border: 'border-green-200' },
+          { label: 'Needs Revision', count: flaggedCount,   color: 'text-orange-600', bg: 'bg-orange-50',  border: 'border-orange-200' },
+          { label: 'Published',      count: publishedCount, color: 'text-blue-600',   bg: 'bg-blue-50',    border: 'border-blue-200' },
         ].map(stat => (
           <div key={stat.label} className={`rounded-xl border ${stat.border} ${stat.bg} px-5 py-4`}>
             <p className={`text-2xl font-bold ${stat.color}`}>{stat.count}</p>
@@ -86,27 +151,33 @@ export default function AdminQueue() {
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter size={14} className="text-slate-400" />
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
-
           <div className="flex items-center gap-1 flex-wrap">
             {STATUS_FILTERS.map(f => (
               <button
                 key={f.value}
                 onClick={() => setStatusFilter(f.value)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  statusFilter === f.value
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  statusFilter === f.value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {f.label}
               </button>
             ))}
           </div>
-
           <div className="flex items-center gap-2 ml-auto flex-wrap">
+            <div className="relative">
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search posts…"
+                className="pl-7 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-slate-400 w-40"
+              />
+            </div>
             <select
               value={platformFilter}
               onChange={(e) => setPlatformFilter(e.target.value)}
@@ -149,10 +220,10 @@ export default function AdminQueue() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map(post => {
-                  const dealership = DEALERSHIPS.find(d => d.id === post.dealership_id)
-                  const platform = getPlatform(post.platform)
-                  const ct = getContentType(post.platform, post.content_type)
+                  const dealership  = DEALERSHIPS.find(d => d.id === post.dealership_id)
+                  const ct          = getContentType(post.platform, post.content_type)
                   const ContentIcon = ICON_MAP[ct?.icon] || File
+                  const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
 
                   return (
                     <tr key={post.id} className="hover:bg-slate-50 transition-colors">
@@ -169,13 +240,13 @@ export default function AdminQueue() {
                           {ct?.name}
                         </span>
                       </td>
-                      <td className="px-4 py-3 max-w-[220px]">
+                      <td className="px-4 py-3 max-w-[200px]">
                         <p className="text-sm text-slate-700 truncate" title={post.caption}>
-                          {post.caption?.slice(0, 60)}{post.caption?.length > 60 ? '...' : ''}
+                          {post.caption?.slice(0, 55)}{post.caption?.length > 55 ? '...' : ''}
                         </p>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <p className="text-sm text-slate-700">{getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name}</p>
+                        <p className="text-sm text-slate-700">{uploaderName}</p>
                         <p className="text-xs text-slate-400">{post.uploaded_by}</p>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
@@ -186,37 +257,37 @@ export default function AdminQueue() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setViewPost(post)}
-                            title="View details"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                          >
+                          <button onClick={() => setViewPost(post)} title="View details"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
                             <Eye size={15} />
                           </button>
-                          {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && (
-                            <button
-                              onClick={() => handleAction(post, 'approve')}
-                              title="Approve"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                            >
+                          {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
+                            <button onClick={() => handleAction(post, 'approve')} title="Approve"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
                               <CheckCircle size={15} />
                             </button>
                           )}
-                          {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && (
-                            <button
-                              onClick={() => handleAction(post, 'flag')}
-                              title="Request revision"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
-                            >
+                          {post.approval_status === 'approved' && (
+                            <button onClick={() => handlePublish(post)} title="Mark as Published"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                              <Send size={15} />
+                            </button>
+                          )}
+                          {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
+                            <button onClick={() => handleAction(post, 'flag')} title="Request revision"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
                               <AlertTriangle size={15} />
                             </button>
                           )}
                           {post.approval_status !== 'deleted' && (
-                            <button
-                              onClick={() => handleAction(post, 'delete')}
-                              title="Delete"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                            >
+                            <button onClick={() => setClonePost(post)} title="Clone to another dealership"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                              <Copy size={15} />
+                            </button>
+                          )}
+                          {post.approval_status !== 'deleted' && (
+                            <button onClick={() => handleAction(post, 'delete')} title="Delete"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                               <Trash2 size={15} />
                             </button>
                           )}
@@ -231,12 +302,7 @@ export default function AdminQueue() {
         )}
       </div>
 
-      <PostDetailModal
-        post={viewPost}
-        isOpen={!!viewPost}
-        onClose={() => setViewPost(null)}
-      />
-
+      <PostDetailModal post={viewPost} isOpen={!!viewPost} onClose={() => setViewPost(null)} />
       <NotificationModal
         post={actionState.post}
         action={actionState.action}
@@ -244,6 +310,7 @@ export default function AdminQueue() {
         onClose={() => setActionState({ post: null, action: null })}
         onConfirm={handleConfirm}
       />
+      {clonePost && <CloneModal post={clonePost} onClose={() => setClonePost(null)} onClone={handleClone} />}
     </div>
   )
 }
