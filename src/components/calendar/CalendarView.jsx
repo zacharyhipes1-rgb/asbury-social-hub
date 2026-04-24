@@ -287,29 +287,56 @@ function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, on
   const getPostsForDay = (day) =>
     dealershipPosts.filter(p => { try { return isSameDay(parseISO(p.scheduled_for), day) } catch { return false } })
 
+  const weekPostCount = weekDays.reduce((n, day) => n + getPostsForDay(day).length, 0)
+
   return (
-    <tr className="border-b border-slate-100 last:border-0">
-      <td className="sticky left-0 bg-white z-10 px-4 py-3 border-r border-slate-200 min-w-[160px] max-w-[160px]">
-        <p className="text-sm font-medium text-slate-900 leading-tight truncate">{dealership.name}</p>
-        <p className="text-xs text-slate-400 mt-0.5 truncate">{dealership.location}</p>
+    <tr className="border-b border-slate-100 last:border-0 group">
+      {/* Dealership label cell */}
+      <td className="sticky left-0 z-10 border-r border-slate-200 min-w-[172px] max-w-[172px] p-0 align-top">
+        <div className="h-full min-h-[140px] bg-white group-hover:bg-slate-50/60 transition-colors px-4 py-4 flex flex-col justify-between border-l-4 border-l-indigo-500">
+          <div>
+            <p className="text-sm font-semibold text-slate-900 leading-tight">{dealership.name}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{dealership.location}</p>
+          </div>
+          <span className={`self-start text-[10px] font-semibold px-2 py-0.5 rounded-full mt-3 ${
+            weekPostCount === 0 ? 'bg-slate-100 text-slate-400' : 'bg-indigo-50 text-indigo-600'
+          }`}>
+            {weekPostCount} post{weekPostCount !== 1 ? 's' : ''} this week
+          </span>
+        </div>
       </td>
+
+      {/* Day cells */}
       {weekDays.map(day => {
         const dayPosts     = getPostsForDay(day)
         const isDropTarget = dragState.overCell === `${dealership.id}-${format(day, 'yyyy-MM-dd')}`
+        const isWeekend    = [0, 6].includes(day.getDay())
+        const today        = isToday(day)
+
         return (
           <td
             key={day.toISOString()}
-            className={`px-2 py-2 align-top min-w-[120px] border-r border-slate-100 last:border-0 transition-colors ${
-              isDropTarget ? 'bg-blue-50' : isToday(day) ? 'bg-blue-50/30' : ''
+            className={`px-2 pt-2.5 pb-2 align-top min-w-[130px] min-h-[140px] border-r border-slate-100 last:border-0 transition-all ${
+              isDropTarget ? 'bg-blue-50 ring-1 ring-inset ring-blue-300' :
+              today        ? 'bg-blue-50/40' :
+              isWeekend    ? 'bg-slate-50/60' : 'bg-white'
             }`}
             onDragOver={(e) => { e.preventDefault(); onDragOver(`${dealership.id}-${format(day, 'yyyy-MM-dd')}`) }}
             onDrop={(e) => { e.preventDefault(); onDrop(dealership.id, format(day, 'yyyy-MM-dd')) }}
           >
-            {dayPosts.map(post => (
-              <div key={post.id} draggable onDragStart={() => onDragStart(post)} className="cursor-grab active:cursor-grabbing">
-                <PostChip post={post} onClick={onPostClick} />
+            {dayPosts.length > 0 ? (
+              dayPosts.map(post => (
+                <div key={post.id} draggable onDragStart={() => onDragStart(post)} className="cursor-grab active:cursor-grabbing">
+                  <PostChip post={post} onClick={onPostClick} />
+                </div>
+              ))
+            ) : (
+              <div className={`h-full min-h-[110px] rounded-lg flex items-center justify-center border-2 border-dashed transition-colors ${
+                isDropTarget ? 'border-blue-300' : today ? 'border-blue-100' : 'border-slate-100 group-hover:border-slate-200'
+              }`}>
+                <span className="text-[10px] text-slate-300 select-none">—</span>
               </div>
-            ))}
+            )}
           </td>
         )
       })}
@@ -595,18 +622,29 @@ export default function CalendarView() {
       ) : (
         <div className="hidden lg:block flex-1 overflow-auto scrollbar-thin">
           <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
-            <thead className="sticky top-0 z-20 bg-white shadow-sm">
-              <tr className="border-b border-slate-200">
-                <th className="sticky left-0 bg-white z-30 px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider border-r border-slate-200 min-w-[160px] max-w-[160px]">
+            <thead className="sticky top-0 z-20 shadow-sm">
+              <tr className="border-b border-slate-200 bg-white">
+                <th className="sticky left-0 bg-white z-30 px-4 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest border-r border-slate-200 min-w-[172px] max-w-[172px]">
                   Dealership
                 </th>
-                {weekDays.map(day => (
-                  <th key={day.toISOString()} className={`px-2 py-3 text-center min-w-[120px] border-r border-slate-100 last:border-0 ${isToday(day) ? 'bg-blue-50' : ''}`}>
-                    <p className={`text-xs font-semibold uppercase tracking-wider ${isToday(day) ? 'text-blue-600' : 'text-slate-500'}`}>{format(day, 'EEE')}</p>
-                    <p className={`text-lg font-bold mt-0.5 ${isToday(day) ? 'text-blue-600' : 'text-slate-800'}`}>{format(day, 'd')}</p>
-                    {isToday(day) && <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mx-auto mt-0.5" />}
-                  </th>
-                ))}
+                {weekDays.map(day => {
+                  const today   = isToday(day)
+                  const weekend = [0, 6].includes(day.getDay())
+                  return (
+                    <th key={day.toISOString()} className={`px-2 py-3 text-center min-w-[130px] border-r border-slate-100 last:border-0 ${
+                      today ? 'bg-blue-50' : weekend ? 'bg-slate-50/70' : 'bg-white'
+                    }`}>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${today ? 'text-blue-500' : 'text-slate-400'}`}>
+                        {format(day, 'EEE')}
+                      </p>
+                      <div className={`mx-auto mt-1 w-8 h-8 flex items-center justify-center rounded-full text-base font-bold ${
+                        today ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-800'
+                      }`}>
+                        {format(day, 'd')}
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
