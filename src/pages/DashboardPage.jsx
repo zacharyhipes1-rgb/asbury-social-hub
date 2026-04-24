@@ -17,19 +17,21 @@ import { DEALERSHIPS } from '../data/dealerships'
 
 const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File }
 
-function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle }) {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to }) {
+  const inner = (
+    <div className={`bg-white rounded-2xl border border-slate-100 p-5 shadow-sm transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${bgGradient}`}>
           <Icon size={18} className="text-white" />
         </div>
+        {to && <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />}
       </div>
       <p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p>
       <p className="text-sm font-medium text-slate-700 mt-1">{label}</p>
       {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
     </div>
   )
+  return to ? <Link to={to}>{inner}</Link> : inner
 }
 
 function PostRow({ post, onClick, onEdit, isSocialMedia, currentUser }) {
@@ -159,6 +161,27 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* Upload CTA hero — primary action for social media users */}
+      {isSocialMedia && (
+        <Link
+          to="/upload"
+          className="group flex items-center gap-5 p-6 rounded-2xl text-white mb-6 transition-all hover:opacity-95 hover:shadow-2xl"
+          style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 60%, #6366f1 100%)', boxShadow: '0 8px 32px rgba(99,102,241,0.30)' }}
+        >
+          <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
+            <Upload size={24} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-lg leading-tight">Upload New Content</p>
+            <p className="text-sm text-indigo-200 mt-0.5">Submit a post for team review — takes less than 2 minutes</p>
+          </div>
+          <div className="flex-shrink-0 flex items-center gap-2 bg-white/15 px-4 py-2.5 rounded-xl group-hover:bg-white/25 transition-colors">
+            <span className="text-sm font-semibold">Get started</span>
+            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </Link>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
         <StatCard
@@ -168,6 +191,7 @@ export default function DashboardPage() {
           bgGradient="bg-gradient-to-br from-indigo-500 to-indigo-700"
           icon={CalendarDays}
           subtitle="Scheduled content"
+          to="/calendar"
         />
         <StatCard
           label="Pending Approval"
@@ -176,6 +200,7 @@ export default function DashboardPage() {
           bgGradient="bg-gradient-to-br from-amber-400 to-orange-500"
           icon={Clock}
           subtitle={isAdmin ? 'Awaiting your review' : "Awaiting Chad's review"}
+          to={isAdmin ? '/admin?status=pending' : undefined}
         />
         <StatCard
           label="Approval Rate"
@@ -184,6 +209,7 @@ export default function DashboardPage() {
           bgGradient="bg-gradient-to-br from-emerald-400 to-teal-600"
           icon={BarChart2}
           subtitle="Of reviewed submissions"
+          to="/analytics"
         />
         <StatCard
           label="Avg. Review Time"
@@ -192,27 +218,12 @@ export default function DashboardPage() {
           bgGradient="bg-gradient-to-br from-slate-600 to-slate-800"
           icon={TrendingUp}
           subtitle="From submit to decision"
+          to="/analytics"
         />
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-7">
-        {isSocialMedia && (
-          <Link
-            to="/upload"
-            className="group flex items-center gap-4 p-5 rounded-2xl text-white transition-all hover:opacity-90 hover:shadow-xl"
-            style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', boxShadow: '0 4px 20px rgba(99,102,241,0.25)' }}
-          >
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
-              <Upload size={18} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">Upload New Content</p>
-              <p className="text-xs text-indigo-300 mt-0.5">Stage a post for review</p>
-            </div>
-            <ArrowRight size={15} className="text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-7">
         <Link
           to="/calendar"
           className="group flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all"
@@ -224,7 +235,7 @@ export default function DashboardPage() {
             <p className="font-semibold text-sm text-slate-900">Content Calendar</p>
             <p className="text-xs text-slate-400 mt-0.5">View week-by-week schedule</p>
           </div>
-          <ArrowRight size={15} className="text-slate-300 group-hover:translate-x-0.5 transition-transform" />
+          <ArrowRight size={15} className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
         </Link>
         {isAdmin && (
           <Link

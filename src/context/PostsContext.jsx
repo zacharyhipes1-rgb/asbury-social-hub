@@ -8,9 +8,6 @@ function postsReducer(state, action) {
     case 'ADD_POST':
       return [action.post, ...state]
 
-    case 'UPDATE_POST':
-      return state.map(p => p.id === action.id ? { ...p, ...action.updates } : p)
-
     case 'DELETE_POST':
       return state.map(p =>
         p.id === action.id

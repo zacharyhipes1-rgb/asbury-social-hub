@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
   CheckCircle, AlertTriangle, Trash2, Eye, Filter, Send,
@@ -67,8 +67,9 @@ export default function AdminQueue() {
   const { addToast } = useToast()
   const { getUserByEmail } = useUsers()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
-  const [statusFilter, setStatusFilter]       = useState('all')
+  const [statusFilter, setStatusFilter]       = useState(() => searchParams.get('status') || 'all')
   const [platformFilter, setPlatformFilter]   = useState('all')
   const [dealershipFilter, setDealershipFilter] = useState('all')
   const [search, setSearch]                   = useState('')

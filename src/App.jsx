@@ -11,6 +11,7 @@ import CalendarPage from './pages/CalendarPage'
 import AdminPage from './pages/AdminPage'
 import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
+import AnalyticsPage from './pages/AnalyticsPage'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { currentUser, isAdmin, authLoaded } = useAuth()
@@ -69,6 +70,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <Layout><SettingsPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Layout><AnalyticsPage /></Layout>
           </ProtectedRoute>
         }
       />

@@ -1,21 +1,24 @@
 import { Check } from 'lucide-react'
 
 const STEPS = [
-  { number: 1, label: 'Dealership' },
-  { number: 2, label: 'Platform'   },
-  { number: 3, label: 'Content Type' },
-  { number: 4, label: 'Upload'     },
-  { number: 5, label: 'Details'    },
+  { number: 1, label: 'Dealership',    hint: 'Choose which dealership this content belongs to' },
+  { number: 2, label: 'Platform',      hint: 'Pick the social media platform for this post' },
+  { number: 3, label: 'Content Type',  hint: 'Select the format — image, video, reel, etc.' },
+  { number: 4, label: 'Upload',        hint: 'Add your media file, caption, and hashtags' },
+  { number: 5, label: 'Details',       hint: 'Set a schedule date and review before submitting' },
 ]
 
 export default function StepIndicator({ currentStep }) {
+  const current = STEPS.find(s => s.number === currentStep)
+
   return (
-    <div className="px-6 py-5 border-b border-slate-200 bg-white">
+    <div className="px-6 pt-5 pb-4 border-b border-slate-200 bg-white">
+      {/* Step dots */}
       <div className="flex items-center">
         {STEPS.map((step, index) => {
           const isCompleted = step.number < currentStep
-          const isActive = step.number === currentStep
-          const isUpcoming = step.number > currentStep
+          const isActive    = step.number === currentStep
+          const isUpcoming  = step.number > currentStep
 
           return (
             <div key={step.number} className="flex items-center flex-1 last:flex-none">
@@ -48,6 +51,17 @@ export default function StepIndicator({ currentStep }) {
           )
         })}
       </div>
+
+      {/* Step context line */}
+      {current && (
+        <div className="mt-3 flex items-center gap-2">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            Step {currentStep} of {STEPS.length}
+          </span>
+          <span className="text-slate-200">·</span>
+          <span className="text-xs text-slate-500">{current.hint}</span>
+        </div>
+      )}
     </div>
   )
 }
