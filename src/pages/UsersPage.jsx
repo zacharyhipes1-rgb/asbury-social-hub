@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Users, UserPlus, Shield, Eye, AtSign, MoreVertical, Search, X, Check, Pencil, UserX, UserCheck, Trash2, AlertTriangle } from 'lucide-react'
+import { Users, UserPlus, Shield, Eye, AtSign, MoreVertical, Search, X, Check, Pencil, UserX, UserCheck, Trash2, AlertTriangle, FileText } from 'lucide-react'
 import { useUsers } from '../context/UsersContext'
 import { useAuth } from '../context/AuthContext'
+import { usePosts } from '../context/PostsContext'
 import { RoleBadge } from '../components/common/Badge'
 
 const ROLE_OPTIONS = [
@@ -154,7 +155,7 @@ function DeleteConfirmModal({ user, onClose, onConfirm }) {
   )
 }
 
-function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin }) {
+function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin, postCount }) {
   const canDelete = !isCurrentUser && !isLastAdmin
   const deleteTitle = isCurrentUser ? "You can't delete your own account"
     : isLastAdmin ? "Can't delete the only admin account"
@@ -179,6 +180,12 @@ function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin 
       </td>
       <td className="px-5 py-4">
         <RoleBadge role={user.role} />
+      </td>
+      <td className="px-5 py-4">
+        <span className="inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
+          <FileText size={12} className="text-slate-400" />
+          {postCount}
+        </span>
       </td>
       <td className="px-5 py-4">
         <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
@@ -224,6 +231,7 @@ function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin 
 export default function UsersPage() {
   const { users, addUser, updateUser, deactivateUser, reactivateUser, deleteUser } = useUsers()
   const { currentUser } = useAuth()
+  const { posts } = usePosts()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [modal, setModal] = useState(null)        // null | { mode: 'add' } | { mode: 'edit', user }
@@ -262,6 +270,10 @@ export default function UsersPage() {
   }
 
   const adminCount = users.filter(u => u.role === 'admin').length
+  const postCountByEmail = posts.reduce((acc, p) => {
+    if (p.approval_status !== 'deleted') acc[p.uploaded_by] = (acc[p.uploaded_by] || 0) + 1
+    return acc
+  }, {})
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -337,7 +349,7 @@ export default function UsersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
-                {['User', 'Email', 'Role', 'Status', ''].map(h => (
+                {['User', 'Email', 'Role', 'Posts', 'Status', ''].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                     {h}
                   </th>
@@ -347,7 +359,7 @@ export default function UsersPage() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-16 text-center text-sm text-slate-400">
+                  <td colSpan={6} className="py-16 text-center text-sm text-slate-400">
                     No users match your search.
                   </td>
                 </tr>
@@ -360,6 +372,7 @@ export default function UsersPage() {
                   onDelete={setDeleteTarget}
                   isCurrentUser={user.id === currentUser?.id}
                   isLastAdmin={user.role === 'admin' && adminCount === 1}
+                  postCount={postCountByEmail[user.email] || 0}
                 />
               ))}
             </tbody>

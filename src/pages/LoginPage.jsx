@@ -6,9 +6,9 @@ import { Eye, EyeOff, Mail, Lock, AlertCircle, Zap } from 'lucide-react'
 
 // Anchors: emails + passwords stay fixed; names/titles come from live user data
 const DEMO_ANCHORS = [
-  { email: 'chad.mitchell@asburyauto.com',  password: 'Admin2026!',  fallbackRole: 'Admin'        },
+  { email: 'zach.hipes@foundfirst.io',      password: 'Demo2026!',   fallbackRole: 'Admin'        },
+  { email: 'chad.davis@asburyauto.com',     password: 'Demo2026!',   fallbackRole: 'Admin'        },
   { email: 'sarah.johnson@asburyauto.com',  password: 'Social2026!', fallbackRole: 'Social Media' },
-  { email: 'emily.chen@asburyauto.com',     password: 'View2026!',   fallbackRole: 'View Only'    },
 ]
 
 export default function LoginPage() {

@@ -47,7 +47,7 @@ function ReviewRow({ label, value }) {
   )
 }
 
-export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubmitting }) {
+export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubmitting, adminName = 'your manager' }) {
   const dealership  = DEALERSHIPS.find(d => d.id === data.dealership_id)
   const platform    = getPlatform(data.platform)
   const contentType = getContentType(data.platform, data.content_type)
@@ -211,7 +211,7 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
 
       <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 mb-6">
         <p className="text-sm text-amber-800">
-          <span className="font-semibold">Before submitting:</span> Your content will be sent to Chad Mitchell for review. You'll receive an email notification once it's approved, flagged, or removed.
+          <span className="font-semibold">Before submitting:</span> Your content will be sent to {adminName} for review. You'll receive an email notification once it's approved, flagged, or removed.
         </p>
       </div>
 

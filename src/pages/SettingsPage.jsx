@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings, Mail, Key, Send, CheckCircle, AlertCircle, ChevronDown, ChevronUp, Trash2, Clock, ExternalLink, Cloud, Image, Zap, Link2 } from 'lucide-react'
+import { Settings, Mail, Key, Send, CheckCircle, AlertCircle, ChevronDown, ChevronUp, Trash2, Clock, ExternalLink, Cloud, Image, Zap, Link2, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getNotificationLog, clearNotificationLog } from '../services/emailService'
 
@@ -186,6 +186,34 @@ function PlatformCard({ platform }) {
         </div>
       </div>
     </div>
+  )
+}
+
+function DemoResetButton() {
+  const [confirm, setConfirm] = useState(false)
+  const handleReset = () => {
+    const preserved = {}
+    ;['asbury_emailjs_config', 'asbury_cloudinary_config'].forEach(k => {
+      const v = localStorage.getItem(k)
+      if (v) preserved[k] = v
+    })
+    Object.keys(localStorage).filter(k => k.startsWith('asbury_')).forEach(k => localStorage.removeItem(k))
+    Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v))
+    window.location.href = '/login'
+  }
+  if (confirm) return (
+    <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+      <div className="flex-1 text-sm font-medium text-red-800">This will delete all users, posts, and presets. Continue?</div>
+      <button onClick={() => setConfirm(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-white transition-colors">Cancel</button>
+      <button onClick={handleReset} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors">Reset Now</button>
+    </div>
+  )
+  return (
+    <button onClick={() => setConfirm(true)}
+      className="flex items-center gap-2 px-5 py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
+      <RotateCcw size={14} />
+      Reset to Demo Defaults
+    </button>
   )
 }
 
@@ -423,7 +451,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex-1">
             <h2 className="text-sm font-bold text-slate-900">File Uploads (Cloudinary)</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Host images and videos so Chad can view uploaded content</p>
+            <p className="text-xs text-slate-400 mt-0.5">Host images and videos for admin review and previews</p>
           </div>
           <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
             clConfigured ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
@@ -485,6 +513,26 @@ export default function SettingsPage() {
         {PLATFORM_INTEGRATIONS.map(platform => (
           <PlatformCard key={platform.id} platform={platform} />
         ))}
+      </div>
+
+      {/* Danger Zone — Reset Demo Data */}
+      <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden mb-6">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-red-50">
+          <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
+            <RotateCcw size={16} className="text-red-500" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-sm font-bold text-slate-900">Reset Demo Data</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Wipe all users and posts, restore default seed data, and log out</p>
+          </div>
+        </div>
+        <div className="p-6">
+          <p className="text-sm text-slate-600 mb-4">
+            Use this to restore the platform to its original demo state — all posts, user edits, and hashtag presets will be cleared.
+            Your integration settings (EmailJS, Cloudinary) will be preserved.
+          </p>
+          <DemoResetButton />
+        </div>
       </div>
 
       {/* Notification log */}

@@ -90,6 +90,7 @@ function PostRow({ post, onClick, onEdit, isSocialMedia, currentUser }) {
 export default function DashboardPage() {
   const { currentUser, isAdmin, isSocialMedia } = useAuth()
   const { posts } = usePosts()
+  const { getAdmins } = useUsers()
   const navigate = useNavigate()
   const [selectedPost, setSelectedPost] = useState(null)
   const [search, setSearch] = useState('')
@@ -199,7 +200,7 @@ export default function DashboardPage() {
           color="text-amber-700"
           bgGradient="bg-gradient-to-br from-amber-400 to-orange-500"
           icon={Clock}
-          subtitle={isAdmin ? 'Awaiting your review' : "Awaiting Chad's review"}
+          subtitle={isAdmin ? 'Awaiting your review' : `Awaiting ${getAdmins()[0]?.name?.split(' ')[0] || 'manager'}'s review`}
           to={isAdmin ? '/admin?status=pending' : undefined}
         />
         <StatCard

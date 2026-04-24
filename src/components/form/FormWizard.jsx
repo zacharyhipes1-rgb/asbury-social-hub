@@ -116,6 +116,7 @@ export default function FormWizard() {
             onSubmit={handleSubmit}
             onPrev={() => setStep(4)}
             isSubmitting={isSubmitting}
+            adminName={(getAdmins()[0] || {}).name || 'your manager'}
           />
         )}
       </div>

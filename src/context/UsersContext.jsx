@@ -15,8 +15,25 @@ export function UsersProvider({ children }) {
   useEffect(() => {
     const saved = localStorage.getItem('asbury_users')
     if (saved) {
-      setUsers(JSON.parse(saved))
-      setInitialized(true)
+      const parsed = JSON.parse(saved)
+      const existingEmails = new Set(parsed.map(u => u.email.toLowerCase()))
+      const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
+      if (missing.length > 0) {
+        Promise.all(
+          missing.map(async (u) => ({
+            ...u,
+            password_hash: await hashPassword(u.defaultPassword),
+            active: true,
+            created_at: '2026-01-15T09:00:00.000Z',
+          }))
+        ).then((newUsers) => {
+          setUsers([...newUsers, ...parsed])
+          setInitialized(true)
+        })
+      } else {
+        setUsers(parsed)
+        setInitialized(true)
+      }
     } else {
       Promise.all(
         MOCK_USERS.map(async (u) => ({
