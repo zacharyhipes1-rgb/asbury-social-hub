@@ -228,10 +228,24 @@ export default function AdminQueue() {
                   return (
                     <tr key={post.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors group">
 
-                      {/* Dealership */}
+                      {/* Dealership + media thumbnail */}
                       <td className="px-5 py-4">
                         <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">{dealership?.name}</p>
                         <p className="text-xs text-slate-400 mt-0.5">{dealership?.location}</p>
+                        {(post.file_url || post.file_preview) ? (
+                          <div className="mt-2 w-16 h-11 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex-shrink-0">
+                            {post.file_type?.startsWith('video/') ? (
+                              <video src={post.file_url || post.file_preview} className="w-full h-full object-cover" muted />
+                            ) : (
+                              <img src={post.file_url || post.file_preview} alt="" className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                        ) : post.file_name ? (
+                          <div className="mt-2 flex items-center gap-1 text-[10px] text-amber-500">
+                            <File size={10} />
+                            <span className="truncate max-w-[80px]">{post.file_name}</span>
+                          </div>
+                        ) : null}
                       </td>
 
                       {/* Platform + content type merged */}

@@ -279,6 +279,67 @@ function MobileMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
   )
 }
 
+// ─── Single-dealership full-week column view ──────────────────────────────────
+function SingleDealershipWeekView({ dealership, weekDays, posts, onPostClick, dragState, onDragStart, onDragOver, onDrop }) {
+  const dealershipPosts = posts.filter(
+    p => p.dealership_id === dealership.id && p.approval_status !== 'deleted'
+  )
+  const getPostsForDay = (day) =>
+    dealershipPosts.filter(p => { try { return isSameDay(parseISO(p.scheduled_for), day) } catch { return false } })
+
+  return (
+    <div className="flex flex-1 overflow-hidden min-h-0">
+      {weekDays.map(day => {
+        const dayPosts     = getPostsForDay(day)
+        const today        = isToday(day)
+        const weekend      = [0, 6].includes(day.getDay())
+        const isDropTarget = dragState.overCell === `${dealership.id}-${format(day, 'yyyy-MM-dd')}`
+
+        return (
+          <div
+            key={day.toISOString()}
+            className={`flex-1 flex flex-col border-r border-slate-100 last:border-0 transition-colors ${
+              isDropTarget ? 'bg-blue-50 ring-1 ring-inset ring-blue-200' :
+              today        ? 'bg-blue-50/25' :
+              weekend      ? 'bg-slate-50/60' : 'bg-white'
+            }`}
+            onDragOver={(e) => { e.preventDefault(); onDragOver(`${dealership.id}-${format(day, 'yyyy-MM-dd')}`) }}
+            onDrop={(e) => { e.preventDefault(); onDrop(dealership.id, format(day, 'yyyy-MM-dd')) }}
+          >
+            {/* Day header */}
+            <div className={`px-3 py-4 border-b flex-shrink-0 text-center ${
+              today ? 'border-blue-100 bg-blue-50/60' : 'border-slate-100'
+            }`}>
+              <p className={`text-[10px] font-bold uppercase tracking-widest ${today ? 'text-blue-500' : 'text-slate-400'}`}>
+                {format(day, 'EEE')}
+              </p>
+              <div className={`mx-auto mt-1.5 w-9 h-9 flex items-center justify-center rounded-full text-base font-bold ${
+                today ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-800'
+              }`}>
+                {format(day, 'd')}
+              </div>
+              <p className={`text-[10px] mt-1.5 font-medium ${
+                dayPosts.length > 0 ? 'text-indigo-500' : 'text-slate-300'
+              }`}>
+                {dayPosts.length > 0 ? `${dayPosts.length} post${dayPosts.length !== 1 ? 's' : ''}` : '—'}
+              </p>
+            </div>
+
+            {/* Posts area */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+              {dayPosts.map(post => (
+                <div key={post.id} draggable onDragStart={() => onDragStart(post)} className="cursor-grab active:cursor-grabbing">
+                  <PostChip post={post} onClick={onPostClick} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Desktop week view ────────────────────────────────────────────────────────
 function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, onDragStart, onDragOver, onDrop }) {
   const dealershipPosts = posts.filter(
@@ -620,50 +681,74 @@ export default function CalendarView() {
           className="hidden lg:flex flex-col flex-1"
         />
       ) : (
-        <div className="hidden lg:block flex-1 overflow-auto scrollbar-thin">
-          <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
-            <thead className="sticky top-0 z-20 shadow-sm">
-              <tr className="border-b border-slate-200 bg-white">
-                <th className="sticky left-0 bg-white z-30 px-4 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest border-r border-slate-200 min-w-[172px] max-w-[172px]">
-                  Dealership
-                </th>
-                {weekDays.map(day => {
-                  const today   = isToday(day)
-                  const weekend = [0, 6].includes(day.getDay())
-                  return (
-                    <th key={day.toISOString()} className={`px-2 py-3 text-center min-w-[130px] border-r border-slate-100 last:border-0 ${
-                      today ? 'bg-blue-50' : weekend ? 'bg-slate-50/70' : 'bg-white'
-                    }`}>
-                      <p className={`text-[10px] font-bold uppercase tracking-widest ${today ? 'text-blue-500' : 'text-slate-400'}`}>
-                        {format(day, 'EEE')}
-                      </p>
-                      <div className={`mx-auto mt-1 w-8 h-8 flex items-center justify-center rounded-full text-base font-bold ${
-                        today ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-800'
+        visibleDealerships.length === 1 ? (
+          /* ── Single-dealership: full-height column view ── */
+          <div className="hidden lg:flex flex-col flex-1 overflow-hidden">
+            <div className="flex-shrink-0 px-6 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center gap-3">
+              <div className="w-1 h-6 rounded-full bg-indigo-500" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{visibleDealerships[0].name}</p>
+                <p className="text-xs text-slate-500">{visibleDealerships[0].location}</p>
+              </div>
+            </div>
+            <SingleDealershipWeekView
+              dealership={visibleDealerships[0]}
+              weekDays={weekDays}
+              posts={posts}
+              onPostClick={setSelectedPost}
+              dragState={dragState}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            />
+          </div>
+        ) : (
+          /* ── All dealerships: scrollable table ── */
+          <div className="hidden lg:block flex-1 overflow-auto scrollbar-thin">
+            <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
+              <thead className="sticky top-0 z-20 shadow-sm">
+                <tr className="border-b border-slate-200 bg-white">
+                  <th className="sticky left-0 bg-white z-30 px-4 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest border-r border-slate-200 min-w-[172px] max-w-[172px]">
+                    Dealership
+                  </th>
+                  {weekDays.map(day => {
+                    const today   = isToday(day)
+                    const weekend = [0, 6].includes(day.getDay())
+                    return (
+                      <th key={day.toISOString()} className={`px-2 py-3 text-center min-w-[130px] border-r border-slate-100 last:border-0 ${
+                        today ? 'bg-blue-50' : weekend ? 'bg-slate-50/70' : 'bg-white'
                       }`}>
-                        {format(day, 'd')}
-                      </div>
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {visibleDealerships.map(dealership => (
-                <DealershipRow
-                  key={dealership.id}
-                  dealership={dealership}
-                  weekDays={weekDays}
-                  posts={posts}
-                  onPostClick={setSelectedPost}
-                  dragState={dragState}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        <p className={`text-[10px] font-bold uppercase tracking-widest ${today ? 'text-blue-500' : 'text-slate-400'}`}>
+                          {format(day, 'EEE')}
+                        </p>
+                        <div className={`mx-auto mt-1 w-8 h-8 flex items-center justify-center rounded-full text-base font-bold ${
+                          today ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-800'
+                        }`}>
+                          {format(day, 'd')}
+                        </div>
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {visibleDealerships.map(dealership => (
+                  <DealershipRow
+                    key={dealership.id}
+                    dealership={dealership}
+                    weekDays={weekDays}
+                    posts={posts}
+                    onPostClick={setSelectedPost}
+                    dragState={dragState}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
 
       <PostDetailModal post={selectedPost} isOpen={!!selectedPost} onClose={() => setSelectedPost(null)} />
