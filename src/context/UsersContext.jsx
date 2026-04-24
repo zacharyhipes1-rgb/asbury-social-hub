@@ -16,15 +16,19 @@ export function UsersProvider({ children }) {
     const saved = localStorage.getItem('asbury_users')
     if (saved) {
       const parsed = JSON.parse(saved)
-      const existingEmails = new Set(parsed.map(u => u.email.toLowerCase()))
-      const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
+      // Remove fake users — only keep the 6 real team members
+      const realEmails = new Set(MOCK_USERS.map(u => u.email.toLowerCase()))
+      const cleaned = parsed.filter(u => realEmails.has(u.email.toLowerCase()))
 
-      // Patch stale titles for existing users (e.g. wrong title from old seed)
+      // Patch stale titles
       const TITLE_PATCHES = { 'zhipes@asburyauto.com': 'SEO | AEO Strategist' }
-      const patched = parsed.map(u => {
+      const patched = cleaned.map(u => {
         const fix = TITLE_PATCHES[u.email.toLowerCase()]
         return fix && u.title !== fix ? { ...u, title: fix } : u
       })
+
+      const existingEmails = new Set(patched.map(u => u.email.toLowerCase()))
+      const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
 
       if (missing.length > 0) {
         Promise.all(

@@ -162,8 +162,8 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Upload CTA hero — primary action for social media users */}
-      {isSocialMedia && (
+      {/* Upload CTA hero — primary action for social media users (not admins) */}
+      {isSocialMedia && !isAdmin && (
         <Link
           to="/upload"
           className="group flex items-center gap-3 sm:gap-5 p-4 sm:p-6 rounded-2xl text-white mb-6 transition-all hover:opacity-95 hover:shadow-2xl"
@@ -178,6 +178,35 @@ export default function DashboardPage() {
           </div>
           <div className="hidden sm:flex flex-shrink-0 items-center gap-2 bg-white/15 px-4 py-2.5 rounded-xl group-hover:bg-white/25 transition-colors">
             <span className="text-sm font-semibold">Get started</span>
+            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        </Link>
+      )}
+
+      {/* Approval Queue hero — primary action for admins */}
+      {isAdmin && (
+        <Link
+          to="/admin"
+          className="group flex items-center gap-3 sm:gap-5 p-4 sm:p-6 rounded-2xl text-white mb-6 transition-all hover:opacity-95 hover:shadow-2xl"
+          style={{ background: 'linear-gradient(135deg, #1c1917 0%, #78350f 60%, #d97706 100%)', boxShadow: '0 8px 32px rgba(217,119,6,0.25)' }}
+        >
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0 group-hover:bg-white/20 transition-colors">
+            <ShieldCheck size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-base sm:text-lg leading-tight">
+              {pendingPosts.length > 0
+                ? `${pendingPosts.length} post${pendingPosts.length !== 1 ? 's' : ''} awaiting your review`
+                : 'Approval Queue'}
+            </p>
+            <p className="text-xs sm:text-sm text-amber-200 mt-0.5">
+              {pendingPosts.length > 0
+                ? 'Approve, flag, or remove pending submissions'
+                : 'All clear — no pending submissions right now'}
+            </p>
+          </div>
+          <div className="hidden sm:flex flex-shrink-0 items-center gap-2 bg-white/15 px-4 py-2.5 rounded-xl group-hover:bg-white/25 transition-colors">
+            <span className="text-sm font-semibold">Review now</span>
             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
           </div>
         </Link>

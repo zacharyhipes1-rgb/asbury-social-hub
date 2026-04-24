@@ -55,10 +55,24 @@ function postsReducer(state, action) {
   }
 }
 
+// Remap old fake uploader emails → real team members
+const UPLOADER_PATCHES = {
+  'sarah.johnson@asburyauto.com': { email: 'rniblett@asburyauto.com', name: 'Rikki Niblett' },
+  'mike.torres@asburyauto.com':   { email: 'bmcdaniel@asburyauto.com', name: 'Ben Mcdaniel' },
+  'alex.rivera@asburyauto.com':   { email: 'rniblett@asburyauto.com', name: 'Rikki Niblett' },
+}
+
 function loadPosts() {
   try {
     const saved = localStorage.getItem('asbury_posts')
-    return saved ? JSON.parse(saved) : MOCK_POSTS
+    if (!saved) return MOCK_POSTS
+    const parsed = JSON.parse(saved)
+    return parsed.map(p => {
+      const patch = UPLOADER_PATCHES[p.uploaded_by?.toLowerCase()]
+      return patch
+        ? { ...p, uploaded_by: patch.email, uploaded_by_name: patch.name }
+        : p
+    })
   } catch {
     return MOCK_POSTS
   }
