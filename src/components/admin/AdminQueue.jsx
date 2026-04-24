@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { usePosts } from '../../context/PostsContext'
 import { useToast } from '../../context/ToastContext'
+import { useUsers } from '../../context/UsersContext'
 import { DEALERSHIPS } from '../../data/dealerships'
 import { PLATFORMS, getPlatform, getContentType } from '../../data/platforms'
 import { StatusBadge, PlatformBadge } from '../common/Badge'
@@ -25,6 +26,7 @@ const STATUS_FILTERS = [
 export default function AdminQueue() {
   const { posts, approvePost, flagPost, deletePost } = usePosts()
   const { addToast } = useToast()
+  const { getUserByEmail } = useUsers()
 
   const [statusFilter, setStatusFilter] = useState('all')
   const [platformFilter, setPlatformFilter] = useState('all')
@@ -54,7 +56,7 @@ export default function AdminQueue() {
       addToast(`Approved: ${getPlatform(post.platform)?.name} post for ${DEALERSHIPS.find(d => d.id === post.dealership_id)?.name}`, 'success')
     } else if (action === 'flag') {
       flagPost(post.id, notes)
-      addToast(`Revision requested for ${post.uploaded_by_name}'s post.`, 'warning')
+      addToast(`Revision requested for ${getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name}'s post.`, 'warning')
     } else if (action === 'delete') {
       deletePost(post.id)
       addToast(`Post removed from queue.`, 'error')
@@ -173,7 +175,7 @@ export default function AdminQueue() {
                         </p>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <p className="text-sm text-slate-700">{post.uploaded_by_name}</p>
+                        <p className="text-sm text-slate-700">{getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name}</p>
                         <p className="text-xs text-slate-400">{post.uploaded_by}</p>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">

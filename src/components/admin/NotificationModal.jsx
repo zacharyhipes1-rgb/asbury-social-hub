@@ -58,15 +58,11 @@ export default function NotificationModal({ post, action, isOpen, onClose, onCon
   const platform   = getPlatform(post.platform)
   const ct         = getContentType(post.platform, post.content_type)
   const dealership = DEALERSHIPS.find((d) => d.id === post.dealership_id)
+  const uploader   = getUserByEmail(post.uploaded_by) || { name: post.uploaded_by_name, email: post.uploaded_by }
   const canSubmit  = !cfg.required || notes.trim().length > 0
 
   const handleConfirm = async () => {
     setSending(true)
-
-    const uploader = getUserByEmail(post.uploaded_by) || {
-      name: post.uploaded_by_name,
-      email: post.uploaded_by,
-    }
 
     try {
       if (action === 'approve') {
@@ -134,7 +130,7 @@ export default function NotificationModal({ post, action, isOpen, onClose, onCon
             <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 space-y-1.5">
               {[
                 ['From', `${currentUser?.name} <${currentUser?.email}>`],
-                ['To',   `${post.uploaded_by_name} <${post.uploaded_by}>`],
+                ['To',   `${uploader.name} <${uploader.email}>`],
               ].map(([k, v]) => (
                 <div key={k} className="flex gap-3 text-xs">
                   <span className="text-slate-400 w-10 font-medium">{k}</span>
@@ -143,7 +139,7 @@ export default function NotificationModal({ post, action, isOpen, onClose, onCon
               ))}
             </div>
             <div className="px-4 py-4 text-sm text-slate-700 space-y-3">
-              <p>Hi {post.uploaded_by_name?.split(' ')[0]},</p>
+              <p>Hi {uploader.name?.split(' ')[0]},</p>
               <p>{cfg.bodyIntro()}</p>
               <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 text-xs space-y-1.5">
                 <p><span className="font-semibold text-slate-500">Platform:</span> {platform?.name} · {ct?.name}</p>
