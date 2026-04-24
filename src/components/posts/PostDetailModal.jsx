@@ -8,6 +8,7 @@ import Modal from '../common/Modal'
 import { StatusBadge, PlatformBadge } from '../common/Badge'
 import { getPlatform, getContentType } from '../../data/platforms'
 import { DEALERSHIPS } from '../../data/dealerships'
+import { useUsers } from '../../context/UsersContext'
 
 const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File }
 
@@ -25,8 +26,10 @@ function DetailRow({ icon: Icon, label, value }) {
 }
 
 export default function PostDetailModal({ post, isOpen, onClose }) {
+  const { getUserByEmail } = useUsers()
   if (!post) return null
 
+  const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
   const platform = getPlatform(post.platform)
   const ct = getContentType(post.platform, post.content_type)
   const dealership = DEALERSHIPS.find(d => d.id === post.dealership_id)
@@ -120,7 +123,7 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
             <DetailRow icon={Users}        label="Audience"      value={post.target_audience} />
             <DetailRow icon={MessageSquare} label="Reason"       value={post.posting_reason} />
             <DetailRow icon={AlignLeft}    label="Alt text"      value={post.alt_text} />
-            <DetailRow icon={User}         label="Uploaded by"   value={post.uploaded_by_name} />
+            <DetailRow icon={User}         label="Uploaded by"   value={uploaderName} />
             <DetailRow icon={Clock}        label="Uploaded at"   value={formatDate(post.uploaded_at)} />
           </div>
         </div>

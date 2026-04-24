@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { usePosts } from '../context/PostsContext'
+import { useUsers } from '../context/UsersContext'
 import { StatusBadge, PlatformBadge } from '../components/common/Badge'
 import PostDetailModal from '../components/posts/PostDetailModal'
 import { getPlatform, getContentType } from '../data/platforms'
@@ -32,10 +33,12 @@ function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle }) {
 }
 
 function PostRow({ post, onClick }) {
+  const { getUserByEmail } = useUsers()
   const platform = getPlatform(post.platform)
   const ct = getContentType(post.platform, post.content_type)
   const ContentIcon = ICON_MAP[ct?.icon] || File
   const dealership = DEALERSHIPS.find((d) => d.id === post.dealership_id)
+  const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
 
   return (
     <tr
@@ -61,7 +64,7 @@ function PostRow({ post, onClick }) {
         </p>
       </td>
       <td className="px-5 py-3.5">
-        <p className="text-xs text-slate-500">{post.uploaded_by_name}</p>
+        <p className="text-xs text-slate-500">{uploaderName}</p>
         <p className="text-xs text-slate-400">{post.uploaded_at ? format(parseISO(post.uploaded_at), 'MMM d') : '—'}</p>
       </td>
       <td className="px-5 py-3.5 text-sm text-slate-500 whitespace-nowrap">
