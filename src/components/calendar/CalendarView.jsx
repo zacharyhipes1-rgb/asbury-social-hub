@@ -23,19 +23,28 @@ function isUrgent(post) {
   } catch { return false }
 }
 
+const STATUS_DOT = {
+  pending:   'bg-amber-400',
+  approved:  'bg-green-400',
+  flagged:   'bg-orange-400',
+  deleted:   'bg-slate-300',
+  published: 'bg-blue-400',
+}
+
+const STATUS_BADGE = {
+  pending:   'bg-amber-100 text-amber-700',
+  approved:  'bg-green-100 text-green-700',
+  flagged:   'bg-orange-100 text-orange-700',
+  published: 'bg-blue-100 text-blue-700',
+  deleted:   'bg-slate-100 text-slate-500',
+}
+
+// ─── Desktop post chip (week/month table cells) ───────────────────────────────
 function PostChip({ post, onClick }) {
   const platform    = getPlatform(post.platform)
   const ct          = getContentType(post.platform, post.content_type)
   const ContentIcon = ICON_MAP[ct?.icon] || File
   const urgent      = isUrgent(post)
-
-  const statusDot = {
-    pending:   'bg-amber-400',
-    approved:  'bg-green-400',
-    flagged:   'bg-orange-400',
-    deleted:   'bg-slate-300',
-    published: 'bg-blue-400',
-  }
 
   return (
     <button
@@ -49,12 +58,228 @@ function PostChip({ post, onClick }) {
       {urgent && <AlertCircle size={9} className="flex-shrink-0 text-red-200" />}
       <ContentIcon size={10} className="flex-shrink-0" />
       <span className="truncate flex-1">{ct?.name}</span>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDot[post.approval_status] || 'bg-slate-300'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[post.approval_status] || 'bg-slate-300'}`} />
     </button>
   )
 }
 
-// ─── Week View ────────────────────────────────────────────────────────────────
+// ─── Mobile: post card used in agenda lists ───────────────────────────────────
+function MobilePostCard({ post, onClick }) {
+  const platform    = getPlatform(post.platform)
+  const ct          = getContentType(post.platform, post.content_type)
+  const ContentIcon = ICON_MAP[ct?.icon] || File
+  const dealership  = DEALERSHIPS.find(d => d.id === post.dealership_id)
+  const urgent      = isUrgent(post)
+
+  return (
+    <button
+      onClick={() => onClick(post)}
+      className={`w-full text-left p-3.5 rounded-xl border-2 bg-white transition-all active:scale-[0.98] ${
+        urgent ? 'border-red-300' : 'border-slate-100 hover:border-slate-200'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: platform?.color || '#475569' }}
+        >
+          <ContentIcon size={15} className="text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+            <span className="text-sm font-semibold text-slate-900">{platform?.name}</span>
+            <span className="text-slate-300 text-xs">·</span>
+            <span className="text-xs text-slate-500">{ct?.name}</span>
+            {urgent && (
+              <span className="text-xs font-medium text-red-600 flex items-center gap-0.5">
+                <AlertCircle size={10} />Urgent
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-400 truncate mb-1.5">{dealership?.name}</p>
+          {post.caption && (
+            <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{post.caption}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100">
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_BADGE[post.approval_status] || 'bg-slate-100 text-slate-600'}`}>
+          {post.approval_status}
+        </span>
+        {post.optimal_posting_time && (
+          <span className="text-xs text-slate-400">Best: {post.optimal_posting_time}</span>
+        )}
+      </div>
+    </button>
+  )
+}
+
+// ─── Mobile: day strip + agenda ───────────────────────────────────────────────
+function MobileWeekAgenda({ weekDays, posts, dealershipFilter, onPostClick }) {
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const today = new Date()
+    return weekDays.find(d => isToday(d)) || weekDays[0]
+  })
+
+  const dayPosts = (dealershipFilter === 'all'
+    ? posts
+    : posts.filter(p => p.dealership_id === dealershipFilter)
+  ).filter(p => {
+    try { return isSameDay(parseISO(p.scheduled_for), selectedDay) && p.approval_status !== 'deleted' }
+    catch { return false }
+  })
+
+  const getPostCount = (day) =>
+    posts.filter(p => {
+      if (p.approval_status === 'deleted') return false
+      if (dealershipFilter !== 'all' && p.dealership_id !== dealershipFilter) return false
+      try { return isSameDay(parseISO(p.scheduled_for), day) } catch { return false }
+    }).length
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Day strip */}
+      <div className="flex gap-1.5 px-4 py-3 bg-white border-b border-slate-100 overflow-x-auto scrollbar-none flex-shrink-0">
+        {weekDays.map(day => {
+          const isSelected = isSameDay(day, selectedDay)
+          const isT = isToday(day)
+          const count = getPostCount(day)
+          return (
+            <button
+              key={day.toISOString()}
+              onClick={() => setSelectedDay(day)}
+              className={`flex flex-col items-center flex-shrink-0 w-12 py-2 rounded-xl transition-all ${
+                isSelected ? 'bg-slate-900' :
+                isT ? 'bg-blue-50' : 'hover:bg-slate-50'
+              }`}
+            >
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                isSelected ? 'text-slate-300' : isT ? 'text-blue-500' : 'text-slate-400'
+              }`}>
+                {format(day, 'EEE')}
+              </span>
+              <span className={`text-base font-bold leading-tight mt-0.5 ${
+                isSelected ? 'text-white' : isT ? 'text-blue-600' : 'text-slate-700'
+              }`}>
+                {format(day, 'd')}
+              </span>
+              {count > 0 ? (
+                <span className={`text-[9px] font-bold mt-0.5 ${
+                  isSelected ? 'text-slate-300' : isT ? 'text-blue-500' : 'text-slate-400'
+                }`}>{count}</span>
+              ) : (
+                <span className="h-3 mt-0.5" />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Agenda list */}
+      <div className="flex-1 overflow-y-auto">
+        {dayPosts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+            <Calendar size={36} className="text-slate-200 mb-3" />
+            <p className="text-sm font-medium text-slate-400">No posts scheduled</p>
+            <p className="text-xs text-slate-300 mt-1">{format(selectedDay, 'EEEE, MMMM d')}</p>
+          </div>
+        ) : (
+          <div className="p-4 space-y-2.5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              {format(selectedDay, 'EEEE, MMMM d')} · {dayPosts.length} post{dayPosts.length !== 1 ? 's' : ''}
+            </p>
+            {dayPosts.map(post => (
+              <MobilePostCard key={post.id} post={post} onClick={onPostClick} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Mobile: compact month grid + day posts ───────────────────────────────────
+function MobileMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
+  const [selectedDay, setSelectedDay] = useState(new Date())
+
+  const monthStart = startOfMonth(monthDate)
+  const monthEnd   = endOfMonth(monthDate)
+  const gridStart  = startOfWeek(monthStart, { weekStartsOn: 1 })
+  const gridEnd    = addDays(startOfWeek(addDays(monthEnd, 6), { weekStartsOn: 1 }), 6)
+  const days       = eachDayOfInterval({ start: gridStart, end: gridEnd })
+
+  const getPostsForDay = (day) =>
+    posts.filter(p => {
+      if (p.approval_status === 'deleted') return false
+      if (dealershipFilter !== 'all' && p.dealership_id !== dealershipFilter) return false
+      try { return isSameDay(parseISO(p.scheduled_for), day) } catch { return false }
+    })
+
+  const selectedPosts = getPostsForDay(selectedDay)
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Compact grid */}
+      <div className="flex-shrink-0 px-4 pt-3 pb-2">
+        <div className="grid grid-cols-7 gap-px">
+          {['M','T','W','T','F','S','S'].map((d, i) => (
+            <div key={i} className="text-center text-[10px] font-bold text-slate-400 uppercase py-1">{d}</div>
+          ))}
+          {days.map(day => {
+            const inMonth  = isSameMonth(day, monthDate)
+            const isT      = isToday(day)
+            const isSel    = isSameDay(day, selectedDay)
+            const dayPosts = getPostsForDay(day)
+            const platforms = [...new Set(dayPosts.map(p => getPlatform(p.platform)?.color).filter(Boolean))]
+
+            return (
+              <button
+                key={day.toISOString()}
+                onClick={() => setSelectedDay(day)}
+                className={`flex flex-col items-center py-1.5 rounded-xl transition-all ${
+                  isSel ? 'bg-slate-900' :
+                  isT   ? 'bg-blue-50' : 'hover:bg-slate-50'
+                } ${!inMonth ? 'opacity-30' : ''}`}
+              >
+                <span className={`text-sm font-bold leading-none ${
+                  isSel ? 'text-white' : isT ? 'text-blue-600' : 'text-slate-700'
+                }`}>
+                  {format(day, 'd')}
+                </span>
+                <div className="flex gap-0.5 mt-1 h-2.5 items-center justify-center">
+                  {platforms.slice(0, 3).map((color, i) => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: isSel ? 'rgba(255,255,255,0.6)' : color }} />
+                  ))}
+                  {platforms.length === 0 && <div className="w-1.5 h-1.5" />}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Divider + selected day posts */}
+      <div className="flex-1 overflow-y-auto border-t border-slate-100">
+        {selectedPosts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center px-6">
+            <p className="text-sm font-medium text-slate-400">No posts on {format(selectedDay, 'MMM d')}</p>
+          </div>
+        ) : (
+          <div className="p-4 space-y-2.5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              {format(selectedDay, 'EEEE, MMMM d')} · {selectedPosts.length} post{selectedPosts.length !== 1 ? 's' : ''}
+            </p>
+            {selectedPosts.map(post => (
+              <MobilePostCard key={post.id} post={post} onClick={onPostClick} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Desktop week view ────────────────────────────────────────────────────────
 function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, onDragStart, onDragOver, onDrop }) {
   const dealershipPosts = posts.filter(
     p => p.dealership_id === dealership.id && p.approval_status !== 'deleted'
@@ -69,7 +294,7 @@ function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, on
         <p className="text-xs text-slate-400 mt-0.5 truncate">{dealership.location}</p>
       </td>
       {weekDays.map(day => {
-        const dayPosts    = getPostsForDay(day)
+        const dayPosts     = getPostsForDay(day)
         const isDropTarget = dragState.overCell === `${dealership.id}-${format(day, 'yyyy-MM-dd')}`
         return (
           <td
@@ -92,8 +317,8 @@ function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, on
   )
 }
 
-// ─── Month View ───────────────────────────────────────────────────────────────
-function MonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
+// ─── Desktop month view ───────────────────────────────────────────────────────
+function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
   const monthStart = startOfMonth(monthDate)
   const monthEnd   = endOfMonth(monthDate)
   const gridStart  = startOfWeek(monthStart, { weekStartsOn: 1 })
@@ -121,10 +346,7 @@ function MonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
           const todayDay  = isToday(day)
           const urgentCnt = dayPosts.filter(isUrgent).length
           return (
-            <div
-              key={day.toISOString()}
-              className={`bg-white min-h-[100px] p-2 ${!inMonth ? 'opacity-40' : ''}`}
-            >
+            <div key={day.toISOString()} className={`bg-white min-h-[100px] p-2 ${!inMonth ? 'opacity-40' : ''}`}>
               <div className="flex items-center justify-between mb-1">
                 <span className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
                   todayDay ? 'bg-blue-600 text-white' : 'text-slate-700'
@@ -155,12 +377,12 @@ function MonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function CalendarView() {
-  const [viewMode, setViewMode]             = useState('week')
-  const [weekStart, setWeekStart]           = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
-  const [monthDate, setMonthDate]           = useState(() => startOfMonth(new Date()))
-  const [selectedPost, setSelectedPost]     = useState(null)
+  const [viewMode, setViewMode]                 = useState('week')
+  const [weekStart, setWeekStart]               = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
+  const [monthDate, setMonthDate]               = useState(() => startOfMonth(new Date()))
+  const [selectedPost, setSelectedPost]         = useState(null)
   const [dealershipFilter, setDealershipFilter] = useState('all')
-  const [dragState, setDragState]           = useState({ post: null, overCell: null })
+  const [dragState, setDragState]               = useState({ post: null, overCell: null })
 
   const { posts, reschedulePost } = usePosts()
 
@@ -187,69 +409,126 @@ export default function CalendarView() {
 
   const urgentCount = posts.filter(isUrgent).length
 
+  const prevPeriod = () => viewMode === 'week' ? setWeekStart(subWeeks(weekStart, 1)) : setMonthDate(subMonths(monthDate, 1))
+  const nextPeriod = () => viewMode === 'week' ? setWeekStart(addWeeks(weekStart, 1)) : setMonthDate(addMonths(monthDate, 1))
+  const goToToday  = () => { setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 })); setMonthDate(startOfMonth(new Date())) }
+
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-slate-200 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => viewMode === 'week' ? setWeekStart(subWeeks(weekStart, 1)) : setMonthDate(subMonths(monthDate, 1))}
-            className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <div className="text-center min-w-[200px]">
-            {viewMode === 'week' ? (
-              <>
-                <p className="font-semibold text-slate-900 text-sm">{format(weekStart, 'MMM d')} – {format(weekEnd, 'MMM d, yyyy')}</p>
-                <p className="text-xs text-slate-500">{totalThisWeek} post{totalThisWeek !== 1 ? 's' : ''} this week</p>
-              </>
-            ) : (
-              <p className="font-semibold text-slate-900 text-sm">{format(monthDate, 'MMMM yyyy')}</p>
+
+      {/* ── Toolbar ── */}
+      <div className="flex-shrink-0 bg-white border-b border-slate-200">
+        {/* Mobile toolbar */}
+        <div className="flex lg:hidden flex-col gap-2 px-4 py-3">
+          <div className="flex items-center justify-between gap-2">
+            {/* Nav */}
+            <div className="flex items-center gap-1.5">
+              <button onClick={prevPeriod} className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                <ChevronLeft size={16} />
+              </button>
+              <div className="text-center">
+                {viewMode === 'week' ? (
+                  <>
+                    <p className="font-semibold text-slate-900 text-sm leading-tight">{format(weekStart, 'MMM d')} – {format(weekEnd, 'MMM d')}</p>
+                    <p className="text-xs text-slate-400">{totalThisWeek} post{totalThisWeek !== 1 ? 's' : ''}</p>
+                  </>
+                ) : (
+                  <p className="font-semibold text-slate-900 text-sm">{format(monthDate, 'MMMM yyyy')}</p>
+                )}
+              </div>
+              <button onClick={nextPeriod} className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            {/* View toggle + Today */}
+            <div className="flex items-center gap-1.5">
+              <button onClick={goToToday} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                Today
+              </button>
+              <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                {[{ id: 'week', label: 'Wk' }, { id: 'month', label: 'Mo' }].map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setViewMode(v.id)}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === v.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Dealership filter + urgent badge */}
+          <div className="flex items-center gap-2">
+            <select
+              value={dealershipFilter}
+              onChange={e => setDealershipFilter(e.target.value)}
+              className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
+            >
+              <option value="all">All Dealerships</option>
+              {DEALERSHIPS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+            {urgentCount > 0 && (
+              <span className="flex items-center gap-1 text-xs font-medium text-red-600 whitespace-nowrap">
+                <AlertCircle size={12} />{urgentCount} urgent
+              </span>
             )}
           </div>
-          <button
-            onClick={() => viewMode === 'week' ? setWeekStart(addWeeks(weekStart, 1)) : setMonthDate(addMonths(monthDate, 1))}
-            className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            <ChevronRight size={16} />
-          </button>
-          <button
-            onClick={() => { setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 })); setMonthDate(startOfMonth(new Date())) }}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-          >
-            Today
-          </button>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* View toggle */}
-          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
-            {[{ id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }].map(v => (
-              <button
-                key={v.id}
-                onClick={() => setViewMode(v.id)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                  viewMode === v.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
+        {/* Desktop toolbar */}
+        <div className="hidden lg:flex items-center justify-between gap-3 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <button onClick={prevPeriod} className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+              <ChevronLeft size={16} />
+            </button>
+            <div className="text-center min-w-[200px]">
+              {viewMode === 'week' ? (
+                <>
+                  <p className="font-semibold text-slate-900 text-sm">{format(weekStart, 'MMM d')} – {format(weekEnd, 'MMM d, yyyy')}</p>
+                  <p className="text-xs text-slate-500">{totalThisWeek} post{totalThisWeek !== 1 ? 's' : ''} this week</p>
+                </>
+              ) : (
+                <p className="font-semibold text-slate-900 text-sm">{format(monthDate, 'MMMM yyyy')}</p>
+              )}
+            </div>
+            <button onClick={nextPeriod} className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+              <ChevronRight size={16} />
+            </button>
+            <button onClick={goToToday} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+              Today
+            </button>
           </div>
-          <select
-            value={dealershipFilter}
-            onChange={(e) => setDealershipFilter(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
-          >
-            <option value="all">All Dealerships</option>
-            {DEALERSHIPS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+              {[{ id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }].map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => setViewMode(v.id)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    viewMode === v.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <select
+              value={dealershipFilter}
+              onChange={e => setDealershipFilter(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
+            >
+              <option value="all">All Dealerships</option>
+              {DEALERSHIPS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 py-2 bg-slate-50 border-b border-slate-200 flex-shrink-0 flex-wrap overflow-x-auto">
+      {/* ── Legend (desktop only) ── */}
+      <div className="hidden lg:flex items-center gap-3 px-6 py-2 bg-slate-50 border-b border-slate-200 flex-shrink-0 flex-wrap">
         {[
           { color: '#1877F2', label: 'Facebook' },
           { color: '#E1306C', label: 'Instagram' },
@@ -280,19 +559,41 @@ export default function CalendarView() {
             {urgentCount} approved post{urgentCount !== 1 ? 's' : ''} due within 3 days — needs publishing
           </div>
         )}
-        {viewMode === 'week' && <p className="text-xs text-slate-400 hidden sm:block ml-auto">Drag posts to reschedule</p>}
+        {viewMode === 'week' && <p className="text-xs text-slate-400 ml-auto">Drag posts to reschedule</p>}
       </div>
 
-      {/* Calendar body */}
+      {/* ── Calendar body ── */}
+
+      {/* Mobile views */}
+      <div className="flex lg:hidden flex-col flex-1 min-h-0">
+        {viewMode === 'week' ? (
+          <MobileWeekAgenda
+            weekDays={weekDays}
+            posts={posts}
+            dealershipFilter={dealershipFilter}
+            onPostClick={setSelectedPost}
+          />
+        ) : (
+          <MobileMonthView
+            monthDate={monthDate}
+            posts={posts}
+            dealershipFilter={dealershipFilter}
+            onPostClick={setSelectedPost}
+          />
+        )}
+      </div>
+
+      {/* Desktop views */}
       {viewMode === 'month' ? (
-        <MonthView
+        <DesktopMonthView
           monthDate={monthDate}
           posts={posts}
           dealershipFilter={dealershipFilter}
           onPostClick={setSelectedPost}
+          className="hidden lg:flex flex-col flex-1"
         />
       ) : (
-        <div className="flex-1 overflow-auto scrollbar-thin">
+        <div className="hidden lg:block flex-1 overflow-auto scrollbar-thin">
           <table className="w-full border-collapse" style={{ minWidth: '900px' }}>
             <thead className="sticky top-0 z-20 bg-white shadow-sm">
               <tr className="border-b border-slate-200">
