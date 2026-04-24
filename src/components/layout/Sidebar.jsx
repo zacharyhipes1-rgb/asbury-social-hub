@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, CalendarDays, ShieldCheck, X,
-  Users, Settings, Zap, BarChart2
+  Users, Settings, BarChart2
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { usePosts } from '../../context/PostsContext'
@@ -48,10 +48,7 @@ export default function Sidebar({ onClose }) {
       {/* Brand */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-white/[0.06] flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}>
-            <Zap size={14} className="text-white" />
-          </div>
+          <img src="/apple-touch-icon.png" alt="Asbury" className="w-7 h-7 rounded-lg flex-shrink-0 object-cover" />
           <div className="leading-none">
             <p className="text-white text-sm font-semibold">Asbury Social</p>
             <p className="text-slate-500 text-[10px] mt-0.5 font-medium tracking-wide">CONTENT HUB</p>
@@ -72,7 +69,7 @@ export default function Sidebar({ onClose }) {
         <NavItem to="/calendar" icon={CalendarDays} label="Content Calendar" onClick={onClose} />
         <NavItem to="/analytics" icon={BarChart2} label="Analytics" onClick={onClose} />
 
-        {isSocialMedia && (
+        {isSocialMedia && !isAdmin && (
           <>
             <SectionLabel>Content</SectionLabel>
             <NavItem to="/upload" icon={Upload} label="Upload Content" onClick={onClose} />
