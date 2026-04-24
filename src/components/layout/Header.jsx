@@ -1,8 +1,80 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, LogOut, ChevronDown, Menu, X, Settings, Users } from 'lucide-react'
+import { Bell, LogOut, ChevronDown, Menu, X, Settings, Users, UserCircle, Check, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useUsers } from '../../context/UsersContext'
 import { usePosts } from '../../context/PostsContext'
+
+function ProfileModal({ user, onClose, onSave }) {
+  const [form, setForm]   = useState({ name: user.name, email: user.email, title: user.title || '', password: '' })
+  const [showPw, setShowPw] = useState(false)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.email.trim()) { setError('Name and email are required.'); return }
+    if (form.password && form.password.length < 8) { setError('New password must be at least 8 characters.'); return }
+    setSaving(true)
+    setError('')
+    await onSave(form)
+    setSaving(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          <h2 className="text-base font-bold text-slate-900">My Profile</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={18} /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          {error && <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Full Name *</label>
+              <input value={form.name} onChange={e => set('name', e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Title</label>
+              <input value={form.title} onChange={e => set('title', e.target.value)}
+                placeholder="e.g. Social Media Manager"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email *</label>
+            <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">New Password <span className="normal-case font-normal text-slate-400">(leave blank to keep current)</span></label>
+            <div className="relative">
+              <input type={showPw ? 'text' : 'password'} value={form.password} onChange={e => set('password', e.target.value)}
+                placeholder="Min. 8 characters"
+                className="w-full px-3 py-2.5 pr-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+              <button type="button" onClick={() => setShowPw(p => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+          <button onClick={onClose} className="px-5 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-white transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+            {saving ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={14} />}
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const AVATAR_COLORS = [
   ['#6366f1', '#8b5cf6'],
@@ -19,9 +91,11 @@ function avatarGradient(name = '') {
 }
 
 export default function Header({ onMenuToggle, menuOpen }) {
-  const { currentUser, logout, isAdmin } = useAuth()
+  const { currentUser, logout, isAdmin, refreshCurrentUser } = useAuth()
+  const { updateUser } = useUsers()
   const { getPendingPosts } = usePosts()
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [profileOpen, setProfileOpen]   = useState(false)
   const navigate = useNavigate()
 
   const pendingCount = getPendingPosts().length
@@ -30,6 +104,12 @@ export default function Header({ onMenuToggle, menuOpen }) {
     setDropdownOpen(false)
     logout()
     navigate('/login')
+  }
+
+  const handleProfileSave = async (form) => {
+    await updateUser(currentUser.id, form)
+    refreshCurrentUser()
+    setProfileOpen(false)
   }
 
   return (
@@ -82,6 +162,13 @@ export default function Header({ onMenuToggle, menuOpen }) {
                   <p className="text-xs text-slate-500 mt-0.5 capitalize">{currentUser?.title}</p>
                 </div>
                 <div className="p-1">
+                  <button
+                    onClick={() => { setDropdownOpen(false); setProfileOpen(true) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    <UserCircle size={14} />
+                    My Profile
+                  </button>
                   {isAdmin && (
                     <>
                       <Link
@@ -100,9 +187,9 @@ export default function Header({ onMenuToggle, menuOpen }) {
                         <Settings size={14} />
                         Settings
                       </Link>
-                      <div className="my-1 border-t border-slate-100" />
                     </>
                   )}
+                  <div className="my-1 border-t border-slate-100" />
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors"
@@ -116,6 +203,14 @@ export default function Header({ onMenuToggle, menuOpen }) {
           )}
         </div>
       </div>
+
+      {profileOpen && currentUser && (
+        <ProfileModal
+          user={currentUser}
+          onClose={() => setProfileOpen(false)}
+          onSave={handleProfileSave}
+        />
+      )}
     </header>
   )
 }
