@@ -37,9 +37,13 @@ export default function LoginPage() {
     if (ok) navigate('/', { replace: true })
   }
 
-  const fillDemo = (acc) => {
+  const fillDemo = async (acc) => {
     setEmail(acc.email)
     setPassword(acc.password)
+    setLoading(true)
+    const ok = await login(acc.email, acc.password)
+    setLoading(false)
+    if (ok) navigate('/', { replace: true })
   }
 
   return (
