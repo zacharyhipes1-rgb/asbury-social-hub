@@ -207,7 +207,83 @@ export default function AdminQueue() {
             <p className="text-sm text-slate-400 mt-1">Try adjusting the filters above</p>
           </div>
         ) : (
-          <div className="overflow-x-auto scrollbar-thin">
+          <>
+          {/* ── Mobile: post cards ── */}
+          <div className="lg:hidden divide-y divide-slate-100">
+            {filtered.map(post => {
+              const dealership  = DEALERSHIPS.find(d => d.id === post.dealership_id)
+              const ct          = getContentType(post.platform, post.content_type)
+              const ContentIcon = ICON_MAP[ct?.icon] || File
+              return (
+                <div key={`m-${post.id}`} className="p-4">
+                  <div className="flex items-start gap-3 mb-2.5">
+                    {(post.file_url || post.file_preview) && (
+                      <div className="w-14 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100 bg-slate-50">
+                        {post.file_type?.startsWith('video/') ? (
+                          <video src={post.file_url || post.file_preview} className="w-full h-full object-cover" muted />
+                        ) : (
+                          <img src={post.file_url || post.file_preview} alt="" className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{dealership?.name}</p>
+                      <p className="text-xs text-slate-400">{dealership?.location}</p>
+                    </div>
+                    <StatusBadge status={post.approval_status} compact />
+                  </div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <PlatformBadge platformId={post.platform} compact />
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+                      <ContentIcon size={10} />{ct?.name}
+                    </span>
+                    <span className="text-xs text-slate-400 ml-auto">{formatDate(post.scheduled_for)}</span>
+                  </div>
+                  {post.caption && (
+                    <p className="text-xs text-slate-600 mb-2.5 line-clamp-2 leading-relaxed">{post.caption}</p>
+                  )}
+                  <div className="flex items-center gap-0.5 pt-2.5 border-t border-slate-100">
+                    <button onClick={() => setViewPost(post)} title="View"
+                      className="p-2 rounded-lg text-slate-300 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                      <Eye size={16} />
+                    </button>
+                    {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
+                      <button onClick={() => handleAction(post, 'approve')} title="Approve"
+                        className="p-2 rounded-lg text-slate-300 hover:text-green-600 hover:bg-green-50 transition-colors">
+                        <CheckCircle size={16} />
+                      </button>
+                    )}
+                    {post.approval_status === 'approved' && (
+                      <button onClick={() => handlePublish(post)} title="Mark as Published"
+                        className="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                        <Send size={16} />
+                      </button>
+                    )}
+                    {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
+                      <button onClick={() => handleAction(post, 'flag')} title="Request revision"
+                        className="p-2 rounded-lg text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                        <AlertTriangle size={16} />
+                      </button>
+                    )}
+                    {post.approval_status !== 'deleted' && (
+                      <button onClick={() => setClonePost(post)} title="Clone"
+                        className="p-2 rounded-lg text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                        <Copy size={16} />
+                      </button>
+                    )}
+                    {post.approval_status !== 'deleted' && (
+                      <button onClick={() => handleAction(post, 'delete')} title="Delete"
+                        className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors">
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {/* ── Desktop: table ── */}
+          <div className="hidden lg:block overflow-x-auto scrollbar-thin">
             <table className="w-full">
               <thead className="bg-slate-50/80 border-b border-slate-200">
                 <tr>
@@ -324,6 +400,7 @@ export default function AdminQueue() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

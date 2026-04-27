@@ -253,63 +253,59 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-7">
         <Link
           to="/calendar"
-          className="group flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all"
+          className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all text-center sm:text-left"
         >
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-            <CalendarDays size={18} className="text-indigo-600" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+            <CalendarDays size={17} className="text-indigo-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-slate-900">Content Calendar</p>
-            <p className="text-xs text-slate-400 mt-0.5">View week-by-week schedule</p>
+            <p className="font-semibold text-xs sm:text-sm text-slate-900 leading-tight">Calendar</p>
+            <p className="hidden sm:block text-xs text-slate-400 mt-0.5">View week-by-week schedule</p>
           </div>
-          <ArrowRight size={15} className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
         </Link>
         {isAdmin ? (
           <Link
             to="/admin"
-            className="group flex items-center gap-4 p-5 bg-amber-50 border border-amber-100 rounded-2xl hover:border-amber-200 hover:shadow-md transition-all"
+            className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-amber-50 border border-amber-100 rounded-2xl hover:border-amber-200 hover:shadow-md transition-all text-center sm:text-left"
           >
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <ShieldCheck size={18} className="text-amber-700" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <ShieldCheck size={17} className="text-amber-700" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-amber-900">Approval Queue</p>
-              <p className="text-xs text-amber-600 mt-0.5">
+              <p className="font-semibold text-xs sm:text-sm text-amber-900 leading-tight">Queue</p>
+              <p className="hidden sm:block text-xs text-amber-600 mt-0.5">
                 {pendingPosts.length > 0 ? `${pendingPosts.length} need${pendingPosts.length === 1 ? 's' : ''} review` : 'All clear'}
               </p>
             </div>
-            <ArrowRight size={15} className="text-amber-400 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         ) : (
           <Link
             to="/upload"
-            className="group flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all"
+            className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all text-center sm:text-left"
           >
-            <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
-              <Upload size={18} className="text-violet-600" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+              <Upload size={17} className="text-violet-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Upload Content</p>
-              <p className="text-xs text-slate-400 mt-0.5">Submit a new post for review</p>
+              <p className="font-semibold text-xs sm:text-sm text-slate-900 leading-tight">Upload</p>
+              <p className="hidden sm:block text-xs text-slate-400 mt-0.5">Submit a new post for review</p>
             </div>
-            <ArrowRight size={15} className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
           </Link>
         )}
         <Link
           to="/analytics"
-          className="group flex items-center gap-4 p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all"
+          className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all text-center sm:text-left"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-            <BarChart2 size={18} className="text-emerald-600" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+            <BarChart2 size={17} className="text-emerald-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-slate-900">Analytics</p>
-            <p className="text-xs text-slate-400 mt-0.5">Performance & engagement overview</p>
+            <p className="font-semibold text-xs sm:text-sm text-slate-900 leading-tight">Analytics</p>
+            <p className="hidden sm:block text-xs text-slate-400 mt-0.5">Performance & engagement overview</p>
           </div>
-          <ArrowRight size={15} className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
         </Link>
       </div>
 
