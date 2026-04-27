@@ -328,21 +328,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {isAdmin && pendingPosts.length > 0 && (
-        <div className="flex items-start gap-3 p-4 mb-4 bg-amber-50 border border-amber-200 rounded-2xl">
-          <AlertTriangle size={15} className="text-amber-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-900">
-              {pendingPosts.length} post{pendingPosts.length !== 1 ? 's' : ''} awaiting your review
-            </p>
-            <p className="text-sm text-amber-700 mt-0.5">
-              Head to the{' '}
-              <Link to="/admin" className="underline font-medium hover:text-amber-900">Approval Queue</Link>
-              {' '}to approve, flag, or remove pending submissions.
-            </p>
-          </div>
-        </div>
-      )}
 
       {myFlagged.length > 0 && !isAdmin && (
         <div className="flex items-start gap-3 p-4 mb-4 bg-orange-50 border border-orange-200 rounded-2xl">
