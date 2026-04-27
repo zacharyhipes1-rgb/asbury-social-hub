@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   format, startOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, subWeeks,
   addMonths, subMonths, isSameDay, isToday, parseISO, differenceInCalendarDays,
@@ -115,11 +115,16 @@ function MobilePostCard({ post, onClick }) {
 }
 
 // ─── Mobile: day strip + agenda ───────────────────────────────────────────────
-function MobileWeekAgenda({ weekDays, posts, dealershipFilter, onPostClick }) {
+function MobileWeekAgenda({ weekDays, posts, dealershipFilter, onPostClick, jumpToDay }) {
   const [selectedDay, setSelectedDay] = useState(() => {
-    const today = new Date()
+    if (jumpToDay) return jumpToDay
     return weekDays.find(d => isToday(d)) || weekDays[0]
   })
+
+  // When drilling in from month view, jump to the specific day
+  useEffect(() => {
+    if (jumpToDay) setSelectedDay(jumpToDay)
+  }, [jumpToDay])
 
   const dayPosts = (dealershipFilter === 'all'
     ? posts
@@ -199,7 +204,7 @@ function MobileWeekAgenda({ weekDays, posts, dealershipFilter, onPostClick }) {
 }
 
 // ─── Mobile: compact month grid + day posts ───────────────────────────────────
-function MobileMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
+function MobileMonthView({ monthDate, posts, dealershipFilter, onPostClick, onDaySelect }) {
   const [selectedDay, setSelectedDay] = useState(new Date())
 
   const monthStart = startOfMonth(monthDate)
@@ -235,7 +240,7 @@ function MobileMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
             return (
               <button
                 key={day.toISOString()}
-                onClick={() => setSelectedDay(day)}
+                onClick={() => onDaySelect ? onDaySelect(day) : setSelectedDay(day)}
                 className={`flex flex-col items-center py-1.5 rounded-xl transition-all ${
                   isSel ? 'bg-slate-900' :
                   isT   ? 'bg-blue-50' : 'hover:bg-slate-50'
@@ -471,6 +476,14 @@ export default function CalendarView() {
   const [selectedPost, setSelectedPost]         = useState(null)
   const [dealershipFilter, setDealershipFilter] = useState('all')
   const [dragState, setDragState]               = useState({ post: null, overCell: null })
+  const [jumpToDay, setJumpToDay]               = useState(null)
+
+  // Called from mobile month view when user taps a date — drill into week view
+  const handleMonthDaySelect = (day) => {
+    setWeekStart(startOfWeek(day, { weekStartsOn: 1 }))
+    setJumpToDay(day)
+    setViewMode('week')
+  }
 
   const { posts, reschedulePost } = usePosts()
 
@@ -660,6 +673,7 @@ export default function CalendarView() {
             posts={posts}
             dealershipFilter={dealershipFilter}
             onPostClick={setSelectedPost}
+            jumpToDay={jumpToDay}
           />
         ) : (
           <MobileMonthView
@@ -667,6 +681,7 @@ export default function CalendarView() {
             posts={posts}
             dealershipFilter={dealershipFilter}
             onPostClick={setSelectedPost}
+            onDaySelect={handleMonthDaySelect}
           />
         )}
       </div>
