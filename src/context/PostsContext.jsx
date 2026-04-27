@@ -67,11 +67,17 @@ function loadPosts() {
     const saved = localStorage.getItem('asbury_posts')
     if (!saved) return MOCK_POSTS
     const parsed = JSON.parse(saved)
+
+    // Restore any locally-stored file previews (kept in a separate key to avoid quota bloat)
+    let previews = {}
+    try { previews = JSON.parse(localStorage.getItem('asbury_post_previews') || '{}') } catch {}
+
     return parsed.map(p => {
       const patch = UPLOADER_PATCHES[p.uploaded_by?.toLowerCase()]
-      return patch
+      const base = patch
         ? { ...p, uploaded_by: patch.email, uploaded_by_name: patch.name }
         : p
+      return previews[p.id] ? { ...base, file_preview: previews[p.id] } : base
     })
   } catch {
     return MOCK_POSTS
@@ -82,7 +88,25 @@ export function PostsProvider({ children }) {
   const [posts, dispatch] = useReducer(postsReducer, null, loadPosts)
 
   useEffect(() => {
-    localStorage.setItem('asbury_posts', JSON.stringify(posts))
+    try {
+      // Strip file_preview (base64 blobs can be several MB — they'd blow the 5 MB localStorage quota)
+      // Store them in a separate key so the main posts JSON stays small and saves reliably.
+      const stripped = posts.map(({ file_preview, ...rest }) => rest) // eslint-disable-line no-unused-vars
+      localStorage.setItem('asbury_posts', JSON.stringify(stripped))
+    } catch (e) {
+      console.warn('[PostsContext] posts save failed:', e)
+    }
+
+    // Save previews separately — gracefully drop them if they're still too large
+    try {
+      const previews = {}
+      posts.forEach(p => { if (p.file_preview) previews[p.id] = p.file_preview })
+      if (Object.keys(previews).length > 0) {
+        localStorage.setItem('asbury_post_previews', JSON.stringify(previews))
+      }
+    } catch {
+      // Previews too large — they'll be gone after a refresh but that's acceptable
+    }
   }, [posts])
 
   const addPost = (postData) => {

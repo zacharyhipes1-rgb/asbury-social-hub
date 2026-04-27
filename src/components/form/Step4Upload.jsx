@@ -45,18 +45,31 @@ function FileDropZone({ onFile, currentFile, contentType }) {
         onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: url, file_url: url })
       } catch {
         setUploadError('Cloudinary upload failed — check your config in Settings.')
-        onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: null, file_url: null })
+        // Fall back to local preview so the uploader can still see their file this session
+        const localPreview = await getLocalPreview(file)
+        onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: localPreview, file_url: null })
       }
       setUploading(false)
     } else {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onloadend = () => onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: reader.result, file_url: null })
-        reader.readAsDataURL(file)
-      } else {
-        onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: null, file_url: null })
-      }
+      const localPreview = await getLocalPreview(file)
+      onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: localPreview, file_url: null })
     }
+  }
+
+  // Returns a preview URL for the file:
+  //   images  → base64 data URL  (persists in localStorage; usable as <img src>)
+  //   videos  → object URL       (session-only; lets the uploader preview the video right now)
+  //   other   → object URL       (session-only)
+  const getLocalPreview = (file) => {
+    if (file.type.startsWith('image/')) {
+      return new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.onerror = () => resolve(URL.createObjectURL(file)) // fallback
+        reader.readAsDataURL(file)
+      })
+    }
+    return Promise.resolve(URL.createObjectURL(file))
   }
 
   const formatSize = (bytes) => {
@@ -128,7 +141,7 @@ function FileDropZone({ onFile, currentFile, contentType }) {
       {!uploadError && currentFile?.file_name && !currentFile?.file_url && !uploading && (
         <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
           <Image size={11} />
-          Configure Cloudinary in Settings so Chad can view the actual file.
+          Preview available in this browser session. Configure Cloudinary in Settings for permanent hosting.
         </p>
       )}
     </div>

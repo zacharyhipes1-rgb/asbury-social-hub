@@ -77,14 +77,14 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
         )}
 
         {!post.file_url && !post.file_preview && post.file_name && (
-          <div className="mb-5 flex items-center gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200">
-            <div className="p-2.5 bg-amber-100 rounded-lg">
-              <File size={18} className="text-amber-600" />
+          <div className="mb-5 flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="p-2.5 bg-slate-100 rounded-lg">
+              <File size={18} className="text-slate-500" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-slate-900">{post.file_name}</p>
               <p className="text-xs text-slate-500">{formatSize(post.file_size)} · {post.file_type}</p>
-              <p className="text-xs text-amber-600 mt-0.5">File not hosted — configure Cloudinary in Settings to enable previews.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Preview only available in the uploader's browser session. Configure Cloudinary in Settings to host files permanently.</p>
             </div>
           </div>
         )}
