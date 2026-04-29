@@ -285,111 +285,134 @@ export default function AdminQueue() {
           {/* ── Desktop: table ── */}
           <div className="hidden lg:block overflow-x-auto scrollbar-thin">
             <table className="w-full">
-              <thead className="bg-slate-50/80 border-b border-slate-200">
+              <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {['Dealership', 'Platform & Type', 'Caption', 'Uploader', 'Scheduled', 'Status', 'Actions'].map(h => (
-                    <th key={h} className="px-5 py-3.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                    <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {filtered.map(post => {
                   const dealership   = DEALERSHIPS.find(d => d.id === post.dealership_id)
                   const ct           = getContentType(post.platform, post.content_type)
                   const ContentIcon  = ICON_MAP[ct?.icon] || File
                   const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
+                  const hasMedia     = !!(post.file_url || post.file_preview)
 
                   return (
-                    <tr key={post.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 transition-colors group">
+                    <tr key={post.id} className="hover:bg-slate-50/70 transition-colors group">
 
-                      {/* Dealership + media thumbnail */}
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">{dealership?.name}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{dealership?.location}</p>
-                        {(post.file_url || post.file_preview) ? (
-                          <div className="mt-2 w-16 h-11 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 flex-shrink-0">
-                            {post.file_type?.startsWith('video/') ? (
-                              <video src={post.file_url || post.file_preview} className="w-full h-full object-cover" muted />
-                            ) : (
-                              <img src={post.file_url || post.file_preview} alt="" className="w-full h-full object-cover" />
-                            )}
+                      {/* Dealership + optional thumbnail */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          {/* Thumbnail — only shown when media exists */}
+                          {hasMedia && (
+                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 bg-slate-100 flex-shrink-0">
+                              {post.file_type?.startsWith('video/') ? (
+                                <video src={post.file_url || post.file_preview} className="w-full h-full object-cover" muted />
+                              ) : (
+                                <img src={post.file_url || post.file_preview} alt="" className="w-full h-full object-cover" />
+                              )}
+                            </div>
+                          )}
+                          {/* File-only placeholder (no preview available) */}
+                          {!hasMedia && post.file_name && (
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                              <File size={14} className="text-slate-400" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 whitespace-nowrap">{dealership?.name}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{dealership?.location}</p>
                           </div>
-                        ) : post.file_name ? (
-                          <div className="mt-2 flex items-center gap-1 text-[10px] text-amber-500">
-                            <File size={10} />
-                            <span className="truncate max-w-[80px]">{post.file_name}</span>
-                          </div>
-                        ) : null}
+                        </div>
                       </td>
 
-                      {/* Platform + content type merged */}
-                      <td className="px-5 py-4">
+                      {/* Platform + content type */}
+                      <td className="px-5 py-3.5">
                         <PlatformBadge platformId={post.platform} compact />
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-400 mt-1.5">
+                        <div className="flex items-center gap-1 text-xs text-slate-400 mt-1.5">
                           <ContentIcon size={11} />
-                          {ct?.name}
-                        </span>
+                          <span>{ct?.name}</span>
+                        </div>
                       </td>
 
                       {/* Caption */}
-                      <td className="px-5 py-4 max-w-[220px]">
-                        <p className="text-sm text-slate-700 truncate leading-relaxed" title={post.caption}>
-                          {post.caption?.slice(0, 60)}{post.caption?.length > 60 ? '…' : ''}
+                      <td className="px-5 py-3.5 max-w-[200px]">
+                        <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed" title={post.caption}>
+                          {post.caption || <span className="text-slate-300 italic">No caption</span>}
                         </p>
                       </td>
 
-                      {/* Uploader — name only, no email */}
-                      <td className="px-5 py-4 whitespace-nowrap">
+                      {/* Uploader */}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
                         <p className="text-sm text-slate-700">{uploaderName}</p>
                       </td>
 
                       {/* Scheduled */}
-                      <td className="px-5 py-4 text-sm text-slate-500 whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-sm text-slate-500 whitespace-nowrap">
                         {formatDate(post.scheduled_for)}
                       </td>
 
                       {/* Status */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-3.5">
                         <StatusBadge status={post.approval_status} compact />
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-0.5">
+                      {/* Actions — grouped by type with a divider */}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1">
+                          {/* View */}
                           <button onClick={() => setViewPost(post)} title="View details"
-                            className="p-2 rounded-lg text-slate-300 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-                            <Eye size={15} />
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                            <Eye size={14} />
                           </button>
-                          {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
-                            <button onClick={() => handleAction(post, 'approve')} title="Approve"
-                              className="p-2 rounded-lg text-slate-300 hover:text-green-600 hover:bg-green-50 transition-colors">
-                              <CheckCircle size={15} />
-                            </button>
-                          )}
-                          {post.approval_status === 'approved' && (
+
+                          {/* Divider */}
+                          <div className="w-px h-4 bg-slate-200 mx-0.5" />
+
+                          {/* Primary action: approve or publish */}
+                          {post.approval_status === 'approved' ? (
                             <button onClick={() => handlePublish(post)} title="Mark as Published"
-                              className="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                              <Send size={15} />
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                              <Send size={14} />
                             </button>
-                          )}
+                          ) : post.approval_status !== 'deleted' && post.approval_status !== 'published' ? (
+                            <button onClick={() => handleAction(post, 'approve')} title="Approve"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
+                              <CheckCircle size={14} />
+                            </button>
+                          ) : null}
+
+                          {/* Flag */}
                           {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                             <button onClick={() => handleAction(post, 'flag')} title="Request revision"
-                              className="p-2 rounded-lg text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-colors">
-                              <AlertTriangle size={15} />
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition-colors">
+                              <AlertTriangle size={14} />
                             </button>
                           )}
+
+                          {/* Divider */}
+                          {post.approval_status !== 'deleted' && (
+                            <div className="w-px h-4 bg-slate-200 mx-0.5" />
+                          )}
+
+                          {/* Clone */}
                           {post.approval_status !== 'deleted' && (
                             <button onClick={() => setClonePost(post)} title="Clone to another dealership"
-                              className="p-2 rounded-lg text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
-                              <Copy size={15} />
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                              <Copy size={14} />
                             </button>
                           )}
+
+                          {/* Delete */}
                           {post.approval_status !== 'deleted' && (
                             <button onClick={() => handleAction(post, 'delete')} title="Delete"
-                              className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors">
-                              <Trash2 size={15} />
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                              <Trash2 size={14} />
                             </button>
                           )}
                         </div>
