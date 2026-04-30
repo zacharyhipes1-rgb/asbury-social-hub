@@ -198,13 +198,13 @@ function DealerPlatformEditor({ dealershipId, platform, allIntegrations, onSave 
               {label}
             </label>
             <div className="relative">
-              <Key size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={fields[key] || ''}
                 onChange={e => set(key, e.target.value)}
                 placeholder={placeholder}
-                className="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
             {hint && <p className="text-[11px] text-slate-400 mt-1">{hint}</p>}
@@ -213,20 +213,23 @@ function DealerPlatformEditor({ dealershipId, platform, allIntegrations, onSave 
       </div>
 
       {/* Save */}
-      <div className="flex items-center gap-3 pt-1">
+      <div className="flex items-center gap-3 pt-2 flex-wrap">
         <button
           onClick={handleSave}
-          className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 12px rgba(99,102,241,0.25)' }}
         >
           {saved
-            ? <><CheckCircle size={13} />Saved!</>
-            : <><Settings size={13} />Save Credentials</>}
+            ? <><CheckCircle size={14} /><span>Saved!</span></>
+            : <><Settings size={14} /><span>Save Credentials</span></>}
         </button>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-          isConfigured ? 'text-emerald-700 bg-emerald-50' : 'text-slate-400 bg-slate-100'
+        <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-xl border flex-shrink-0 ${
+          isConfigured
+            ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+            : 'text-slate-400 bg-slate-50 border-slate-200'
         }`}>
-          {isConfigured ? '✓ Configured' : 'Not configured'}
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isConfigured ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+          {isConfigured ? 'Configured' : 'Not configured'}
         </span>
       </div>
     </div>
@@ -291,7 +294,7 @@ function DealershipRow({ dealership, allIntegrations, onSave }) {
       {open && (
         <div className="border-t border-slate-100 bg-white">
           {/* Platform tab strip */}
-          <div className="flex border-b border-slate-100 overflow-x-auto">
+          <div className="flex border-b border-slate-100 overflow-x-auto scrollbar-hide">
             {PLATFORMS.map(p => {
               const isActive     = activePlatform === p.id
               const isConfigured = p.fields.every(f => !!dealerConfig[p.id]?.[f.key]?.trim())
@@ -394,7 +397,7 @@ function DemoResetButton() {
   )
   return (
     <button onClick={() => setConfirm(true)} className="flex items-center gap-2 px-5 py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
-      <RotateCcw size={14} />Reset to Demo Defaults
+      <RotateCcw size={14} /><span>Reset to Demo Defaults</span>
     </button>
   )
 }
@@ -579,17 +582,17 @@ export default function SettingsPage() {
               {emailResult.msg}
             </div>
           )}
-          <div className="flex items-center gap-3 pt-1">
+          <div className="flex items-center gap-3 pt-1 flex-wrap">
             <button onClick={handleEmailSave}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all flex-shrink-0"
               style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
-              {emailSaved ? <><CheckCircle size={14} />Saved!</> : <><Settings size={14} />Save Configuration</>}
+              {emailSaved ? <><CheckCircle size={14} /><span>Saved!</span></> : <><Settings size={14} /><span>Save Configuration</span></>}
             </button>
             <button onClick={handleEmailTest} disabled={!emailConfigured || emailTest}
-              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40">
+              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
               {emailTest
-                ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Sending…</>
-                : <><Send size={14} />Send Test Email</>}
+                ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin flex-shrink-0" /><span>Sending…</span></>
+                : <><Send size={14} /><span>Send Test Email</span></>}
             </button>
           </div>
         </div>
@@ -643,17 +646,17 @@ export default function SettingsPage() {
               {clResult.msg}
             </div>
           )}
-          <div className="flex items-center gap-3 pt-1">
+          <div className="flex items-center gap-3 pt-1 flex-wrap">
             <button onClick={handleClSave}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all flex-shrink-0"
               style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
-              {clSaved ? <><CheckCircle size={14} />Saved!</> : <><Settings size={14} />Save</>}
+              {clSaved ? <><CheckCircle size={14} /><span>Saved!</span></> : <><Settings size={14} /><span>Save</span></>}
             </button>
             <button onClick={handleClTest} disabled={!clConfigured || clTest}
-              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40">
+              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
               {clTest
-                ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Testing…</>
-                : <><Image size={14} />Test Connection</>}
+                ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin flex-shrink-0" /><span>Testing…</span></>
+                : <><Image size={14} /><span>Test Connection</span></>}
             </button>
           </div>
         </div>
