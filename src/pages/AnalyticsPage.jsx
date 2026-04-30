@@ -41,6 +41,23 @@ const STATUS_STYLES = {
 
 const BRANDS = ['All', 'BMW', 'Honda', 'Toyota', 'Lexus', 'Acura', 'Corporate']
 
+// ─── Seeded mock engagement (deterministic, no flicker) ───────────────────────
+function mockEng(id) {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
+  const a = Math.abs(h)
+  return {
+    impressions: 800  + (a % 12000),
+    reach:       600  + (a % 9000),
+    likes:       30   + (a % 800),
+    comments:    2    + (a % 60),
+    shares:      1    + (a % 40),
+    clicks:      10   + (a % 300),
+  }
+}
+
+const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+
 // ─── Approval rate bar ────────────────────────────────────────────────────────
 function ApprovalBar({ rate }) {
   const color     = rate >= 80 ? 'bg-emerald-500' : rate >= 60 ? 'bg-amber-400' : 'bg-rose-500'
@@ -199,6 +216,25 @@ export default function AnalyticsPage() {
     () => [...drillPosts].sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at)).slice(0, 5),
     [drillPosts]
   )
+
+  // Drill-in: sample engagement totals (published posts only)
+  const drillEng = useMemo(() => {
+    const published = drillPosts.filter(p => p.approval_status === 'published')
+    if (!published.length) return null
+    const totals = published.reduce((acc, p) => {
+      const e = mockEng(p.id)
+      return {
+        impressions: acc.impressions + e.impressions,
+        reach:       acc.reach       + e.reach,
+        engagement:  acc.engagement  + e.likes + e.comments + e.shares,
+        clicks:      acc.clicks      + e.clicks,
+      }
+    }, { impressions: 0, reach: 0, engagement: 0, clicks: 0 })
+    const engRate = totals.impressions > 0
+      ? ((totals.engagement / totals.impressions) * 100).toFixed(1)
+      : null
+    return { ...totals, engRate, count: published.length }
+  }, [drillPosts])
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
@@ -417,6 +453,35 @@ export default function AnalyticsPage() {
                               >
                                 <X size={14} />
                               </button>
+                            </div>
+
+                            {/* Sample engagement cards */}
+                            <div className="mb-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Est. Platform Performance</p>
+                                <span className="flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                  <Info size={9} />Sample data · {drillEng?.count ?? 0} published posts
+                                </span>
+                              </div>
+                              {drillEng ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                  {[
+                                    { label: 'Est. Impressions', value: fmt(drillEng.impressions) },
+                                    { label: 'Est. Reach',       value: fmt(drillEng.reach)       },
+                                    { label: 'Avg. Eng. Rate',   value: drillEng.engRate ? `${drillEng.engRate}%` : '—' },
+                                    { label: 'Est. Clicks',      value: fmt(drillEng.clicks)      },
+                                  ].map(c => (
+                                    <div key={c.label} className="bg-white rounded-xl border border-slate-100 px-4 py-3 opacity-90">
+                                      <p className="text-lg font-bold text-slate-900">{c.value}</p>
+                                      <p className="text-xs text-slate-500 mt-0.5">{c.label}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="bg-white rounded-xl border border-slate-100 px-4 py-3 text-xs text-slate-400">
+                                  No published posts yet — engagement data will appear once posts are published.
+                                </div>
+                              )}
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
