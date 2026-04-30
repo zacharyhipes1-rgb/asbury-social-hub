@@ -50,6 +50,9 @@ function postsReducer(state, action) {
           : p
       )
 
+    case 'RELOAD':
+      return action.posts
+
     default:
       return state
   }
@@ -112,6 +115,17 @@ export function PostsProvider({ children }) {
       // Previews too large (large base64 images) — gone after refresh, acceptable
     }
   }, [posts])
+
+  // Cross-tab sync: when another tab writes to localStorage, reload posts state
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'asbury_posts' || e.key === 'asbury_post_previews') {
+        dispatch({ type: 'RELOAD', posts: loadPosts() })
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
 
   const addPost = (postData) => {
     const post = {
