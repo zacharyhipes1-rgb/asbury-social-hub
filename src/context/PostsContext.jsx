@@ -97,10 +97,15 @@ export function PostsProvider({ children }) {
       console.warn('[PostsContext] posts save failed:', e)
     }
 
-    // Save previews separately — gracefully drop them if they're still too large
+    // Save image previews separately (base64 data: URLs only).
+    // Blob URLs (video/other) die on page refresh and must NOT be persisted.
     try {
       const previews = {}
-      posts.forEach(p => { if (p.file_preview) previews[p.id] = p.file_preview })
+      posts.forEach(p => {
+        if (p.file_preview && p.file_preview.startsWith('data:')) {
+          previews[p.id] = p.file_preview
+        }
+      })
       if (Object.keys(previews).length > 0) {
         localStorage.setItem('asbury_post_previews', JSON.stringify(previews))
       }

@@ -308,16 +308,26 @@ export default function AdminQueue() {
                       {/* Dealership + optional thumbnail */}
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          {/* Thumbnail — only shown when media exists */}
-                          {hasMedia && (
-                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 bg-slate-100 flex-shrink-0">
-                              {post.file_type?.startsWith('video/') ? (
-                                <video src={post.file_url || post.file_preview} className="w-full h-full object-cover" muted />
-                              ) : (
-                                <img src={post.file_url || post.file_preview} alt="" className="w-full h-full object-cover" />
-                              )}
-                            </div>
-                          )}
+                          {/* Thumbnail */}
+                          {hasMedia && (() => {
+                            const src = post.file_url || post.file_preview
+                            const isVideo = post.file_type?.startsWith('video/')
+                            const isBlobOrData = src.startsWith('blob:') || src.startsWith('data:')
+                            return (
+                              <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 bg-slate-100 flex-shrink-0 relative">
+                                {isVideo && isBlobOrData ? (
+                                  <video src={src} className="w-full h-full object-cover" muted />
+                                ) : (
+                                  <img src={src} alt="" className="w-full h-full object-cover" />
+                                )}
+                                {isVideo && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                    <svg className="w-3 h-3 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })()}
                           {/* File-only placeholder (no preview available) */}
                           {!hasMedia && post.file_name && (
                             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">

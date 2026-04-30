@@ -85,29 +85,41 @@ function FileDropZone({ onFile, currentFile, contentType }) {
       </label>
 
       {currentFile?.file_name ? (
-        <div className="flex items-center gap-3 p-4 border-2 border-green-200 bg-green-50 rounded-xl">
-          {uploading ? (
-            <div className="w-14 h-14 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-              <Loader size={20} className="text-indigo-500 animate-spin" />
-            </div>
-          ) : currentFile.file_preview && currentFile.file_type?.startsWith('image/') ? (
-            <img src={currentFile.file_preview} alt="preview" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
-          ) : (
-            <div className="w-14 h-14 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-              <File size={20} className="text-green-600" />
-            </div>
+        <div className="border-2 border-green-200 bg-green-50 rounded-xl overflow-hidden">
+          {/* Video preview */}
+          {!uploading && currentFile.file_preview && currentFile.file_type?.startsWith('video/') && (
+            <video
+              src={currentFile.file_preview}
+              controls
+              className="w-full max-h-48 bg-black object-contain"
+            />
           )}
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm text-slate-900 truncate">{currentFile.file_name}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{formatSize(currentFile.file_size)} · {currentFile.file_type}</p>
+          {/* Image preview */}
+          {!uploading && currentFile.file_preview && currentFile.file_type?.startsWith('image/') && (
+            <img src={currentFile.file_preview} alt="preview" className="w-full max-h-48 object-cover" />
+          )}
+          <div className="flex items-center gap-3 p-3">
+            {uploading ? (
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                <Loader size={18} className="text-indigo-500 animate-spin" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle size={16} className="text-green-600" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-slate-900 truncate">{currentFile.file_name}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{formatSize(currentFile.file_size)} · {currentFile.file_type}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onFile({ file_name: '', file_size: 0, file_type: '', file_preview: null })}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+            >
+              <X size={16} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => onFile({ file_name: '', file_size: 0, file_type: '', file_preview: null })}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-          >
-            <X size={16} />
-          </button>
         </div>
       ) : (
         <div

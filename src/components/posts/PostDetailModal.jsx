@@ -66,15 +66,34 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
         </div>
 
         {/* Media preview */}
-        {(post.file_url || post.file_preview) && (
-          <div className="mb-5 rounded-xl overflow-hidden border border-slate-200">
-            {post.file_type?.startsWith('video/') ? (
-              <video src={post.file_url || post.file_preview} controls className="w-full max-h-64 object-contain bg-black" />
-            ) : (
-              <img src={post.file_url || post.file_preview} alt={post.alt_text || 'Post media'} className="w-full max-h-64 object-cover" />
-            )}
-          </div>
-        )}
+        {(post.file_url || post.file_preview) && (() => {
+          const src = post.file_url || post.file_preview
+          const isVideo = post.file_type?.startsWith('video/')
+          // If it's a video type but src is a hosted image URL (thumbnail), show image + badge
+          const isBlobOrData = src.startsWith('blob:') || src.startsWith('data:')
+          const showVideoPlayer = isVideo && isBlobOrData
+
+          return (
+            <div className="mb-5 rounded-xl overflow-hidden border border-slate-200 relative">
+              {showVideoPlayer ? (
+                <video src={src} controls className="w-full max-h-64 object-contain bg-black" />
+              ) : (
+                <>
+                  <img src={src} alt={post.alt_text || 'Post media'} className="w-full max-h-64 object-cover" />
+                  {isVideo && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })()}
 
         {!post.file_url && !post.file_preview && post.file_name && (
           <div className="mb-5 flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
