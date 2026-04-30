@@ -1,27 +1,41 @@
-import { useState } from 'react'
-import { Settings, Mail, Key, Send, CheckCircle, AlertCircle, ChevronDown, ChevronUp, Trash2, Clock, ExternalLink, Cloud, Image, Zap, Link2, RotateCcw } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import {
+  Settings, Mail, Key, Send, CheckCircle, AlertCircle, ChevronDown, ChevronUp,
+  Trash2, Clock, ExternalLink, Cloud, Image, Zap, RotateCcw, Building2, Link2
+} from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getNotificationLog, clearNotificationLog } from '../services/emailService'
+import { DEALERSHIPS } from '../data/dealerships'
 
-const PLATFORM_INTEGRATIONS = [
+// ─── Per-dealership integration storage ──────────────────────────────────────
+const LS_DEALER_KEY = 'asbury_dealership_integrations'
+
+function loadDealerIntegrations() {
+  try { return JSON.parse(localStorage.getItem(LS_DEALER_KEY) || '{}') } catch { return {} }
+}
+function saveDealerIntegrations(data) {
+  localStorage.setItem(LS_DEALER_KEY, JSON.stringify(data))
+}
+
+// ─── Platform definitions ─────────────────────────────────────────────────────
+const PLATFORMS = [
   {
     id: 'facebook',
     name: 'Facebook',
     color: '#1877F2',
     twBg: 'bg-blue-50',
-    twIcon: 'text-blue-600',
+    twText: 'text-blue-700',
     twBorder: 'border-blue-100',
-    description: 'Auto-publish posts to your Facebook Business Page on the scheduled date.',
-    lsKey: 'asbury_platform_facebook',
+    twActive: 'bg-blue-600 text-white',
     fields: [
-      { key: 'pageId',      label: 'Page ID',           placeholder: '123456789012345',  hint: 'Found in your Page → About section, or via Meta for Developers' },
+      { key: 'pageId',      label: 'Page ID',           placeholder: '123456789012345',  hint: 'Page → About → numeric Page ID' },
       { key: 'accessToken', label: 'Page Access Token', placeholder: 'EAAxxxx...',        hint: 'Long-lived token from Meta Graph API Explorer — expires after 60 days' },
     ],
     guide: [
-      ['Create a Meta Developer App', 'Go to developers.facebook.com → My Apps → Create App → select Business type.'],
-      ['Add Pages API product', 'In your app, add the Facebook Login and Pages API products.'],
-      ['Generate a long-lived Page Token', 'Use the Graph API Explorer → select your app → generate a User Token → exchange it for a long-lived Page Access Token.'],
-      ['Find your Page ID', 'Open your Facebook Page → About → scroll to the bottom to find the numeric Page ID.'],
+      ['Create a Meta Developer App', 'developers.facebook.com → My Apps → Create App → Business type'],
+      ['Add Pages API product', 'Add Facebook Login and Pages API products to your app'],
+      ['Generate a long-lived Page Token', 'Graph API Explorer → generate User Token → exchange for long-lived Page Access Token'],
+      ['Find your Page ID', 'Open Facebook Page → About → scroll to the bottom for numeric Page ID'],
     ],
     docsUrl: 'https://developers.facebook.com/docs/pages/publishing',
   },
@@ -30,19 +44,18 @@ const PLATFORM_INTEGRATIONS = [
     name: 'Instagram',
     color: '#E1306C',
     twBg: 'bg-pink-50',
-    twIcon: 'text-pink-600',
+    twText: 'text-pink-700',
     twBorder: 'border-pink-100',
-    description: 'Auto-publish images, Reels, and Stories to your Instagram Business account.',
-    lsKey: 'asbury_platform_instagram',
+    twActive: 'bg-pink-600 text-white',
     fields: [
-      { key: 'businessAccountId', label: 'Instagram Business Account ID', placeholder: '17841400000000000', hint: 'Call GET /me/accounts?fields=instagram_business_account in Graph API Explorer' },
-      { key: 'accessToken',       label: 'Access Token',                  placeholder: 'EAAxxxx...',         hint: 'Same long-lived token from your Facebook app — Meta uses one token for both' },
+      { key: 'businessAccountId', label: 'Instagram Business Account ID', placeholder: '17841400000000000', hint: 'GET /me/accounts?fields=instagram_business_account in Graph API Explorer' },
+      { key: 'accessToken',       label: 'Access Token',                  placeholder: 'EAAxxxx...',         hint: 'Same long-lived token from your Facebook app' },
     ],
     guide: [
-      ['Switch to a Business or Creator account', 'Your Instagram account must be a Business/Creator account linked to a Facebook Page.'],
-      ['Use your existing Facebook app', 'Instagram publishing uses the same Meta Developer app — no new app needed.'],
-      ['Get the Business Account ID', 'In Graph API Explorer: GET /me/accounts?fields=instagram_business_account → copy the id value.'],
-      ['Reuse your Page Access Token', 'The same long-lived token from your Facebook setup grants Instagram Content Publishing permissions.'],
+      ['Switch to Business/Creator account', 'Must be linked to a Facebook Page'],
+      ['Use your existing Facebook app', 'Instagram publishing uses the same Meta Developer app'],
+      ['Get Business Account ID', 'Graph API Explorer: GET /me/accounts?fields=instagram_business_account'],
+      ['Reuse Page Access Token', 'Same long-lived token from Facebook setup'],
     ],
     docsUrl: 'https://developers.facebook.com/docs/instagram-api/guides/content-publishing',
   },
@@ -51,20 +64,19 @@ const PLATFORM_INTEGRATIONS = [
     name: 'TikTok',
     color: '#010101',
     twBg: 'bg-slate-50',
-    twIcon: 'text-slate-700',
+    twText: 'text-slate-800',
     twBorder: 'border-slate-200',
-    description: 'Auto-publish short-form videos to your TikTok Business account.',
-    lsKey: 'asbury_platform_tiktok',
+    twActive: 'bg-slate-900 text-white',
     fields: [
-      { key: 'clientKey',    label: 'Client Key',    placeholder: 'awxxx...',  hint: 'From your TikTok for Developers app dashboard' },
-      { key: 'clientSecret', label: 'Client Secret', placeholder: 'xxxxx...', hint: 'Keep private — never expose this publicly' },
-      { key: 'accessToken',  label: 'Access Token',  placeholder: 'act.xxx...', hint: 'Generated via TikTok OAuth flow for the posting account' },
+      { key: 'clientKey',    label: 'Client Key',    placeholder: 'awxxx...',   hint: 'From TikTok for Developers app dashboard' },
+      { key: 'clientSecret', label: 'Client Secret', placeholder: 'xxxxx...',   hint: 'Keep private — never expose publicly' },
+      { key: 'accessToken',  label: 'Access Token',  placeholder: 'act.xxx...', hint: 'Generated via TikTok OAuth flow for this posting account' },
     ],
     guide: [
-      ['Create a TikTok for Business account', 'Register at business.tiktok.com — you need a Business account to use the API.'],
-      ['Apply for Content Posting API', 'Go to developers.tiktok.com → My Apps → Create App → apply for the Content Posting API (review required).'],
-      ['Get Client Key & Secret', 'Once approved, your Client Key and Client Secret appear in the app dashboard under Manage App.'],
-      ['Authorize and get Access Token', 'Run the TikTok OAuth 2.0 flow for your posting account to generate a user Access Token.'],
+      ['Create TikTok for Business account', 'Register at business.tiktok.com'],
+      ['Apply for Content Posting API', 'developers.tiktok.com → My Apps → apply for Content Posting API (review required)'],
+      ['Get Client Key & Secret', 'Approved app dashboard → Manage App'],
+      ['Authorize and get Access Token', 'Run TikTok OAuth 2.0 for the posting account'],
     ],
     docsUrl: 'https://developers.tiktok.com/doc/content-posting-api-get-started',
   },
@@ -73,122 +85,294 @@ const PLATFORM_INTEGRATIONS = [
     name: 'LinkedIn',
     color: '#0A66C2',
     twBg: 'bg-sky-50',
-    twIcon: 'text-sky-700',
+    twText: 'text-sky-700',
     twBorder: 'border-sky-100',
-    description: 'Auto-publish company updates and thought leadership content to your LinkedIn Page.',
-    lsKey: 'asbury_platform_linkedin',
+    twActive: 'bg-sky-700 text-white',
     fields: [
-      { key: 'clientId',       label: 'Client ID',            placeholder: '86xxxx...',                hint: 'From your LinkedIn Developer app under Auth tab' },
-      { key: 'clientSecret',   label: 'Client Secret',        placeholder: 'xxxxx...',                 hint: 'Primary Client Secret from the Auth tab — keep private' },
-      { key: 'organizationId', label: 'Organization URN',     placeholder: 'urn:li:organization:123456', hint: 'Your Company Page ID as a URN — the number is in your company page URL' },
-      { key: 'accessToken',    label: 'OAuth Access Token',   placeholder: 'AQV...',                   hint: 'Generated via LinkedIn OAuth 2.0 — expires after 60 days, refresh needed' },
+      { key: 'clientId',       label: 'Client ID',          placeholder: '86xxxx...',                  hint: 'LinkedIn Developer app → Auth tab' },
+      { key: 'clientSecret',   label: 'Client Secret',      placeholder: 'xxxxx...',                   hint: 'Primary Client Secret → Auth tab' },
+      { key: 'organizationId', label: 'Organization URN',   placeholder: 'urn:li:organization:123456', hint: 'Company Page numeric ID as a URN' },
+      { key: 'accessToken',    label: 'OAuth Access Token', placeholder: 'AQV...',                     hint: 'Expires after 60 days — refresh required' },
     ],
     guide: [
-      ['Create a LinkedIn Developer App', 'Go to linkedin.com/developers → Create App → associate it with your LinkedIn Company Page.'],
-      ['Request the right permissions', 'Under Products, request "Share on LinkedIn" and "Marketing Developer Platform" access.'],
-      ['Copy Client ID & Secret', 'In your app settings → Auth tab, copy the Client ID and Primary Client Secret.'],
-      ['Get your Organization URN', 'Format: urn:li:organization:XXXXXXX — the number is the numeric ID in your Company Page URL.'],
-      ['Run OAuth and get Access Token', 'Use LinkedIn\'s OAuth 2.0 flow with scopes r_organization_social + w_organization_social to generate an access token.'],
+      ['Create LinkedIn Developer App', 'linkedin.com/developers → Create App → link to Company Page'],
+      ['Request permissions', 'Products: "Share on LinkedIn" + "Marketing Developer Platform"'],
+      ['Copy Client ID & Secret', 'App settings → Auth tab'],
+      ['Get Organization URN', 'urn:li:organization:XXXXXXX — numeric ID from Company Page URL'],
+      ['Run OAuth for Access Token', 'Scopes: r_organization_social + w_organization_social'],
     ],
     docsUrl: 'https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api',
   },
 ]
 
-function loadPlatformConfig(lsKey) {
-  try { return JSON.parse(localStorage.getItem(lsKey) || '{}') } catch { return {} }
+const PLATFORM_MAP = Object.fromEntries(PLATFORMS.map(p => [p.id, p]))
+const BRANDS = ['All', 'BMW', 'Honda', 'Toyota', 'Lexus', 'Acura', 'Corporate']
+
+const BRAND_BADGE = {
+  BMW:       'bg-slate-900 text-white',
+  Honda:     'bg-red-600 text-white',
+  Toyota:    'bg-red-700 text-white',
+  Lexus:     'bg-slate-700 text-white',
+  Acura:     'bg-slate-800 text-white',
+  Corporate: 'bg-indigo-600 text-white',
 }
 
-function PlatformCard({ platform }) {
-  const [config, setConfig] = useState(() => loadPlatformConfig(platform.lsKey))
+// ─── Platform status dot ──────────────────────────────────────────────────────
+function PlatformDot({ platform, configured }) {
+  return (
+    <div
+      title={`${platform.name}: ${configured ? 'Connected' : 'Not configured'}`}
+      className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-bold transition-all ${
+        configured
+          ? 'text-white shadow-sm'
+          : 'bg-slate-100 text-slate-300'
+      }`}
+      style={configured ? { backgroundColor: platform.color } : {}}
+    >
+      {platform.name[0]}
+    </div>
+  )
+}
+
+// ─── Credential fields for one platform within a dealership ──────────────────
+function DealerPlatformEditor({ dealershipId, platform, allIntegrations, onSave }) {
+  const stored  = allIntegrations[dealershipId]?.[platform.id] || {}
+  const [fields, setFields] = useState(stored)
+  const [saved,  setSaved]  = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const isConfigured = platform.fields.every(f => !!config[f.key]?.trim())
-  const set = (k, v) => setConfig(p => ({ ...p, [k]: v }))
+
+  const isConfigured = platform.fields.every(f => !!fields[f.key]?.trim())
+  const set = (k, v) => setFields(p => ({ ...p, [k]: v }))
 
   const handleSave = () => {
-    localStorage.setItem(platform.lsKey, JSON.stringify(config))
+    onSave(dealershipId, platform.id, fields)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-        <div className={`w-9 h-9 rounded-xl ${platform.twBg} flex items-center justify-center flex-shrink-0`}>
-          <Link2 size={16} className={platform.twIcon} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold text-slate-900">{platform.name}</h2>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
-              <Zap size={9} /> Coming soon
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 mt-0.5">{platform.description}</p>
-        </div>
-        <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border flex-shrink-0 ${
-          isConfigured ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-slate-300'}`} />
-          {isConfigured ? 'Credentials saved' : 'Not configured'}
-        </span>
-      </div>
-      <div className="p-6 space-y-4">
-        {/* Collapsible guide */}
-        <div className={`border rounded-xl overflow-hidden ${platform.twBorder}`}>
-          <button onClick={() => setGuideOpen(o => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors">
-            <span className="text-sm font-semibold text-slate-700">How to get your {platform.name} API credentials</span>
-            {guideOpen ? <ChevronUp size={15} className="text-slate-400" /> : <ChevronDown size={15} className="text-slate-400" />}
-          </button>
-          {guideOpen && (
-            <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
-              {platform.guide.map(([title, desc], i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">{title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-                  </div>
+    <div className="space-y-4">
+      {/* Collapsible setup guide */}
+      <div className={`border rounded-xl overflow-hidden ${platform.twBorder}`}>
+        <button
+          onClick={() => setGuideOpen(o => !o)}
+          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+        >
+          <span className="text-xs font-semibold text-slate-600">
+            How to get {platform.name} API credentials
+          </span>
+          {guideOpen
+            ? <ChevronUp size={13} className="text-slate-400" />
+            : <ChevronDown size={13} className="text-slate-400" />}
+        </button>
+        {guideOpen && (
+          <div className="px-4 pb-4 space-y-2.5 border-t border-slate-100 pt-3">
+            {platform.guide.map(([title, desc], i) => (
+              <div key={i} className="flex gap-2.5">
+                <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                  {i + 1}
                 </div>
-              ))}
-              <a href={platform.docsUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline mt-1">
-                {platform.name} API docs <ExternalLink size={11} />
-              </a>
-            </div>
-          )}
-        </div>
-
-        {/* Credential fields */}
-        <div className="space-y-4">
-          {platform.fields.map(({ key, label, placeholder, hint }) => (
-            <div key={key}>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
-              <div className="relative">
-                <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" value={config[key] || ''} onChange={e => set(key, e.target.value)}
-                  placeholder={placeholder}
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+                <div>
+                  <p className="text-xs font-semibold text-slate-800">{title}</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{desc}</p>
+                </div>
               </div>
-              {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
-            </div>
-          ))}
-        </div>
+            ))}
+            <a
+              href={platform.docsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline mt-1"
+            >
+              {platform.name} API docs <ExternalLink size={10} />
+            </a>
+          </div>
+        )}
+      </div>
 
-        <div className="flex items-center gap-3 pt-1">
-          <button onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
-            {saved ? <><CheckCircle size={14} /> Saved!</> : <><Settings size={14} /> Save Credentials</>}
-          </button>
-          <p className="text-xs text-slate-400">Credentials stored locally — auto-publish wires in automatically once the integration goes live.</p>
-        </div>
+      {/* Credential inputs */}
+      <div className="space-y-3">
+        {platform.fields.map(({ key, label, placeholder, hint }) => (
+          <div key={key}>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              {label}
+            </label>
+            <div className="relative">
+              <Key size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={fields[key] || ''}
+                onChange={e => set(key, e.target.value)}
+                placeholder={placeholder}
+                className="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              />
+            </div>
+            {hint && <p className="text-[11px] text-slate-400 mt-1">{hint}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* Save */}
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          onClick={handleSave}
+          className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 12px rgba(99,102,241,0.25)' }}
+        >
+          {saved
+            ? <><CheckCircle size={13} />Saved!</>
+            : <><Settings size={13} />Save Credentials</>}
+        </button>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+          isConfigured ? 'text-emerald-700 bg-emerald-50' : 'text-slate-400 bg-slate-100'
+        }`}>
+          {isConfigured ? '✓ Configured' : 'Not configured'}
+        </span>
       </div>
     </div>
   )
 }
 
+// ─── Accordion row for one dealership ────────────────────────────────────────
+function DealershipRow({ dealership, allIntegrations, onSave }) {
+  const [open, setOpen]             = useState(false)
+  const [activePlatform, setActive] = useState('facebook')
+
+  const dealerConfig   = allIntegrations[dealership.id] || {}
+  const configuredCount = PLATFORMS.filter(p =>
+    p.fields.every(f => !!dealerConfig[p.id]?.[f.key]?.trim())
+  ).length
+
+  return (
+    <div className={`border rounded-xl overflow-hidden transition-all ${open ? 'border-indigo-200 shadow-sm' : 'border-slate-100'}`}>
+      {/* Row header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors ${open ? 'bg-indigo-50/50' : 'bg-white hover:bg-slate-50'}`}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-slate-800 leading-tight">{dealership.name}</p>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide flex-shrink-0 ${BRAND_BADGE[dealership.brand] || 'bg-slate-200 text-slate-600'}`}>
+              {dealership.brand}
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-0.5">{dealership.location}</p>
+        </div>
+
+        {/* Platform status dots */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {PLATFORMS.map(p => (
+            <PlatformDot
+              key={p.id}
+              platform={p}
+              configured={p.fields.every(f => !!dealerConfig[p.id]?.[f.key]?.trim())}
+            />
+          ))}
+        </div>
+
+        {/* Connected count */}
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+          configuredCount === PLATFORMS.length
+            ? 'text-emerald-700 bg-emerald-50'
+            : configuredCount > 0
+            ? 'text-amber-700 bg-amber-50'
+            : 'text-slate-400 bg-slate-100'
+        }`}>
+          {configuredCount}/{PLATFORMS.length}
+        </span>
+
+        {open
+          ? <ChevronUp size={15} className="text-slate-400 flex-shrink-0" />
+          : <ChevronDown size={15} className="text-slate-400 flex-shrink-0" />}
+      </button>
+
+      {/* Expanded: platform tabs + editor */}
+      {open && (
+        <div className="border-t border-slate-100 bg-white">
+          {/* Platform tab strip */}
+          <div className="flex border-b border-slate-100 overflow-x-auto">
+            {PLATFORMS.map(p => {
+              const isActive     = activePlatform === p.id
+              const isConfigured = p.fields.every(f => !!dealerConfig[p.id]?.[f.key]?.trim())
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setActive(p.id)}
+                  className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-all flex-shrink-0 ${
+                    isActive
+                      ? 'border-indigo-500 text-indigo-700 bg-indigo-50/40'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span
+                    className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                    style={{ backgroundColor: isConfigured ? p.color : '#cbd5e1' }}
+                  >
+                    {p.name[0]}
+                  </span>
+                  {p.name}
+                  {isConfigured && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Active platform editor */}
+          <div className="p-5">
+            <DealerPlatformEditor
+              key={`${dealership.id}-${activePlatform}`}
+              dealershipId={dealership.id}
+              platform={PLATFORM_MAP[activePlatform]}
+              allIntegrations={allIntegrations}
+              onSave={onSave}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── EmailJS guide ────────────────────────────────────────────────────────────
+function EmailGuide() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border border-slate-200 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors"
+      >
+        <span className="text-sm font-semibold text-slate-700">How to set up EmailJS (step-by-step)</span>
+        {open ? <ChevronUp size={15} className="text-slate-400" /> : <ChevronDown size={15} className="text-slate-400" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
+          {[
+            ['Create an account', 'Go to emailjs.com and sign up (200 emails/month free).'],
+            ['Add an Email Service', 'Email Services → Add New Service → connect Gmail, Outlook, or SMTP.'],
+            ['Create a Template', 'Email Templates → Create New → use {{to_name}}, {{subject}}, {{message}} variables.'],
+            ['Get your credentials', 'Service ID from Email Services, Template ID from your template, Public Key from Account → API Keys.'],
+            ['Paste below & test', 'Enter all three values and click Send Test Email.'],
+          ].map(([title, desc], i) => (
+            <div key={i} className="flex gap-3">
+              <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</div>
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{title}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+              </div>
+            </div>
+          ))}
+          <a href="https://www.emailjs.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline mt-1">
+            Open EmailJS <ExternalLink size={11} />
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Demo reset ───────────────────────────────────────────────────────────────
 function DemoResetButton() {
   const [confirm, setConfirm] = useState(false)
   const handleReset = () => {
@@ -209,28 +393,18 @@ function DemoResetButton() {
     </div>
   )
   return (
-    <button onClick={() => setConfirm(true)}
-      className="flex items-center gap-2 px-5 py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
-      <RotateCcw size={14} />
-      Reset to Demo Defaults
+    <button onClick={() => setConfirm(true)} className="flex items-center gap-2 px-5 py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
+      <RotateCcw size={14} />Reset to Demo Defaults
     </button>
   )
 }
 
-const LS_KEY = 'asbury_emailjs_config'
-const CL_KEY = 'asbury_cloudinary_config'
+// ─── EmailJS config keys ──────────────────────────────────────────────────────
+const LS_EMAIL_KEY = 'asbury_emailjs_config'
+const LS_CL_KEY    = 'asbury_cloudinary_config'
 
-function loadConfig() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} }
-}
-
-function saveConfig(cfg) {
-  localStorage.setItem(LS_KEY, JSON.stringify(cfg))
-}
-
-function loadCloudinary() {
-  try { return JSON.parse(localStorage.getItem(CL_KEY) || '{}') } catch { return {} }
-}
+function loadEmailConfig()  { try { return JSON.parse(localStorage.getItem(LS_EMAIL_KEY) || '{}') } catch { return {} } }
+function loadCloudinary()   { try { return JSON.parse(localStorage.getItem(LS_CL_KEY)    || '{}') } catch { return {} } }
 
 async function testCloudinary(cfg) {
   const fd = new FormData()
@@ -249,143 +423,137 @@ async function sendTestEmail(cfg, fromUser) {
       template_id: cfg.templateId,
       user_id:     cfg.publicKey,
       template_params: {
-        to_email:    fromUser.email,
-        to_name:     fromUser.name,
-        subject:     'Asbury Social Hub — Email Test',
-        message:     'This is a test notification from Asbury Social Hub. Your EmailJS configuration is working correctly!',
-        from_name:   'Asbury Social Hub',
+        to_email: fromUser.email,
+        to_name:  fromUser.name,
+        subject:  'Asbury Social Hub — Email Test',
+        message:  'Your EmailJS configuration is working correctly!',
+        from_name: 'Asbury Social Hub',
       },
     }),
   })
   if (!res.ok) throw new Error(await res.text())
 }
 
-function GuideSection() {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-slate-50 transition-colors"
-      >
-        <span className="text-sm font-semibold text-slate-700">How to set up EmailJS (step-by-step)</span>
-        {open ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
-      </button>
-      {open && (
-        <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
-          {[
-            ['Create an account', 'Go to emailjs.com and sign up for a free account (200 emails/month free).'],
-            ['Add an Email Service', 'In the dashboard, go to Email Services → Add New Service. Connect your Gmail, Outlook, or SMTP provider.'],
-            ['Create an Email Template', 'Go to Email Templates → Create New Template. Use variables like {{to_name}}, {{subject}}, {{message}}, {{from_name}} in your template body.'],
-            ['Get your credentials', 'From Email Services, copy your Service ID. From your template, copy the Template ID. From Account → API Keys, copy your Public Key.'],
-            ['Paste below & test', 'Enter all three values in the form below and click Send Test Email to confirm it works.'],
-          ].map(([title, desc], i) => (
-            <div key={i} className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</div>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">{title}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-              </div>
-            </div>
-          ))}
-          <a href="https://www.emailjs.com" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline mt-1">
-            Open EmailJS <ExternalLink size={11} />
-          </a>
-        </div>
-      )}
-    </div>
-  )
-}
-
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { currentUser } = useAuth()
-  const [cfg, setCfg] = useState(loadConfig)
-  const [saved, setSaved]     = useState(false)
-  const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState(null)
-  const [log, setLog]         = useState(getNotificationLog)
 
-  const [cl, setCl]             = useState(loadCloudinary)
-  const [clSaved, setClSaved]   = useState(false)
-  const [clTesting, setClTesting] = useState(false)
+  // EmailJS state
+  const [emailCfg,   setEmailCfg]   = useState(loadEmailConfig)
+  const [emailSaved, setEmailSaved] = useState(false)
+  const [emailTest,  setEmailTest]  = useState(false)
+  const [emailResult,setEmailResult]= useState(null)
+  const emailConfigured = !!(emailCfg.serviceId && emailCfg.templateId && emailCfg.publicKey)
+
+  // Cloudinary state
+  const [cl,       setCl]       = useState(loadCloudinary)
+  const [clSaved,  setClSaved]  = useState(false)
+  const [clTest,   setClTest]   = useState(false)
   const [clResult, setClResult] = useState(null)
   const clConfigured = !!(cl.cloudName && cl.uploadPreset)
 
-  const isConfigured = !!(cfg.serviceId && cfg.templateId && cfg.publicKey)
+  // Notification log
+  const [log, setLog] = useState(getNotificationLog)
 
-  const set = (k, v) => setCfg(prev => ({ ...prev, [k]: v }))
+  // Dealership integrations
+  const [allIntegrations, setAllIntegrations] = useState(loadDealerIntegrations)
+  const [brandFilter, setBrandFilter]         = useState('All')
 
-  const handleSave = () => {
-    saveConfig(cfg)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  // Summary counts for social account manager header
+  const totalConnected = useMemo(() => {
+    let count = 0
+    DEALERSHIPS.forEach(d => {
+      PLATFORMS.forEach(p => {
+        if (p.fields.every(f => !!allIntegrations[d.id]?.[p.id]?.[f.key]?.trim())) count++
+      })
+    })
+    return count
+  }, [allIntegrations])
+  const totalPossible = DEALERSHIPS.length * PLATFORMS.length
+
+  const filteredDealerships = useMemo(
+    () => brandFilter === 'All' ? DEALERSHIPS : DEALERSHIPS.filter(d => d.brand === brandFilter),
+    [brandFilter]
+  )
+
+  // Save one platform's credentials for one dealership
+  const handleDealerSave = (dealershipId, platformId, fields) => {
+    setAllIntegrations(prev => {
+      const updated = {
+        ...prev,
+        [dealershipId]: {
+          ...prev[dealershipId],
+          [platformId]: fields,
+        },
+      }
+      saveDealerIntegrations(updated)
+      return updated
+    })
   }
 
-  const handleTest = async () => {
-    if (!isConfigured) return
-    setTesting(true)
-    setTestResult(null)
+  // EmailJS handlers
+  const setEmail = (k, v) => setEmailCfg(p => ({ ...p, [k]: v }))
+  const handleEmailSave = () => {
+    localStorage.setItem(LS_EMAIL_KEY, JSON.stringify(emailCfg))
+    setEmailSaved(true)
+    setTimeout(() => setEmailSaved(false), 2000)
+  }
+  const handleEmailTest = async () => {
+    if (!emailConfigured) return
+    setEmailTest(true); setEmailResult(null)
     try {
-      await sendTestEmail(cfg, currentUser)
-      setTestResult({ ok: true, msg: `Test email sent to ${currentUser.email}` })
-    } catch (err) {
-      setTestResult({ ok: false, msg: err.message || 'Send failed' })
+      await sendTestEmail(emailCfg, currentUser)
+      setEmailResult({ ok: true, msg: `Test email sent to ${currentUser.email}` })
+    } catch (e) {
+      setEmailResult({ ok: false, msg: e.message || 'Send failed' })
     }
-    setTesting(false)
+    setEmailTest(false)
   }
 
-  const handleClearLog = () => {
-    clearNotificationLog()
-    setLog([])
-  }
-
+  // Cloudinary handlers
+  const setCld = (k, v) => setCl(p => ({ ...p, [k]: v }))
   const handleClSave = () => {
-    localStorage.setItem(CL_KEY, JSON.stringify(cl))
+    localStorage.setItem(LS_CL_KEY, JSON.stringify(cl))
     setClSaved(true)
     setTimeout(() => setClSaved(false), 2000)
   }
-
   const handleClTest = async () => {
-    setClTesting(true)
-    setClResult(null)
+    setClTest(true); setClResult(null)
     try {
       await testCloudinary(cl)
       setClResult({ ok: true, msg: 'Cloudinary connection successful!' })
     } catch (e) {
       setClResult({ ok: false, msg: e.message || 'Connection failed — check your credentials.' })
     }
-    setClTesting(false)
+    setClTest(false)
   }
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="mb-7">
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
-        <p className="text-slate-400 mt-1 text-sm">Configure email notifications and integrations</p>
+        <p className="text-slate-400 mt-1 text-sm">Configure notifications, file hosting, and social media accounts per dealership</p>
       </div>
 
-      {/* EmailJS config */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
+      {/* ── EmailJS ── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-5">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
             <Mail size={16} className="text-indigo-600" />
           </div>
           <div className="flex-1">
             <h2 className="text-sm font-bold text-slate-900">Email Notifications (EmailJS)</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Send real email alerts without a backend server</p>
+            <p className="text-xs text-slate-400 mt-0.5">Send approval/flag alerts without a backend server</p>
           </div>
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
-            isConfigured
-              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-              : 'text-slate-500 bg-slate-50 border-slate-200'
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border flex-shrink-0 ${
+            emailConfigured ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
           }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isConfigured ? 'bg-emerald-400' : 'bg-slate-300'}`} />
-            {isConfigured ? 'Configured' : 'Not configured'}
+            <span className={`w-1.5 h-1.5 rounded-full ${emailConfigured ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+            {emailConfigured ? 'Configured' : 'Not configured'}
           </span>
         </div>
         <div className="p-6 space-y-5">
-          <GuideSection />
+          <EmailGuide />
           <div className="space-y-4">
             {[
               { key: 'serviceId',  label: 'Service ID',  placeholder: 'service_xxxxxxx' },
@@ -393,67 +561,51 @@ export default function SettingsPage() {
               { key: 'publicKey',  label: 'Public Key',  placeholder: 'Your EmailJS public key' },
             ].map(({ key, label, placeholder }) => (
               <div key={key}>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                  {label}
-                </label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
                 <div className="relative">
                   <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={cfg[key] || ''}
-                    onChange={e => set(key, e.target.value)}
+                  <input type="text" value={emailCfg[key] || ''} onChange={e => setEmail(key, e.target.value)}
                     placeholder={placeholder}
-                    className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                  />
+                    className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
                 </div>
               </div>
             ))}
           </div>
-
-          {testResult && (
+          {emailResult && (
             <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border ${
-              testResult.ok
-                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                : 'text-red-700 bg-red-50 border-red-200'
+              emailResult.ok ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
             }`}>
-              {testResult.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-              {testResult.msg}
+              {emailResult.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+              {emailResult.msg}
             </div>
           )}
-
           <div className="flex items-center gap-3 pt-1">
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}
-            >
-              {saved ? <><CheckCircle size={14} /> Saved!</> : <><Settings size={14} /> Save Configuration</>}
+            <button onClick={handleEmailSave}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
+              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
+              {emailSaved ? <><CheckCircle size={14} />Saved!</> : <><Settings size={14} />Save Configuration</>}
             </button>
-            <button
-              onClick={handleTest}
-              disabled={!isConfigured || testing}
-              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {testing
-                ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /> Sending…</>
-                : <><Send size={14} /> Send Test Email</>
-              }
+            <button onClick={handleEmailTest} disabled={!emailConfigured || emailTest}
+              className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40">
+              {emailTest
+                ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Sending…</>
+                : <><Send size={14} />Send Test Email</>}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Cloudinary */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
+      {/* ── Cloudinary ── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-5">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-          <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center flex-shrink-0">
             <Cloud size={16} className="text-sky-600" />
           </div>
           <div className="flex-1">
             <h2 className="text-sm font-bold text-slate-900">File Uploads (Cloudinary)</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Host images and videos for admin review and previews</p>
+            <p className="text-xs text-slate-400 mt-0.5">Host images and videos so any team member can preview them</p>
           </div>
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border flex-shrink-0 ${
             clConfigured ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${clConfigured ? 'bg-emerald-400' : 'bg-slate-300'}`} />
@@ -465,81 +617,133 @@ export default function SettingsPage() {
             <p className="font-semibold text-slate-800">Setup (2 minutes, free tier available):</p>
             <ol className="list-decimal list-inside space-y-1 text-xs text-slate-500">
               <li>Create a free account at <a href="https://cloudinary.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">cloudinary.com</a></li>
-              <li>In your dashboard, go to <strong>Settings → Upload</strong></li>
-              <li>Click <strong>Add upload preset</strong> → set Signing Mode to <strong>Unsigned</strong> → Save</li>
-              <li>Copy your <strong>Cloud Name</strong> (top of dashboard) and the <strong>Upload Preset name</strong> below</li>
+              <li>Settings → Upload → Add upload preset → Signing Mode: <strong>Unsigned</strong> → Save</li>
+              <li>Copy your <strong>Cloud Name</strong> and <strong>Upload Preset name</strong> below</li>
             </ol>
           </div>
           {[
-            { key: 'cloudName',    label: 'Cloud Name',     placeholder: 'my-cloud-name' },
-            { key: 'uploadPreset', label: 'Upload Preset',  placeholder: 'my-unsigned-preset' },
+            { key: 'cloudName',    label: 'Cloud Name',    placeholder: 'my-cloud-name' },
+            { key: 'uploadPreset', label: 'Upload Preset', placeholder: 'my-unsigned-preset' },
           ].map(({ key, label, placeholder }) => (
             <div key={key}>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
               <div className="relative">
                 <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" value={cl[key] || ''} onChange={e => setCl(p => ({ ...p, [key]: e.target.value }))}
+                <input type="text" value={cl[key] || ''} onChange={e => setCld(key, e.target.value)}
                   placeholder={placeholder}
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
               </div>
             </div>
           ))}
           {clResult && (
-            <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border ${clResult.ok ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'}`}>
+            <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border ${
+              clResult.ok ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
+            }`}>
               {clResult.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
               {clResult.msg}
             </div>
           )}
           <div className="flex items-center gap-3 pt-1">
             <button onClick={handleClSave}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white hover:opacity-90 transition-all"
               style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
-              {clSaved ? <><CheckCircle size={14} /> Saved!</> : <><Settings size={14} /> Save</>}
+              {clSaved ? <><CheckCircle size={14} />Saved!</> : <><Settings size={14} />Save</>}
             </button>
-            <button onClick={handleClTest} disabled={!clConfigured || clTesting}
+            <button onClick={handleClTest} disabled={!clConfigured || clTest}
               className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40">
-              {clTesting ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /> Testing…</> : <><Image size={14} /> Test Connection</>}
+              {clTest
+                ? <><span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />Testing…</>
+                : <><Image size={14} />Test Connection</>}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Platform Integrations */}
+      {/* ── Social Account Manager ── */}
       <div className="mb-2">
-        <h2 className="text-base font-bold text-slate-900">Social Media Platform Integrations</h2>
-        <p className="text-xs text-slate-400 mt-0.5">Save your API credentials now — auto-publishing activates once each integration goes live.</p>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Social Media Accounts</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Each dealership connects its own handles — credentials never mix between locations</p>
+          </div>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 mt-0.5 ${
+            totalConnected === totalPossible
+              ? 'text-emerald-700 bg-emerald-50'
+              : totalConnected > 0
+              ? 'text-amber-700 bg-amber-50'
+              : 'text-slate-500 bg-slate-100'
+          }`}>
+            {totalConnected}/{totalPossible} connected
+          </span>
+        </div>
+
+        {/* Platform legend */}
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          {PLATFORMS.map(p => (
+            <div key={p.id} className="flex items-center gap-1.5 text-xs text-slate-500">
+              <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold text-white" style={{ backgroundColor: p.color }}>
+                {p.name[0]}
+              </div>
+              {p.name}
+            </div>
+          ))}
+          <span className="text-xs text-slate-300 ml-1">· grey = not configured</span>
+        </div>
+
+        {/* Brand filter */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {BRANDS.map(b => (
+            <button
+              key={b}
+              onClick={() => setBrandFilter(b)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                brandFilter === b
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              {b}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="mb-6">
-        {PLATFORM_INTEGRATIONS.map(platform => (
-          <PlatformCard key={platform.id} platform={platform} />
+
+      {/* Dealership accordion list */}
+      <div className="space-y-2 mb-6">
+        {filteredDealerships.map(d => (
+          <DealershipRow
+            key={d.id}
+            dealership={d}
+            allIntegrations={allIntegrations}
+            onSave={handleDealerSave}
+          />
         ))}
       </div>
 
-      {/* Danger Zone — Reset Demo Data */}
-      <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden mb-6">
+      {/* ── Danger Zone ── */}
+      <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden mb-5">
         <div className="flex items-center gap-3 px-6 py-5 border-b border-red-50">
-          <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
             <RotateCcw size={16} className="text-red-500" />
           </div>
-          <div className="flex-1">
+          <div>
             <h2 className="text-sm font-bold text-slate-900">Reset Demo Data</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Wipe all users and posts, restore default seed data, and log out</p>
+            <p className="text-xs text-slate-400 mt-0.5">Wipe all posts and restore default seed data</p>
           </div>
         </div>
         <div className="p-6">
           <p className="text-sm text-slate-600 mb-4">
-            Use this to restore the platform to its original demo state — all posts, user edits, and hashtag presets will be cleared.
-            Your integration settings (EmailJS, Cloudinary) will be preserved.
+            Restores the platform to its original demo state. Integration credentials (EmailJS, Cloudinary, social accounts) are preserved.
           </p>
           <DemoResetButton />
         </div>
       </div>
 
-      {/* Notification log */}
+      {/* ── Notification Log ── */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
               <Clock size={15} className="text-slate-500" />
             </div>
             <div>
@@ -548,8 +752,9 @@ export default function SettingsPage() {
             </div>
           </div>
           {log.length > 0 && (
-            <button onClick={handleClearLog} className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors">
-              <Trash2 size={13} /> Clear log
+            <button onClick={() => { clearNotificationLog(); setLog([]) }}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors">
+              <Trash2 size={13} />Clear log
             </button>
           )}
         </div>
@@ -560,9 +765,7 @@ export default function SettingsPage() {
             {[...log].reverse().map((entry, i) => (
               <div key={i} className="flex items-start gap-4 px-6 py-3.5">
                 <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border flex-shrink-0 mt-0.5 ${
-                  entry.sent
-                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                    : 'text-slate-500 bg-slate-50 border-slate-200'
+                  entry.sent ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${entry.sent ? 'bg-emerald-400' : 'bg-slate-300'}`} />
                   {entry.sent ? 'Sent' : 'Logged'}
@@ -571,9 +774,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-medium text-slate-800">{entry.type}</p>
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{entry.to}</p>
                 </div>
-                <p className="text-xs text-slate-400 flex-shrink-0">
-                  {new Date(entry.timestamp).toLocaleString()}
-                </p>
+                <p className="text-xs text-slate-400 flex-shrink-0">{new Date(entry.timestamp).toLocaleString()}</p>
               </div>
             ))}
           </div>
