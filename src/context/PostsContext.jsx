@@ -97,20 +97,19 @@ export function PostsProvider({ children }) {
       console.warn('[PostsContext] posts save failed:', e)
     }
 
-    // Save image previews separately (base64 data: URLs only).
-    // Blob URLs (video/other) die on page refresh and must NOT be persisted.
+    // Save previews separately.
+    // Save: data: (base64) and https: (Cloudinary/Unsplash hosted) URLs — these survive refresh.
+    // Skip: blob: URLs — they die when the tab closes and must never be persisted.
     try {
       const previews = {}
       posts.forEach(p => {
-        if (p.file_preview && p.file_preview.startsWith('data:')) {
+        if (p.file_preview && !p.file_preview.startsWith('blob:')) {
           previews[p.id] = p.file_preview
         }
       })
-      if (Object.keys(previews).length > 0) {
-        localStorage.setItem('asbury_post_previews', JSON.stringify(previews))
-      }
+      localStorage.setItem('asbury_post_previews', JSON.stringify(previews))
     } catch {
-      // Previews too large — they'll be gone after a refresh but that's acceptable
+      // Previews too large (large base64 images) — gone after refresh, acceptable
     }
   }, [posts])
 
