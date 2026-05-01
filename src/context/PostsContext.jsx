@@ -1,163 +1,168 @@
-import { createContext, useContext, useReducer, useEffect } from 'react'
+import { createContext, useContext, useReducer, useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 import { MOCK_POSTS } from '../data/mockData'
 
 const PostsContext = createContext(null)
 
+// ─── Local state reducer ──────────────────────────────────────────────────────
+// Handles optimistic updates so the UI is instant even before Supabase confirms.
+// Real-time subscription handles incoming changes from all other browsers/logins.
 function postsReducer(state, action) {
   switch (action.type) {
+    case 'SET_POSTS':
+      return action.posts
+
     case 'ADD_POST':
+      // Guard against real-time echoing back our own insert
+      if (state.find(p => p.id === action.post.id)) return state
       return [action.post, ...state]
 
-    case 'DELETE_POST':
+    case 'UPDATE_ONE':
       return state.map(p =>
-        p.id === action.id
-          ? { ...p, approval_status: 'deleted', chad_action_at: new Date().toISOString() }
-          : p
+        p.id === action.id ? { ...p, ...action.updates } : p
       )
-
-    case 'APPROVE_POST':
-      return state.map(p =>
-        p.id === action.id
-          ? { ...p, approval_status: 'approved', chad_notes: action.notes || p.chad_notes, chad_action_at: new Date().toISOString() }
-          : p
-      )
-
-    case 'FLAG_POST':
-      return state.map(p =>
-        p.id === action.id
-          ? { ...p, approval_status: 'flagged', chad_notes: action.notes, chad_action_at: new Date().toISOString() }
-          : p
-      )
-
-    case 'RESCHEDULE_POST':
-      return state.map(p =>
-        p.id === action.id
-          ? { ...p, scheduled_for: action.date }
-          : p
-      )
-
-    case 'PUBLISH_POST':
-      return state.map(p =>
-        p.id === action.id
-          ? { ...p, approval_status: 'published', published_at: new Date().toISOString() }
-          : p
-      )
-
-    case 'UPDATE_POST':
-      return state.map(p =>
-        p.id === action.id
-          ? { ...p, ...action.updates, approval_status: 'pending', chad_notes: null, chad_action_at: null }
-          : p
-      )
-
-    case 'RELOAD':
-      return action.posts
 
     default:
       return state
   }
 }
 
-// Remap old fake uploader emails → real team members
-const UPLOADER_PATCHES = {
-  'sarah.johnson@asburyauto.com': { email: 'rniblett@asburyauto.com', name: 'Rikki Niblett' },
-  'mike.torres@asburyauto.com':   { email: 'bmcdaniel@asburyauto.com', name: 'Ben Mcdaniel' },
-  'alex.rivera@asburyauto.com':   { email: 'rniblett@asburyauto.com', name: 'Rikki Niblett' },
-}
-
-function loadPosts() {
-  try {
-    const saved = localStorage.getItem('asbury_posts')
-    if (!saved) return MOCK_POSTS
-    const parsed = JSON.parse(saved)
-
-    // Restore any locally-stored file previews (kept in a separate key to avoid quota bloat)
-    let previews = {}
-    try { previews = JSON.parse(localStorage.getItem('asbury_post_previews') || '{}') } catch {}
-
-    return parsed.map(p => {
-      const patch = UPLOADER_PATCHES[p.uploaded_by?.toLowerCase()]
-      const base = patch
-        ? { ...p, uploaded_by: patch.email, uploaded_by_name: patch.name }
-        : p
-      return previews[p.id] ? { ...base, file_preview: previews[p.id] } : base
-    })
-  } catch {
-    return MOCK_POSTS
-  }
-}
-
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export function PostsProvider({ children }) {
-  const [posts, dispatch] = useReducer(postsReducer, null, loadPosts)
+  const [posts, dispatch] = useReducer(postsReducer, [])
+  const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
-    try {
-      // Strip file_preview (base64 blobs can be several MB — they'd blow the 5 MB localStorage quota)
-      // Store them in a separate key so the main posts JSON stays small and saves reliably.
-      const stripped = posts.map(({ file_preview, ...rest }) => rest) // eslint-disable-line no-unused-vars
-      localStorage.setItem('asbury_posts', JSON.stringify(stripped))
-    } catch (e) {
-      console.warn('[PostsContext] posts save failed:', e)
-    }
+    loadPosts()
 
-    // Save previews separately.
-    // Save: data: (base64) and https: (Cloudinary/Unsplash hosted) URLs — these survive refresh.
-    // Skip: blob: URLs — they die when the tab closes and must never be persisted.
-    try {
-      const previews = {}
-      posts.forEach(p => {
-        if (p.file_preview && !p.file_preview.startsWith('blob:')) {
-          previews[p.id] = p.file_preview
+    // ── Real-time subscription ─────────────────────────────────────────────
+    // Supabase broadcasts any INSERT/UPDATE on the posts table to every
+    // connected client simultaneously — no polling, no storage events needed.
+    const channel = supabase
+      .channel('posts-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'posts' },
+        ({ eventType, new: row }) => {
+          if (eventType === 'INSERT') {
+            dispatch({ type: 'ADD_POST', post: row })
+          } else if (eventType === 'UPDATE') {
+            dispatch({ type: 'UPDATE_ONE', id: row.id, updates: row })
+          }
+          // DELETE not used — we soft-delete by setting approval_status = 'deleted'
         }
-      })
-      localStorage.setItem('asbury_post_previews', JSON.stringify(previews))
-    } catch {
-      // Previews too large (large base64 images) — gone after refresh, acceptable
-    }
-  }, [posts])
+      )
+      .subscribe()
 
-  // Cross-tab sync: when another tab writes to localStorage, reload posts state
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === 'asbury_posts' || e.key === 'asbury_post_previews') {
-        dispatch({ type: 'RELOAD', posts: loadPosts() })
-      }
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
+    return () => supabase.removeChannel(channel)
   }, [])
 
-  const addPost = (postData) => {
+  async function loadPosts() {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .order('uploaded_at', { ascending: false })
+
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        // First-time setup: seed the database with demo posts
+        const { error: seedErr } = await supabase.from('posts').insert(MOCK_POSTS)
+        if (seedErr) throw seedErr
+        dispatch({ type: 'SET_POSTS', posts: MOCK_POSTS })
+      } else {
+        dispatch({ type: 'SET_POSTS', posts: data })
+      }
+    } catch (err) {
+      console.error('[PostsContext] load failed:', err)
+      // Fallback: show mock data locally so the UI never breaks
+      dispatch({ type: 'SET_POSTS', posts: MOCK_POSTS })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ── Mutators — each optimistically updates local state, then writes to Supabase
+  // Supabase real-time then broadcasts the change to every other open session.
+
+  const addPost = async (postData) => {
     const post = {
       ...postData,
-      id: `post-${Date.now()}`,
-      uploaded_at: new Date().toISOString(),
+      id:              `post-${Date.now()}`,
+      uploaded_at:     new Date().toISOString(),
       approval_status: 'pending',
-      chad_notes: null,
-      chad_action_at: null,
+      chad_notes:      null,
+      chad_action_at:  null,
     }
-    dispatch({ type: 'ADD_POST', post })
+    dispatch({ type: 'ADD_POST', post })                            // Instant UI
+    const { error } = await supabase.from('posts').insert(post)     // Persist + broadcast
+    if (error) console.error('[PostsContext] addPost:', error)
     return post
   }
 
-  const approvePost = (id, notes = '') =>
-    dispatch({ type: 'APPROVE_POST', id, notes })
+  const approvePost = async (id, notes = '') => {
+    const updates = {
+      approval_status: 'approved',
+      chad_notes:      notes || null,
+      chad_action_at:  new Date().toISOString(),
+    }
+    dispatch({ type: 'UPDATE_ONE', id, updates })
+    const { error } = await supabase.from('posts').update(updates).eq('id', id)
+    if (error) console.error('[PostsContext] approvePost:', error)
+  }
 
-  const flagPost = (id, notes) =>
-    dispatch({ type: 'FLAG_POST', id, notes })
+  const flagPost = async (id, notes) => {
+    const updates = {
+      approval_status: 'flagged',
+      chad_notes:      notes,
+      chad_action_at:  new Date().toISOString(),
+    }
+    dispatch({ type: 'UPDATE_ONE', id, updates })
+    const { error } = await supabase.from('posts').update(updates).eq('id', id)
+    if (error) console.error('[PostsContext] flagPost:', error)
+  }
 
-  const deletePost = (id) =>
-    dispatch({ type: 'DELETE_POST', id })
+  const deletePost = async (id) => {
+    const updates = {
+      approval_status: 'deleted',
+      chad_action_at:  new Date().toISOString(),
+    }
+    dispatch({ type: 'UPDATE_ONE', id, updates })
+    const { error } = await supabase.from('posts').update(updates).eq('id', id)
+    if (error) console.error('[PostsContext] deletePost:', error)
+  }
 
-  const reschedulePost = (id, date) =>
-    dispatch({ type: 'RESCHEDULE_POST', id, date })
+  const reschedulePost = async (id, date) => {
+    const updates = { scheduled_for: date }
+    dispatch({ type: 'UPDATE_ONE', id, updates })
+    const { error } = await supabase.from('posts').update(updates).eq('id', id)
+    if (error) console.error('[PostsContext] reschedulePost:', error)
+  }
 
-  const publishPost = (id) =>
-    dispatch({ type: 'PUBLISH_POST', id })
+  const publishPost = async (id) => {
+    const updates = {
+      approval_status: 'published',
+      published_at:    new Date().toISOString(),
+    }
+    dispatch({ type: 'UPDATE_ONE', id, updates })
+    const { error } = await supabase.from('posts').update(updates).eq('id', id)
+    if (error) console.error('[PostsContext] publishPost:', error)
+  }
 
-  const updatePost = (id, updates) =>
-    dispatch({ type: 'UPDATE_POST', id, updates })
+  const updatePost = async (id, updates) => {
+    const fullUpdates = {
+      ...updates,
+      approval_status: 'pending',
+      chad_notes:      null,
+      chad_action_at:  null,
+    }
+    dispatch({ type: 'UPDATE_ONE', id, updates: fullUpdates })
+    const { error } = await supabase.from('posts').update(fullUpdates).eq('id', id)
+    if (error) console.error('[PostsContext] updatePost:', error)
+  }
 
+  // ── Selectors ─────────────────────────────────────────────────────────────
   const getPostsByDealership = (dealershipId) =>
     posts.filter(p => p.dealership_id === dealershipId && p.approval_status !== 'deleted')
 
@@ -170,6 +175,7 @@ export function PostsProvider({ children }) {
   return (
     <PostsContext.Provider value={{
       posts,
+      loading,
       addPost,
       approvePost,
       flagPost,

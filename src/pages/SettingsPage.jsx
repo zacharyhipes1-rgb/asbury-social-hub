@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Settings, Mail, Key, Send, CheckCircle, AlertCircle, ChevronDown, ChevronUp,
   Trash2, Clock, ExternalLink, Cloud, Image, Zap, RotateCcw, Building2, Link2
@@ -6,15 +6,31 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { getNotificationLog, clearNotificationLog } from '../services/emailService'
 import { DEALERSHIPS } from '../data/dealerships'
+import { supabase } from '../lib/supabase'
+import { MOCK_POSTS } from '../data/mockData'
 
-// ─── Per-dealership integration storage ──────────────────────────────────────
-const LS_DEALER_KEY = 'asbury_dealership_integrations'
-
-function loadDealerIntegrations() {
-  try { return JSON.parse(localStorage.getItem(LS_DEALER_KEY) || '{}') } catch { return {} }
+// ─── Supabase helpers for dealership integrations ─────────────────────────────
+// Transforms flat Supabase rows → nested { [dealershipId]: { [platformId]: fields } }
+function rowsToIntegrations(rows) {
+  const result = {}
+  rows.forEach(row => {
+    if (!result[row.dealership_id]) result[row.dealership_id] = {}
+    result[row.dealership_id][row.platform_id] = row.fields || {}
+  })
+  return result
 }
-function saveDealerIntegrations(data) {
-  localStorage.setItem(LS_DEALER_KEY, JSON.stringify(data))
+
+async function fetchDealerIntegrations() {
+  const { data, error } = await supabase.from('dealership_integrations').select('*')
+  if (error) { console.error('[Settings] fetch integrations:', error); return {} }
+  return rowsToIntegrations(data || [])
+}
+
+async function upsertDealerIntegration(dealershipId, platformId, fields) {
+  const { error } = await supabase
+    .from('dealership_integrations')
+    .upsert({ dealership_id: dealershipId, platform_id: platformId, fields, updated_at: new Date().toISOString() })
+  if (error) console.error('[Settings] upsert integration:', error)
 }
 
 // ─── Platform definitions ─────────────────────────────────────────────────────
@@ -144,8 +160,8 @@ function DealerPlatformEditor({ dealershipId, platform, allIntegrations, onSave 
   const isConfigured = platform.fields.every(f => !!fields[f.key]?.trim())
   const set = (k, v) => setFields(p => ({ ...p, [k]: v }))
 
-  const handleSave = () => {
-    onSave(dealershipId, platform.id, fields)
+  const handleSave = async () => {
+    await onSave(dealershipId, platform.id, fields)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -377,22 +393,39 @@ function EmailGuide() {
 
 // ─── Demo reset ───────────────────────────────────────────────────────────────
 function DemoResetButton() {
-  const [confirm, setConfirm] = useState(false)
-  const handleReset = () => {
-    const preserved = {}
+  const [confirm, setConfirm]   = useState(false)
+  const [resetting, setResetting] = useState(false)
+
+  const handleReset = async () => {
+    setResetting(true)
+    try {
+      // 1. Wipe all posts from Supabase
+      await supabase.from('posts').delete().neq('id', '__none__')
+      // 2. Re-seed with mock data
+      await supabase.from('posts').insert(MOCK_POSTS)
+      // 3. Clear dealership integrations
+      await supabase.from('dealership_integrations').delete().neq('dealership_id', '__none__')
+    } catch (e) {
+      console.error('[DemoReset]', e)
+    }
+    // 4. Clear local configs except EmailJS/Cloudinary
     ;['asbury_emailjs_config', 'asbury_cloudinary_config'].forEach(k => {
       const v = localStorage.getItem(k)
-      if (v) preserved[k] = v
+      localStorage.clear()
+      if (v) localStorage.setItem(k, v)
     })
-    Object.keys(localStorage).filter(k => k.startsWith('asbury_')).forEach(k => localStorage.removeItem(k))
-    Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v))
     window.location.href = '/login'
   }
+
   if (confirm) return (
     <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-      <div className="flex-1 text-sm font-medium text-red-800">This will delete all users, posts, and presets. Continue?</div>
+      <div className="flex-1 text-sm font-medium text-red-800">This will delete all posts and social account credentials. Continue?</div>
       <button onClick={() => setConfirm(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-white transition-colors">Cancel</button>
-      <button onClick={handleReset} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors">Reset Now</button>
+      <button onClick={handleReset} disabled={resetting} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60">
+        {resetting
+          ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /><span>Resetting…</span></>
+          : <span>Reset Now</span>}
+      </button>
     </div>
   )
   return (
@@ -458,9 +491,13 @@ export default function SettingsPage() {
   // Notification log
   const [log, setLog] = useState(getNotificationLog)
 
-  // Dealership integrations
-  const [allIntegrations, setAllIntegrations] = useState(loadDealerIntegrations)
+  // Dealership integrations — loaded from Supabase on mount
+  const [allIntegrations, setAllIntegrations] = useState({})
   const [brandFilter, setBrandFilter]         = useState('All')
+
+  useEffect(() => {
+    fetchDealerIntegrations().then(data => setAllIntegrations(data))
+  }, [])
 
   // Summary counts for social account manager header
   const totalConnected = useMemo(() => {
@@ -479,19 +516,16 @@ export default function SettingsPage() {
     [brandFilter]
   )
 
-  // Save one platform's credentials for one dealership
-  const handleDealerSave = (dealershipId, platformId, fields) => {
-    setAllIntegrations(prev => {
-      const updated = {
-        ...prev,
-        [dealershipId]: {
-          ...prev[dealershipId],
-          [platformId]: fields,
-        },
-      }
-      saveDealerIntegrations(updated)
-      return updated
-    })
+  // Save one platform's credentials for one dealership → Supabase
+  const handleDealerSave = async (dealershipId, platformId, fields) => {
+    await upsertDealerIntegration(dealershipId, platformId, fields)
+    setAllIntegrations(prev => ({
+      ...prev,
+      [dealershipId]: {
+        ...prev[dealershipId],
+        [platformId]: fields,
+      },
+    }))
   }
 
   // EmailJS handlers
