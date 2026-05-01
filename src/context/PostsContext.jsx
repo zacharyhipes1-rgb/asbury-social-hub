@@ -37,6 +37,16 @@ function postsReducer(state, action) {
   }
 }
 
+// Fields that exist in the Supabase posts table — strip anything else before insert/update
+const SCHEMA_FIELDS = new Set([
+  'id','dealership_id','platform','content_type','caption','hashtags','alt_text',
+  'file_name','file_size','file_type','file_preview','file_url','target_audience',
+  'posting_reason','optimal_posting_time','uploaded_by','uploaded_by_name',
+  'uploaded_at','scheduled_for','approval_status','chad_notes','chad_action_at',
+  'published_at','content_pillar',
+])
+const toDb = (obj) => Object.fromEntries(Object.entries(obj).filter(([k]) => SCHEMA_FIELDS.has(k)))
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 export function PostsProvider({ children }) {
   const [posts, dispatch] = useReducer(postsReducer, [])
@@ -118,8 +128,8 @@ export function PostsProvider({ children }) {
       chad_notes:      null,
       chad_action_at:  null,
     }
-    dispatch({ type: 'ADD_POST', post })                            // Instant UI
-    const { error } = await supabase.from('posts').insert(post)     // Persist + broadcast
+    dispatch({ type: 'ADD_POST', post })                                    // Instant UI
+    const { error } = await supabase.from('posts').insert(toDb(post))       // Persist + broadcast
     if (error) console.error('[PostsContext] addPost:', error)
     return post
   }
