@@ -43,7 +43,8 @@ const SCHEMA_FIELDS = new Set([
   'file_name','file_size','file_type','file_preview','file_url','target_audience',
   'posting_reason','optimal_posting_time','uploaded_by','uploaded_by_name',
   'uploaded_at','scheduled_for','approval_status','chad_notes','chad_action_at',
-  'published_at','content_pillar',
+  'published_at',
+  // content_pillar intentionally omitted until the DB column is added
 ])
 const toDb = (obj) => Object.fromEntries(Object.entries(obj).filter(([k]) => SCHEMA_FIELDS.has(k)))
 
@@ -191,7 +192,7 @@ export function PostsProvider({ children }) {
       chad_action_at:  null,
     }
     dispatch({ type: 'UPDATE_ONE', id, updates: fullUpdates })
-    const { error } = await supabase.from('posts').update(fullUpdates).eq('id', id)
+    const { error } = await supabase.from('posts').update(toDb(fullUpdates)).eq('id', id)
     if (error) console.error('[PostsContext] updatePost:', error)
   }
 
