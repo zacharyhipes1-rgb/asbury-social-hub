@@ -84,7 +84,7 @@ export default function FormWizard() {
       })
       addToast('Post updated and resubmitted for approval.', 'success')
     } else {
-      const post = addPost({
+      const post = await addPost({
         ...formData,
         uploaded_by:      currentUser.email,
         uploaded_by_name: currentUser.name,

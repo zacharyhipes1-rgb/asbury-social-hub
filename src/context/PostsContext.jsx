@@ -12,6 +12,16 @@ function postsReducer(state, action) {
     case 'SET_POSTS':
       return action.posts
 
+    // Merge Supabase poll results without wiping optimistic posts that
+    // haven't been confirmed yet (they exist in state but not in Supabase).
+    case 'SYNC_POSTS': {
+      const dbMap      = new Map(action.posts.map(p => [p.id, p]))
+      const existingIds = new Set(state.map(p => p.id))
+      const merged     = state.map(p => dbMap.has(p.id) ? dbMap.get(p.id) : p)
+      const newFromDb  = action.posts.filter(p => !existingIds.has(p.id))
+      return [...newFromDb, ...merged]
+    }
+
     case 'ADD_POST':
       // Guard against real-time echoing back our own insert
       if (state.find(p => p.id === action.post.id)) return state
@@ -58,7 +68,7 @@ export function PostsProvider({ children }) {
     // ── Polling fallback ───────────────────────────────────────────────────
     // Re-fetches every 8 seconds as a safety net in case the WebSocket
     // broadcast isn't firing. Guarantees cross-device sync regardless.
-    const poll = setInterval(loadPosts, 8000)
+    const poll = setInterval(() => loadPosts(true), 8000)
 
     return () => {
       supabase.removeChannel(channel)
@@ -66,7 +76,7 @@ export function PostsProvider({ children }) {
     }
   }, [])
 
-  async function loadPosts() {
+  async function loadPosts(isPoll = false) {
     try {
       const { data, error } = await supabase
         .from('posts')
@@ -76,19 +86,23 @@ export function PostsProvider({ children }) {
       if (error) throw error
 
       if (!data || data.length === 0) {
-        // First-time setup: seed the database with demo posts
-        const { error: seedErr } = await supabase.from('posts').insert(MOCK_POSTS)
-        if (seedErr) throw seedErr
-        dispatch({ type: 'SET_POSTS', posts: MOCK_POSTS })
+        if (!isPoll) {
+          // First-time setup: seed the database with demo posts
+          const { error: seedErr } = await supabase.from('posts').insert(MOCK_POSTS)
+          if (seedErr) throw seedErr
+          dispatch({ type: 'SET_POSTS', posts: MOCK_POSTS })
+        }
+      } else if (isPoll) {
+        // Merge poll results — preserves optimistic posts not yet confirmed
+        dispatch({ type: 'SYNC_POSTS', posts: data })
       } else {
         dispatch({ type: 'SET_POSTS', posts: data })
       }
     } catch (err) {
       console.error('[PostsContext] load failed:', err)
-      // Fallback: show mock data locally so the UI never breaks
-      dispatch({ type: 'SET_POSTS', posts: MOCK_POSTS })
+      if (!isPoll) dispatch({ type: 'SET_POSTS', posts: MOCK_POSTS })
     } finally {
-      setLoading(false)
+      if (!isPoll) setLoading(false)
     }
   }
 
