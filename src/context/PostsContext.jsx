@@ -37,7 +37,7 @@ export function PostsProvider({ children }) {
 
     // ── Real-time subscription ─────────────────────────────────────────────
     // Supabase broadcasts any INSERT/UPDATE on the posts table to every
-    // connected client simultaneously — no polling, no storage events needed.
+    // connected client simultaneously.
     const channel = supabase
       .channel('posts-live')
       .on(
@@ -49,12 +49,21 @@ export function PostsProvider({ children }) {
           } else if (eventType === 'UPDATE') {
             dispatch({ type: 'UPDATE_ONE', id: row.id, updates: row })
           }
-          // DELETE not used — we soft-delete by setting approval_status = 'deleted'
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('[PostsContext] realtime status:', status)
+      })
 
-    return () => supabase.removeChannel(channel)
+    // ── Polling fallback ───────────────────────────────────────────────────
+    // Re-fetches every 8 seconds as a safety net in case the WebSocket
+    // broadcast isn't firing. Guarantees cross-device sync regardless.
+    const poll = setInterval(loadPosts, 8000)
+
+    return () => {
+      supabase.removeChannel(channel)
+      clearInterval(poll)
+    }
   }, [])
 
   async function loadPosts() {
