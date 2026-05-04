@@ -12,9 +12,13 @@ import Step3ContentType from './Step3ContentType'
 import Step4Upload from './Step4Upload'
 import Step5Optional from './Step5Optional'
 
+// The wizard collects multi-select arrays in `dealership_ids` and `platforms`,
+// then fans out into one DB row per (dealership × platform) pair at submit time.
+// Each persisted post still carries singular `dealership_id` and `platform` —
+// that's the schema the rest of the app reads.
 const INITIAL_FORM = {
-  dealership_id: '',
-  platform: '',
+  dealership_ids: [],
+  platforms: [],
   content_type: '',
   caption: '',
   hashtags: [],
@@ -32,8 +36,8 @@ const INITIAL_FORM = {
 }
 
 const DEMO_FORM = {
-  dealership_id: 'nalley-honda',
-  platform: 'instagram',
+  dealership_ids: ['nalley-honda'],
+  platforms: ['instagram'],
   content_type: 'reel',
   caption: 'Summer savings event is HERE! Stop by Nalley Honda this weekend and drive home in your dream car. Low APR financing available on select models.',
   hashtags: ['#NalleyHonda', '#HondaDeals', '#CollegePark', '#SummerSavings'],
@@ -46,6 +50,17 @@ const DEMO_FORM = {
   posting_reason: 'Monthly sales event — drive weekend foot traffic',
   optimal_posting_time: '12:00',
   scheduled_for: '2026-04-25',
+}
+
+// When editing an existing post, hydrate the multi arrays from its singular fields
+// so the UI shows the original selection in the new multi-select widgets.
+function hydrateForEdit(post) {
+  return {
+    ...INITIAL_FORM,
+    ...post,
+    dealership_ids: post.dealership_id ? [post.dealership_id] : [],
+    platforms:      post.platform      ? [post.platform]      : [],
+  }
 }
 
 export default function FormWizard() {
@@ -62,7 +77,7 @@ export default function FormWizard() {
   // If editing a flagged post, pre-fill with its data
   const editingPost = editPostId ? getPostById(editPostId) : null
   const initialData = editingPost
-    ? { ...INITIAL_FORM, ...editingPost }
+    ? hydrateForEdit(editingPost)
     : demoStep >= 2 ? DEMO_FORM : INITIAL_FORM
 
   const [step, setStep] = useState(demoStep >= 1 && demoStep <= 5 ? demoStep : 1)
@@ -75,25 +90,62 @@ export default function FormWizard() {
     setIsSubmitting(true)
     await new Promise((r) => setTimeout(r, 600))
 
+    // Strip the multi-select arrays before persisting; each row carries singular fields.
+    const { dealership_ids, platforms, ...sharedFields } = formData
+    const dealershipList = dealership_ids?.length ? dealership_ids : []
+    const platformList   = platforms?.length      ? platforms      : []
+
     if (editingPost) {
-      // Resubmit — update existing post and reset to pending
+      // Edit mode updates the existing single row in place. The user can change
+      // which (dealership, platform) it points to, but it stays one row — we
+      // don't fan out edits because that would orphan the original.
+      const targetDealership = dealershipList[0] || editingPost.dealership_id
+      const targetPlatform   = platformList[0]   || editingPost.platform
       updatePost(editingPost.id, {
-        ...formData,
+        ...sharedFields,
+        dealership_id:    targetDealership,
+        platform:         targetPlatform,
         uploaded_by:      currentUser.email,
         uploaded_by_name: currentUser.name,
       })
-      addToast('Post updated and resubmitted for approval.', 'success')
+      const extraCount = (dealershipList.length * platformList.length) - 1
+      addToast(
+        extraCount > 0
+          ? `Post updated and resubmitted. (Note: edits are applied to this single post — additional dealership/platform selections were ignored.)`
+          : 'Post updated and resubmitted for approval.',
+        'success'
+      )
     } else {
-      const post = await addPost({
-        ...formData,
-        uploaded_by:      currentUser.email,
-        uploaded_by_name: currentUser.name,
-      })
+      // Fan out: one row per (dealership × platform) pair.
       const admins     = getAdmins()
       const socialTeam = getSocialTeam()
       const admin      = admins[0] || { name: 'Chad Mitchell', email: 'chad.mitchell@asburyauto.com' }
-      notifyNewUpload({ post, uploader: currentUser, socialTeam, admin }).catch(() => {})
-      addToast('Content submitted — your team has been notified.', 'success')
+
+      const created = []
+      for (const dId of dealershipList) {
+        for (const pId of platformList) {
+          // Stagger ids so Date.now() collisions don't produce duplicate keys
+          // when the loop runs faster than 1ms per iteration.
+          await new Promise((r) => setTimeout(r, 1))
+          const post = await addPost({
+            ...sharedFields,
+            dealership_id:    dId,
+            platform:         pId,
+            uploaded_by:      currentUser.email,
+            uploaded_by_name: currentUser.name,
+          })
+          created.push(post)
+          notifyNewUpload({ post, uploader: currentUser, socialTeam, admin }).catch(() => {})
+        }
+      }
+
+      const total = created.length
+      addToast(
+        total > 1
+          ? `${total} posts submitted — your team has been notified.`
+          : 'Content submitted — your team has been notified.',
+        'success'
+      )
     }
 
     setIsSubmitting(false)

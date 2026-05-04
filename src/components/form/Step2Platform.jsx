@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react'
+import { ChevronLeft, ChevronRight, TrendingUp, Check } from 'lucide-react'
 import { PLATFORMS } from '../../data/platforms'
 
 const PLATFORM_META = {
@@ -29,45 +29,50 @@ const PLATFORM_META = {
 }
 
 export default function Step2Platform({ data, onUpdate, onNext, onPrev }) {
-  const selected = data.platform
+  const selectedIds = data.platforms || []
 
-  const handleSelect = (id) => {
-    onUpdate({ platform: id, content_type: '' })
+  const toggle = (id) => {
+    const next = selectedIds.includes(id)
+      ? selectedIds.filter(x => x !== id)
+      : [...selectedIds, id]
+    // Reset content_type when platform selection changes
+    onUpdate({ platforms: next, content_type: '' })
   }
 
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-5 sm:mb-6">
-        <h3 className="text-lg font-semibold text-slate-900">Select Platform</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Select Platform(s)</h3>
         <p className="text-sm text-slate-500 mt-1">
-          Choose where this content will be published. Platform selection determines which content formats are available in the next step.
+          Choose one or more platforms. The same content will be posted to every platform you select.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {PLATFORMS.map(platform => {
           const meta = PLATFORM_META[platform.id]
-          const isSelected = selected === platform.id
+          const isSelected = selectedIds.includes(platform.id)
 
           return (
             <button
               key={platform.id}
               type="button"
-              onClick={() => handleSelect(platform.id)}
-              className={`
-                text-left p-4 sm:p-5 rounded-xl border-2 transition-all
-                ${isSelected
-                  ? 'border-2 shadow-md'
-                  : selected
-                    ? 'border-slate-200 bg-white opacity-40 hover:opacity-70 hover:border-slate-300'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-                }
-              `}
-              style={isSelected ? {
-                borderColor: platform.color,
-                backgroundColor: platform.lightBg,
-              } : {}}
+              onClick={() => toggle(platform.id)}
+              className={`text-left p-4 sm:p-5 rounded-xl border-2 transition-all relative ${
+                isSelected ? 'shadow-md' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+              }`}
+              style={isSelected ? { borderColor: platform.color, backgroundColor: platform.lightBg } : {}}
             >
+              {/* Check badge */}
+              {isSelected && (
+                <div
+                  className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: platform.color }}
+                >
+                  <Check size={13} className="text-white" strokeWidth={3} />
+                </div>
+              )}
+
               <div className="flex items-center gap-3 mb-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
@@ -79,12 +84,6 @@ export default function Step2Platform({ data, onUpdate, onNext, onPrev }) {
                   <p className="font-semibold text-slate-900">{platform.name}</p>
                   <p className="text-xs text-slate-500">Audience: {meta.audience}</p>
                 </div>
-                {isSelected && (
-                  <div className="ml-auto w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: platform.color }}>
-                    <span className="text-white text-xs">✓</span>
-                  </div>
-                )}
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">{meta.description}</p>
               <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-600">
@@ -96,6 +95,18 @@ export default function Step2Platform({ data, onUpdate, onNext, onPrev }) {
         })}
       </div>
 
+      {/* Multi-platform note */}
+      {selectedIds.length > 1 && (
+        <div className="mt-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+          <p className="text-xs font-semibold text-indigo-700">
+            {selectedIds.length} platforms selected — one post will be created per platform
+          </p>
+          <p className="text-xs text-indigo-500 mt-0.5">
+            You'll choose a universal content format in the next step.
+          </p>
+        </div>
+      )}
+
       <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-6 sm:mt-8 flex items-center justify-between">
         <button
           onClick={onPrev}
@@ -106,11 +117,15 @@ export default function Step2Platform({ data, onUpdate, onNext, onPrev }) {
         </button>
         <button
           onClick={onNext}
-          disabled={!selected}
+          disabled={selectedIds.length === 0}
           className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          {selected ? `Continue with ${PLATFORMS.find(p => p.id === selected)?.name}` : 'Continue'}
+          {selectedIds.length === 0
+            ? 'Select a platform'
+            : selectedIds.length === 1
+            ? `Continue with ${PLATFORMS.find(p => p.id === selectedIds[0])?.name}`
+            : `Continue with ${selectedIds.length} platforms`}
           <ChevronRight size={16} />
         </button>
       </div>

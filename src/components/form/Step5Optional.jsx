@@ -48,14 +48,19 @@ function ReviewRow({ label, value }) {
 }
 
 export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubmitting, adminName = 'your manager' }) {
-  const dealership  = DEALERSHIPS.find(d => d.id === data.dealership_id)
-  const platform    = getPlatform(data.platform)
-  const contentType = getContentType(data.platform, data.content_type)
+  // Support both single (legacy edit) and multi-select
+  const dealershipIds = data.dealership_ids?.length ? data.dealership_ids : (data.dealership_id ? [data.dealership_id] : [])
+  const platformIds   = data.platforms?.length       ? data.platforms       : (data.platform   ? [data.platform]   : [])
+  const contentType   = getContentType(platformIds[0], data.content_type)
+  const postCount     = dealershipIds.length * platformIds.length
 
-  // Auto-populate optimal time when step loads if not already set
+  const dealershipNames = dealershipIds.map(id => DEALERSHIPS.find(d => d.id === id)?.name).filter(Boolean).join(', ')
+  const platformNames   = platformIds.map(id => getPlatform(id)?.name).filter(Boolean).join(', ')
+
+  // Auto-populate optimal time based on first selected platform
   useEffect(() => {
-    if (!data.optimal_posting_time && data.platform && PLATFORM_TIMES[data.platform]) {
-      onUpdate({ optimal_posting_time: PLATFORM_TIMES[data.platform] })
+    if (!data.optimal_posting_time && platformIds[0] && PLATFORM_TIMES[platformIds[0]]) {
+      onUpdate({ optimal_posting_time: PLATFORM_TIMES[platformIds[0]] })
     }
   }, []) // eslint-disable-line
 
@@ -161,9 +166,10 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
             className="w-full sm:w-auto px-4 py-2.5 border border-slate-300 rounded-xl text-sm text-slate-900
               focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200 transition-all"
           />
-          {data.platform && PLATFORM_TIME_TIPS[data.platform] && (
+          {platformIds[0] && PLATFORM_TIME_TIPS[platformIds[0]] && (
             <p className="text-xs text-indigo-600 mt-1 flex items-center gap-1">
-              <span className="font-medium">Tip:</span> {PLATFORM_TIME_TIPS[data.platform]}
+              <span className="font-medium">Tip:</span> {PLATFORM_TIME_TIPS[platformIds[0]]}
+              {platformIds.length > 1 && ' (based on the first selected platform)'}
             </p>
           )}
         </div>
@@ -190,14 +196,24 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
 
       {/* Review Summary */}
       <div className="rounded-xl border border-slate-200 overflow-hidden mb-6">
-        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <p className="text-sm font-semibold text-slate-700">Submission Summary</p>
+          {postCount > 1 && (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+              {postCount} posts will be created
+            </span>
+          )}
         </div>
         <div className="px-4 py-1">
-          <ReviewRow label="Dealership"     value={dealership?.name} />
-          <ReviewRow label="Location"       value={dealership?.location} />
-          <ReviewRow label="Platform"       value={platform?.name} />
-          <ReviewRow label="Content Type"   value={contentType?.name} />
+          <ReviewRow
+            label={dealershipIds.length > 1 ? 'Dealerships' : 'Dealership'}
+            value={dealershipNames || null}
+          />
+          <ReviewRow
+            label={platformIds.length > 1 ? 'Platforms' : 'Platform'}
+            value={platformNames || null}
+          />
+          <ReviewRow label={platformIds.length > 1 ? 'Content Format' : 'Content Type'} value={contentType?.name} />
           <ReviewRow label="Content Pillar" value={pillarLabel} />
           <ReviewRow label="Posting Reason" value={reasonLabel} />
           <ReviewRow label="Caption"        value={data.caption ? `${data.caption.slice(0, 80)}${data.caption.length > 80 ? '...' : ''}` : null} />
@@ -211,7 +227,11 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
 
       <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 mb-6">
         <p className="text-sm text-amber-800">
-          <span className="font-semibold">Before submitting:</span> Your content will be sent to {adminName} for review. You'll receive an email notification once it's approved, flagged, or removed.
+          <span className="font-semibold">Before submitting:</span>{' '}
+          {postCount > 1
+            ? <>One review item will be created for each dealership × platform pair (<strong>{postCount} total</strong>) and sent to {adminName} for approval. You'll receive an email notification once each one is approved, flagged, or removed.</>
+            : <>Your content will be sent to {adminName} for review. You'll receive an email notification once it's approved, flagged, or removed.</>
+          }
         </p>
       </div>
 

@@ -265,7 +265,23 @@ const PLATFORM_CAPTION = {
 export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
   const isTextOnly = ['text_post', 'text_caption', 'text_update'].includes(data.content_type)
   const needsAltText = ['single_image', 'carousel', 'stories'].includes(data.content_type)
-  const platformCaption = PLATFORM_CAPTION[data.platform] || { limit: 2200, soft: 2200, tip: null }
+  // Multi-select aware: fall back to legacy singular fields when present
+  const platformIds   = data.platforms?.length      ? data.platforms      : (data.platform      ? [data.platform]      : [])
+  const dealershipIds = data.dealership_ids?.length ? data.dealership_ids : (data.dealership_id ? [data.dealership_id] : [])
+  const primaryPlatformId   = platformIds[0]
+  const primaryDealershipId = dealershipIds[0]
+  // When multiple platforms are selected, enforce the strictest caption limits across them.
+  const platformCaption = platformIds.length > 1
+    ? platformIds.reduce((acc, pid) => {
+        const c = PLATFORM_CAPTION[pid]
+        if (!c) return acc
+        return {
+          limit: Math.min(acc.limit, c.limit),
+          soft:  Math.min(acc.soft,  c.soft),
+          tip:   `Strictest limits shown — caption posts to ${platformIds.length} platforms.`,
+        }
+      }, { limit: 999999, soft: 999999, tip: null })
+    : (PLATFORM_CAPTION[primaryPlatformId] || { limit: 2200, soft: 2200, tip: null })
 
   const valid = data.caption.trim().length > 0 && (isTextOnly || data.file_name)
 
@@ -322,7 +338,7 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
         <HashtagInput
           value={data.hashtags}
           onChange={(tags) => onUpdate({ hashtags: tags })}
-          dealershipId={data.dealership_id}
+          dealershipId={primaryDealershipId}
         />
 
         {needsAltText && (

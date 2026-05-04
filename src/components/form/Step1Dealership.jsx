@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, ChevronRight, BookOpen, Edit2, Check, X } from 'lucide-react'
+import { MapPin, ChevronRight, BookOpen, Edit2, Check, X, CheckSquare, Square } from 'lucide-react'
 import { DEALERSHIPS } from '../../data/dealerships'
 import { useAuth } from '../../context/AuthContext'
 
@@ -26,7 +26,6 @@ function ContentBrief({ dealershipId }) {
   }
 
   const brief = briefs[dealershipId]
-
   if (!brief && !isAdmin) return null
 
   return (
@@ -48,7 +47,7 @@ function ContentBrief({ dealershipId }) {
                 value={draft}
                 onChange={e => setDraft(e.target.value)}
                 rows={3}
-                placeholder="Describe this dealership's content focus, tone, key messages, or anything the social media team needs to know before creating content..."
+                placeholder="Describe this dealership's content focus, tone, key messages..."
                 className="w-full text-xs text-slate-700 border border-indigo-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:border-indigo-400 resize-none"
                 autoFocus
               />
@@ -74,81 +73,142 @@ function ContentBrief({ dealershipId }) {
   )
 }
 
-export default function Step1Dealership({ data, onUpdate, onNext }) {
-  const selected = data.dealership_id
+const BRAND_ORDER = ['Honda', 'BMW', 'Lexus', 'Acura', 'Toyota', 'Corporate']
 
-  const handleSelect = (id) => {
-    onUpdate({ dealership_id: id })
+export default function Step1Dealership({ data, onUpdate, onNext }) {
+  const selectedIds = data.dealership_ids || []
+
+  const toggle = (id) => {
+    const next = selectedIds.includes(id)
+      ? selectedIds.filter(x => x !== id)
+      : [...selectedIds, id]
+    onUpdate({ dealership_ids: next })
+  }
+
+  const toggleBrand = (brandDealerships) => {
+    const brandIds = brandDealerships.map(d => d.id)
+    const allSelected = brandIds.every(id => selectedIds.includes(id))
+    const next = allSelected
+      ? selectedIds.filter(id => !brandIds.includes(id))
+      : [...new Set([...selectedIds, ...brandIds])]
+    onUpdate({ dealership_ids: next })
   }
 
   const grouped = DEALERSHIPS.reduce((acc, d) => {
-    const brand = d.brand
-    if (!acc[brand]) acc[brand] = []
-    acc[brand].push(d)
+    if (!acc[d.brand]) acc[d.brand] = []
+    acc[d.brand].push(d)
     return acc
   }, {})
 
-  const brandOrder = ['Honda', 'BMW', 'Lexus', 'Acura', 'Toyota', 'Corporate']
+  const lastSelected = selectedIds.length === 1 ? selectedIds[0] : null
 
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-5 sm:mb-6">
-        <h3 className="text-lg font-semibold text-slate-900">Select Dealership</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Select Dealership(s)</h3>
         <p className="text-sm text-slate-500 mt-1">
-          Choose the dealership this content is being created for. Each dealership has its own content calendar and approval workflow.
+          Choose one or more dealerships. The same content will be submitted for each location you select.
         </p>
       </div>
 
       <div className="space-y-5">
-        {brandOrder.map(brand => {
+        {BRAND_ORDER.map(brand => {
           const dealerships = grouped[brand]
           if (!dealerships) return null
+          const allSelected = dealerships.every(d => selectedIds.includes(d.id))
+          const someSelected = dealerships.some(d => selectedIds.includes(d.id))
+
           return (
             <div key={brand}>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{brand}</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{brand}</p>
+                <button
+                  type="button"
+                  onClick={() => toggleBrand(dealerships)}
+                  className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+                    allSelected ? 'text-indigo-600 hover:text-indigo-800' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  {allSelected
+                    ? <><CheckSquare size={12} /> Deselect all</>
+                    : <><Square size={12} /> Select all</>
+                  }
+                </button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {dealerships.map(d => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => handleSelect(d.id)}
-                    className={`
-                      flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all
-                      ${selected === d.id
-                        ? 'border-slate-900 bg-slate-900 text-white'
-                        : selected
-                          ? 'border-slate-200 bg-white text-slate-400 opacity-40 hover:opacity-70 hover:border-slate-300'
+                {dealerships.map(d => {
+                  const isSelected = selectedIds.includes(d.id)
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => toggle(d.id)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all ${
+                        isSelected
+                          ? 'border-slate-900 bg-slate-900 text-white'
                           : 'border-slate-200 bg-white text-slate-900 hover:border-slate-400'
+                      }`}
+                    >
+                      <MapPin size={16} className={isSelected ? 'text-slate-300' : 'text-slate-400'} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{d.name}</p>
+                        <p className={`text-xs mt-0.5 truncate ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
+                          {d.location}
+                        </p>
+                      </div>
+                      {isSelected
+                        ? <div className="w-5 h-5 rounded-full bg-green-400 flex items-center justify-center flex-shrink-0">
+                            <Check size={11} className="text-white" strokeWidth={3} />
+                          </div>
+                        : <div className="w-5 h-5 rounded-full border-2 border-slate-200 flex-shrink-0" />
                       }
-                    `}
-                  >
-                    <MapPin size={16} className={selected === d.id ? 'text-slate-300' : 'text-slate-400'} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{d.name}</p>
-                      <p className={`text-xs mt-0.5 truncate ${selected === d.id ? 'text-slate-300' : 'text-slate-500'}`}>
-                        {d.location}
-                      </p>
-                    </div>
-                    {selected === d.id && <div className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />}
-                  </button>
-                ))}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )
         })}
       </div>
 
-      {selected && <ContentBrief dealershipId={selected} />}
+      {/* Content brief for single selected dealership */}
+      {lastSelected && <ContentBrief dealershipId={lastSelected} />}
+
+      {/* Multi-selection summary */}
+      {selectedIds.length > 1 && (
+        <div className="mt-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+          <p className="text-xs font-semibold text-indigo-700 mb-1.5">
+            {selectedIds.length} dealerships selected — content will be submitted for each
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {selectedIds.map(id => {
+              const d = DEALERSHIPS.find(x => x.id === id)
+              return (
+                <span key={id} className="inline-flex items-center gap-1 text-xs bg-white border border-indigo-200 text-indigo-700 rounded-lg px-2 py-0.5">
+                  {d?.name}
+                  <button type="button" onClick={() => toggle(id)} className="text-indigo-400 hover:text-indigo-700">
+                    <X size={10} />
+                  </button>
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="sticky bottom-0 bg-white border-t border-slate-100 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 mt-6 sm:mt-8 flex justify-end">
         <button
           onClick={onNext}
-          disabled={!selected}
+          disabled={selectedIds.length === 0}
           className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-sm
             hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
-          <span className="truncate max-w-[160px] sm:max-w-none">
-            {selected ? `Continue with ${DEALERSHIPS.find(d => d.id === selected)?.name}` : 'Continue'}
+          <span>
+            {selectedIds.length === 0
+              ? 'Select a dealership'
+              : selectedIds.length === 1
+              ? `Continue with ${DEALERSHIPS.find(d => d.id === selectedIds[0])?.name}`
+              : `Continue with ${selectedIds.length} dealerships`}
           </span>
           <ChevronRight size={16} className="flex-shrink-0" />
         </button>
