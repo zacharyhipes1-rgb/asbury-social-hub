@@ -1,29 +1,20 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useUsers } from '../context/UsersContext'
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Zap } from 'lucide-react'
-
-// Anchors: emails + passwords stay fixed; names/titles come from live user data
-const DEMO_ANCHORS = [
-  { email: 'zhipes@asburyauto.com',    password: 'Demo2026!', fallbackRole: 'Admin'        },
-  { email: 'cdavis@asburyauto.com',    password: 'Demo2026!', fallbackRole: 'Admin'        },
-  { email: 'rniblett@asburyauto.com',  password: 'Demo2026!', fallbackRole: 'Social Media' },
-]
+import { DEMO_USER_ID, DEMO_USER_PASSWORD } from '../data/mockData'
 
 export default function LoginPage() {
   const { login, currentUser, loginError, authLoaded } = useAuth()
-  const { getUserByEmail } = useUsers()
+  const { getUserById } = useUsers()
   const navigate = useNavigate()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading]   = useState(false)
 
-  const demoAccounts = DEMO_ANCHORS.map(anchor => {
-    const user = getUserByEmail(anchor.email)
-    return user ? { ...anchor, name: user.name, role: user.title || anchor.fallbackRole } : null
-  }).filter(Boolean)
+  const demoUser = getUserById(DEMO_USER_ID)
 
   useEffect(() => {
     if (currentUser) navigate('/', { replace: true })
@@ -37,11 +28,12 @@ export default function LoginPage() {
     if (ok) navigate('/', { replace: true })
   }
 
-  const fillDemo = async (acc) => {
-    setEmail(acc.email)
-    setPassword(acc.password)
+  const fillDemo = async () => {
+    if (!demoUser) return
+    setEmail(demoUser.email)
+    setPassword(DEMO_USER_PASSWORD)
     setLoading(true)
-    const ok = await login(acc.email, acc.password)
+    const ok = await login(demoUser.email, DEMO_USER_PASSWORD)
     setLoading(false)
     if (ok) navigate('/', { replace: true })
   }
@@ -138,31 +130,38 @@ export default function LoginPage() {
                 </span>
               ) : 'Sign in'}
             </button>
+
+            <div className="flex items-center justify-between text-xs pt-1">
+              <Link to="/forgot-password" className="text-slate-400 hover:text-slate-200 transition-colors">
+                Forgot password?
+              </Link>
+              <Link to="/signup" className="text-indigo-300 hover:text-indigo-200 font-medium transition-colors">
+                Request access
+              </Link>
+            </div>
           </form>
         </div>
 
-        {/* Demo accounts */}
-        <div className="mt-4 rounded-2xl border border-white/10 p-4" style={{ background: 'rgba(255,255,255,0.03)' }}>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Demo accounts — click to fill</p>
-          <div className="space-y-1.5">
-            {demoAccounts.map((acc) => (
-              <button
-                key={acc.email}
-                type="button"
-                onClick={() => fillDemo(acc)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all text-left
-                  border border-white/8 hover:border-white/15"
-                style={{ background: 'rgba(255,255,255,0.04)' }}
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-200">{acc.name}</p>
-                  <p className="text-xs text-slate-500">{acc.role}</p>
-                </div>
-                <code className="text-xs text-slate-500 font-mono">{acc.password}</code>
-              </button>
-            ))}
+        {/* Single demo account — delete the "Demo Admin" user from Team Members to remove this shortcut */}
+        {demoUser && (
+          <div className="mt-4 rounded-2xl border border-white/10 p-4" style={{ background: 'rgba(255,255,255,0.03)' }}>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Demo account — click to sign in</p>
+            <button
+              type="button"
+              onClick={fillDemo}
+              disabled={loading}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all text-left
+                border border-white/8 hover:border-white/15 disabled:opacity-50 min-h-[44px]"
+              style={{ background: 'rgba(255,255,255,0.04)' }}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-slate-200 truncate">{demoUser.name}</p>
+                <p className="text-xs text-slate-500 truncate">Full admin access · delete to disable</p>
+              </div>
+              <code className="text-xs text-slate-500 font-mono flex-shrink-0">{DEMO_USER_PASSWORD}</code>
+            </button>
           </div>
-        </div>
+        )}
 
         <p className="text-center text-xs text-slate-700 mt-6">
           Asbury Automotive Group · Internal Use Only

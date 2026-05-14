@@ -14,18 +14,6 @@ export function AuthProvider({ children }) {
     if (!initialized) return
 
     try {
-      // headless/demo capture via URL param
-      const params = new URLSearchParams(window.location.search)
-      const autoId = params.get('autouser')
-      if (autoId) {
-        const u = getUserById(autoId)
-        if (u && u.active) {
-          setCurrentUser(u)
-          setAuthLoaded(true)
-          return
-        }
-      }
-
       const saved = localStorage.getItem('asbury_current_user')
       if (saved) {
         const parsed = JSON.parse(saved)
@@ -37,14 +25,18 @@ export function AuthProvider({ children }) {
     setAuthLoaded(true)
   }, [initialized]) // eslint-disable-line
 
+  // Only persist after auth has finished loading — otherwise the initial
+  // null state would wipe the saved login before the loader can read it.
+  // Also strip password_hash so it never lands in localStorage (security).
   useEffect(() => {
+    if (!authLoaded) return
     if (currentUser) {
       const { password_hash, ...safe } = currentUser
       localStorage.setItem('asbury_current_user', JSON.stringify(safe))
     } else {
       localStorage.removeItem('asbury_current_user')
     }
-  }, [currentUser])
+  }, [currentUser, authLoaded])
 
   const login = async (email, password) => {
     setLoginError('')

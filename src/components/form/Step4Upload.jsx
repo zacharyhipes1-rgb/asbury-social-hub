@@ -22,6 +22,38 @@ async function uploadToCloudinary(file, cfg) {
   return data.secure_url
 }
 
+// File validation — runs before any preview/upload to keep dangerous payloads out
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100 MB
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska',
+  'application/pdf',
+  'application/zip', 'application/x-zip-compressed',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+])
+const ALLOWED_EXTENSIONS = /\.(jpe?g|png|gif|webp|heic|heif|mp4|mov|webm|avi|mkv|pdf|zip|pptx?|)$/i
+
+function validateFile(file) {
+  if (!file) return 'No file selected.'
+  if (file.size > MAX_FILE_SIZE) {
+    return `File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Max ${MAX_FILE_SIZE / (1024 * 1024)} MB.`
+  }
+  if (file.size === 0) return 'File is empty.'
+  const okMime = ALLOWED_MIME_TYPES.has(file.type)
+  const okExt  = ALLOWED_EXTENSIONS.test(file.name)
+  if (!okMime && !okExt) {
+    return `Unsupported file type${file.type ? ` (${file.type})` : ''}. Allowed: images, video, PDF, ZIP, PowerPoint.`
+  }
+  // SVGs and HTML can carry script payloads; reject explicitly even if extension is allowed
+  if (/\.(svg|html?|xhtml|js|mjs|jsx?|ts|tsx|exe|bat|sh|cmd|app|dmg|msi)$/i.test(file.name)
+      || file.type === 'image/svg+xml'
+      || file.type === 'text/html') {
+    return 'That file type is not allowed for security reasons.'
+  }
+  return null
+}
+
 function FileDropZone({ onFile, currentFile, contentType }) {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -34,6 +66,10 @@ function FileDropZone({ onFile, currentFile, contentType }) {
   const handleFile = async (file) => {
     if (!file) return
     setUploadError('')
+
+    const error = validateFile(file)
+    if (error) { setUploadError(error); return }
+
     const cfg = getCloudinaryConfig()
     const hasCloudinary = !!(cfg.cloudName && cfg.uploadPreset)
 

@@ -1,8 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
 import {
   Settings, Mail, Key, Send, CheckCircle, AlertCircle, ChevronDown, ChevronUp,
-  Trash2, Clock, ExternalLink, Cloud, Image, Zap, RotateCcw, Building2, Link2
+  Trash2, Clock, ExternalLink, Cloud, Image, Zap, RotateCcw, Building2, Link2,
+  Eye, EyeOff
 } from 'lucide-react'
+
+// Field keys whose values are secrets and should be masked by default in inputs
+const SENSITIVE_FIELD_KEYS = /token|secret|password|apikey|api_key|refresh/i
 import { useAuth } from '../context/AuthContext'
 import { getNotificationLog, clearNotificationLog } from '../services/emailService'
 import { DEALERSHIPS } from '../data/dealerships'
@@ -150,6 +154,44 @@ function PlatformDot({ platform, configured }) {
   )
 }
 
+// ─── Masked input for credentials/tokens ─────────────────────────────────────
+function SecretInput({ field, value, onChange }) {
+  const { key, label, placeholder, hint } = field
+  const isSecret = SENSITIVE_FIELD_KEYS.test(key)
+  const [reveal, setReveal] = useState(false)
+  return (
+    <div>
+      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+        {label}
+      </label>
+      <div className="relative">
+        <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type={isSecret && !reveal ? 'password' : 'text'}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete="off"
+          spellCheck={false}
+          className={`w-full pl-9 ${isSecret ? 'pr-10' : 'pr-4'} py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100`}
+        />
+        {isSecret && (
+          <button
+            type="button"
+            onClick={() => setReveal(r => !r)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1"
+            title={reveal ? 'Hide' : 'Show'}
+            aria-label={reveal ? 'Hide secret' : 'Show secret'}
+          >
+            {reveal ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
+        )}
+      </div>
+      {hint && <p className="text-[11px] text-slate-400 mt-1">{hint}</p>}
+    </div>
+  )
+}
+
 // ─── Credential fields for one platform within a dealership ──────────────────
 function DealerPlatformEditor({ dealershipId, platform, allIntegrations, onSave }) {
   const stored  = allIntegrations[dealershipId]?.[platform.id] || {}
@@ -208,23 +250,13 @@ function DealerPlatformEditor({ dealershipId, platform, allIntegrations, onSave 
 
       {/* Credential inputs */}
       <div className="space-y-3">
-        {platform.fields.map(({ key, label, placeholder, hint }) => (
-          <div key={key}>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              {label}
-            </label>
-            <div className="relative">
-              <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={fields[key] || ''}
-                onChange={e => set(key, e.target.value)}
-                placeholder={placeholder}
-                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-              />
-            </div>
-            {hint && <p className="text-[11px] text-slate-400 mt-1">{hint}</p>}
-          </div>
+        {platform.fields.map(field => (
+          <SecretInput
+            key={field.key}
+            field={field}
+            value={fields[field.key] || ''}
+            onChange={(v) => set(field.key, v)}
+          />
         ))}
       </div>
 
@@ -399,16 +431,16 @@ function DemoResetButton() {
   const handleReset = async () => {
     setResetting(true)
     try {
-      // 1. Wipe all posts from Supabase
-      await supabase.from('posts').delete().neq('id', '__none__')
-      // 2. Re-seed with mock data
-      await supabase.from('posts').insert(MOCK_POSTS)
-      // 3. Clear dealership integrations
-      await supabase.from('dealership_integrations').delete().neq('dealership_id', '__none__')
+      // 1. Soft-delete every existing post (RLS denies hard DELETE for anon)
+      await supabase.from('posts').update({ approval_status: 'deleted' }).neq('id', '__none__')
+      // 2. Re-seed with mock data — upsert so re-runs don't conflict on PK
+      await supabase.from('posts').upsert(MOCK_POSTS, { onConflict: 'id' })
+      // Note: dealership_integrations are NOT wiped — clear individual rows from the UI.
+      // This prevents accidental/malicious bulk credential deletion via the anon key.
     } catch (e) {
       console.error('[DemoReset]', e)
     }
-    // 4. Clear local configs except EmailJS/Cloudinary
+    // 3. Clear local configs except EmailJS/Cloudinary
     ;['asbury_emailjs_config', 'asbury_cloudinary_config'].forEach(k => {
       const v = localStorage.getItem(k)
       localStorage.clear()

@@ -242,39 +242,39 @@ export default function AdminQueue() {
                   {post.caption && (
                     <p className="text-xs text-slate-600 mb-2.5 line-clamp-2 leading-relaxed">{post.caption}</p>
                   )}
-                  <div className="flex items-center gap-0.5 pt-2.5 border-t border-slate-100">
+                  <div className="flex items-center gap-1 pt-2.5 border-t border-slate-100 flex-wrap">
                     <button onClick={() => setViewPost(post)} title="View"
-                      className="p-2 rounded-lg text-slate-300 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-                      <Eye size={16} />
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                      <Eye size={18} />
                     </button>
                     {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                       <button onClick={() => handleAction(post, 'approve')} title="Approve"
-                        className="p-2 rounded-lg text-slate-300 hover:text-green-600 hover:bg-green-50 transition-colors">
-                        <CheckCircle size={16} />
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
+                        <CheckCircle size={18} />
                       </button>
                     )}
                     {post.approval_status === 'approved' && (
                       <button onClick={() => handlePublish(post)} title="Mark as Published"
-                        className="p-2 rounded-lg text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                        <Send size={16} />
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                        <Send size={18} />
                       </button>
                     )}
                     {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                       <button onClick={() => handleAction(post, 'flag')} title="Request revision"
-                        className="p-2 rounded-lg text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-colors">
-                        <AlertTriangle size={16} />
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                        <AlertTriangle size={18} />
                       </button>
                     )}
                     {post.approval_status !== 'deleted' && (
                       <button onClick={() => setClonePost(post)} title="Clone"
-                        className="p-2 rounded-lg text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
-                        <Copy size={16} />
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                        <Copy size={18} />
                       </button>
                     )}
                     {post.approval_status !== 'deleted' && (
                       <button onClick={() => handleAction(post, 'delete')} title="Delete"
-                        className="p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors">
-                        <Trash2 size={16} />
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                        <Trash2 size={18} />
                       </button>
                     )}
                   </div>

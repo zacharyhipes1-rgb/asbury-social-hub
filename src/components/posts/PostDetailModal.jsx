@@ -1,8 +1,9 @@
 import { format, parseISO } from 'date-fns'
 import {
   Image, Video, Layout, Type, Calendar, Circle, Music,
-  FileText, BookOpen, File, User, Clock, MapPin, Hash,
-  AlignLeft, Users, MessageSquare, CheckCircle, AlertTriangle, XCircle
+  FileText, BookOpen, File, User, Clock, MapPin,
+  AlignLeft, Users, MessageSquare, CheckCircle, AlertTriangle, XCircle,
+  Download, ExternalLink
 } from 'lucide-react'
 import Modal from '../common/Modal'
 import { StatusBadge, PlatformBadge } from '../common/Badge'
@@ -65,48 +66,109 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Media preview */}
-        {(post.file_url || post.file_preview) && (() => {
-          const src = post.file_url || post.file_preview
+        {/* Media preview — clickable + downloadable for any viewer */}
+        {(() => {
+          // Prefer file_url (hosted, cross-user). file_preview blob: URLs are session-local
+          // and won't render for other users — skip those.
+          const hostedSrc = post.file_url || (
+            post.file_preview && !post.file_preview.startsWith('blob:')
+              ? post.file_preview : null
+          )
+          const localSrc = post.file_preview
+          const src = hostedSrc || localSrc
+          if (!src && !post.file_name) return null
+
           const isVideo = post.file_type?.startsWith('video/')
-          // If it's a video type but src is a hosted image URL (thumbnail), show image + badge
-          const isBlobOrData = src.startsWith('blob:') || src.startsWith('data:')
-          const showVideoPlayer = isVideo && isBlobOrData
+          const isBlobOrData = src && (src.startsWith('blob:') || src.startsWith('data:'))
+          const showVideoPlayer = isVideo && (hostedSrc || isBlobOrData)
+          const downloadName = post.file_name || (isVideo ? 'video' : 'image')
+
+          // For hosted URLs (Cloudinary, https), use fl_attachment to force download from Cloudinary,
+          // otherwise rely on the download attribute. Cross-origin downloads may navigate instead.
+          const downloadHref = hostedSrc
+            ? (hostedSrc.includes('/upload/') && hostedSrc.includes('res.cloudinary.com')
+                ? hostedSrc.replace('/upload/', '/upload/fl_attachment/')
+                : hostedSrc)
+            : src
+
+          if (!src) {
+            return (
+              <div className="mb-5 flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="p-2.5 bg-slate-100 rounded-lg">
+                  <File size={18} className="text-slate-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 truncate">{post.file_name}</p>
+                  <p className="text-xs text-slate-500">{formatSize(post.file_size)} · {post.file_type}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">No hosted preview — configure Cloudinary in Settings to view this file.</p>
+                </div>
+              </div>
+            )
+          }
 
           return (
-            <div className="mb-5 rounded-xl overflow-hidden border border-slate-200 relative">
-              {showVideoPlayer ? (
-                <video src={src} controls className="w-full max-h-64 object-contain bg-black" />
-              ) : (
-                <>
-                  <img src={src} alt={post.alt_text || 'Post media'} className="w-full max-h-64 object-cover" />
-                  {isVideo && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
+            <div className="mb-5">
+              <div className="rounded-xl overflow-hidden border border-slate-200 relative bg-slate-50">
+                {showVideoPlayer ? (
+                  <video src={src} controls className="w-full max-h-72 object-contain bg-black" />
+                ) : (
+                  <a
+                    href={src}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block group"
+                    title="Open full-size in a new tab"
+                  >
+                    <img
+                      src={src}
+                      alt={post.alt_text || 'Post media'}
+                      className="w-full max-h-72 object-contain bg-slate-50 transition-opacity group-hover:opacity-95"
+                    />
+                    {isVideo && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                        <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
+                    )}
+                  </a>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <a
+                  href={src}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors min-h-[36px]"
+                >
+                  <ExternalLink size={12} /> View full size
+                </a>
+                <a
+                  href={downloadHref}
+                  download={downloadName}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors min-h-[36px]"
+                >
+                  <Download size={12} /> Download
+                </a>
+                {post.file_name && (
+                  <span className="text-xs text-slate-400 truncate flex-1 min-w-0">
+                    {post.file_name}{post.file_size ? ` · ${formatSize(post.file_size)}` : ''}
+                  </span>
+                )}
+              </div>
+              {!hostedSrc && localSrc && (
+                <p className="text-xs text-amber-700 mt-2 flex items-start gap-1.5">
+                  <AlertTriangle size={11} className="flex-shrink-0 mt-0.5" />
+                  This preview is only visible in the uploader's browser. Configure Cloudinary in Settings so the team can view the original file.
+                </p>
               )}
             </div>
           )
         })()}
-
-        {!post.file_url && !post.file_preview && post.file_name && (
-          <div className="mb-5 flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <div className="p-2.5 bg-slate-100 rounded-lg">
-              <File size={18} className="text-slate-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900">{post.file_name}</p>
-              <p className="text-xs text-slate-500">{formatSize(post.file_size)} · {post.file_type}</p>
-              <p className="text-xs text-slate-400 mt-0.5">Preview only available in the uploader's browser session. Configure Cloudinary in Settings to host files permanently.</p>
-            </div>
-          </div>
-        )}
 
         {/* Caption */}
         {post.caption && (

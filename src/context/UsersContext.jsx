@@ -4,8 +4,36 @@ import { hashPassword } from '../utils/auth'
 
 const UsersContext = createContext(null)
 
+const STORAGE_KEY = 'asbury_users'
+const SCHEMA_VERSION_KEY = 'asbury_users_schema'
+const SCHEMA_VERSION = 'v2-single-demo'
+
 function initials(name) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+
+// Random 32-byte hex string — used as a placeholder password for seeded real users
+// who don't have a defaultPassword. Effectively locks the account until the user
+// resets via the Forgot Password flow.
+function randomLockoutSecret() {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function seedUserFromMock(u) {
+  const secret = u.defaultPassword || randomLockoutSecret()
+  return {
+    ...u,
+    password_hash: await hashPassword(secret),
+    needs_password_reset: !u.defaultPassword,
+    active: true,
+    created_at: '2026-01-15T09:00:00.000Z',
+  }
+}
+
+function stripUiOnlyFields(users) {
+  return users.map(({ defaultPassword, ...rest }) => rest)
 }
 
 export function UsersProvider({ children }) {
@@ -14,18 +42,21 @@ export function UsersProvider({ children }) {
 
   useEffect(() => {
     const seedFromMock = () =>
-      Promise.all(
-        MOCK_USERS.map(async (u) => ({
-          ...u,
-          password_hash: await hashPassword(u.defaultPassword),
-          active: true,
-          created_at: '2026-01-15T09:00:00.000Z',
-        }))
-      ).then((hashed) => { setUsers(hashed); setInitialized(true) })
+      Promise.all(MOCK_USERS.map(seedUserFromMock))
+        .then((hashed) => { setUsers(stripUiOnlyFields(hashed)); setInitialized(true) })
         .catch(() => { setUsers([]); setInitialized(true) })
 
     try {
-      const saved = localStorage.getItem('asbury_users')
+      const storedVersion = localStorage.getItem(SCHEMA_VERSION_KEY)
+      if (storedVersion !== SCHEMA_VERSION) {
+        // Schema changed — wipe stale localStorage and re-seed from mock
+        localStorage.removeItem(STORAGE_KEY)
+        localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION)
+        seedFromMock()
+        return
+      }
+
+      const saved = localStorage.getItem(STORAGE_KEY)
       if (!saved) { seedFromMock(); return }
 
       const parsed = JSON.parse(saved)
@@ -41,22 +72,17 @@ export function UsersProvider({ children }) {
         return fix && u.title !== fix ? { ...u, title: fix } : u
       })
 
-      // Add any MOCK_USERS not yet in localStorage (always re-hashes their passwords)
+      // Add any MOCK_USERS not yet in localStorage
       const existingEmails = new Set(patched.map(u => u.email.toLowerCase()))
       const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
 
       if (missing.length > 0) {
-        Promise.all(
-          missing.map(async (u) => ({
-            ...u,
-            password_hash: await hashPassword(u.defaultPassword),
-            active: true,
-            created_at: '2026-01-15T09:00:00.000Z',
-          }))
-        ).then((newUsers) => {
-          setUsers([...newUsers, ...patched])
-          setInitialized(true)
-        }).catch(() => seedFromMock())
+        Promise.all(missing.map(seedUserFromMock))
+          .then((newUsers) => {
+            setUsers(stripUiOnlyFields([...newUsers, ...patched]))
+            setInitialized(true)
+          })
+          .catch(() => seedFromMock())
       } else {
         setUsers(patched)
         setInitialized(true)
@@ -68,11 +94,11 @@ export function UsersProvider({ children }) {
 
   useEffect(() => {
     if (initialized) {
-      localStorage.setItem('asbury_users', JSON.stringify(users))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(users))
     }
   }, [users, initialized])
 
-  const addUser = async ({ name, email, role, title, password }) => {
+  const addUser = async ({ name, email, role, title, password, active = true }) => {
     const user = {
       id: `user-${Date.now()}`,
       name,
@@ -81,11 +107,26 @@ export function UsersProvider({ children }) {
       title: title || '',
       initials: initials(name),
       password_hash: await hashPassword(password),
-      active: true,
+      active,
       created_at: new Date().toISOString(),
     }
     setUsers((prev) => [...prev, user])
     return user
+  }
+
+  const setPasswordByEmail = async (email, newPassword) => {
+    const normalized = email.trim().toLowerCase()
+    const existing = users.find(u => u.email.toLowerCase() === normalized)
+    if (!existing) return false
+    const password_hash = await hashPassword(newPassword)
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.email.toLowerCase() === normalized
+          ? { ...u, password_hash, needs_password_reset: false }
+          : u
+      )
+    )
+    return true
   }
 
   const updateUser = async (id, updates) => {
@@ -130,6 +171,7 @@ export function UsersProvider({ children }) {
         deactivateUser,
         reactivateUser,
         deleteUser,
+        setPasswordByEmail,
         getUserByEmail,
         getUserById,
         getActiveUsers,

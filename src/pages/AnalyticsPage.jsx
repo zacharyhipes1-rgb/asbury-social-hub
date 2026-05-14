@@ -336,19 +336,19 @@ export default function AnalyticsPage() {
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <th className="px-3 sm:px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Dealership
                 </th>
                 {[
-                  ['thisWeek',     'This Week'],
-                  ['total',        'Submitted'],
-                  ['approvalRate', 'Approval Rate'],
-                  ['flagged',      'Flagged'],
-                ].map(([col, label]) => (
+                  ['thisWeek',     'This Week',     null],
+                  ['total',        'Submitted',     'hidden sm:table-cell'],
+                  ['approvalRate', 'Approval Rate', null],
+                  ['flagged',      'Flagged',       'hidden sm:table-cell'],
+                ].map(([col, label, hideCls]) => (
                   <th
                     key={col}
                     onClick={() => toggleSort(col)}
-                    className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider cursor-pointer select-none hover:text-slate-600 whitespace-nowrap"
+                    className={`px-3 sm:px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider cursor-pointer select-none hover:text-slate-600 whitespace-nowrap ${hideCls || ''}`}
                   >
                     <span className="flex items-center gap-1">
                       {label}
@@ -356,10 +356,10 @@ export default function AnalyticsPage() {
                     </span>
                   </th>
                 ))}
-                <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                   Avg Review
                 </th>
-                <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                   Last Post
                 </th>
               </tr>
@@ -382,11 +382,11 @@ export default function AnalyticsPage() {
                       }`}
                     >
                       {/* Dealership name + brand badge */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800 leading-tight">{d.name}</p>
-                            <p className="text-xs text-slate-400">{d.location}</p>
+                      <td className="px-3 sm:px-4 py-3.5">
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-800 leading-tight truncate">{d.name}</p>
+                            <p className="text-xs text-slate-400 truncate">{d.location}</p>
                           </div>
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide flex-shrink-0 ${BRAND_COLORS[d.brand] || 'bg-slate-200 text-slate-600'}`}>
                             {d.brand}
@@ -395,19 +395,19 @@ export default function AnalyticsPage() {
                       </td>
 
                       {/* This week */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 sm:px-4 py-3.5">
                         <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold ${
                           d.thisWeek > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-400'
                         }`}>{d.thisWeek}</span>
                       </td>
 
                       {/* Total submitted */}
-                      <td className="px-4 py-3.5 text-sm font-semibold text-slate-700">
+                      <td className="hidden sm:table-cell px-3 sm:px-4 py-3.5 text-sm font-semibold text-slate-700">
                         {d.total || <span className="text-slate-300">—</span>}
                       </td>
 
                       {/* Approval rate */}
-                      <td className="px-4 py-3.5 min-w-[160px]">
+                      <td className="px-3 sm:px-4 py-3.5 sm:min-w-[160px]">
                         {d.approvalRate !== null
                           ? <ApprovalBar rate={d.approvalRate} />
                           : <span className="text-xs text-slate-300">No data</span>
@@ -415,21 +415,21 @@ export default function AnalyticsPage() {
                       </td>
 
                       {/* Flagged */}
-                      <td className="px-4 py-3.5">
+                      <td className="hidden sm:table-cell px-3 sm:px-4 py-3.5">
                         {d.flagged > 0
                           ? <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full">{d.flagged}</span>
                           : <span className="text-xs text-slate-300">—</span>}
                       </td>
 
                       {/* Avg review time */}
-                      <td className="px-4 py-3.5 text-sm text-slate-500 whitespace-nowrap">
+                      <td className="hidden lg:table-cell px-4 py-3.5 text-sm text-slate-500 whitespace-nowrap">
                         {d.avgReviewHrs !== null
                           ? d.avgReviewHrs < 24 ? `${d.avgReviewHrs}h` : `${Math.round(d.avgReviewHrs / 24)}d`
                           : <span className="text-slate-300">—</span>}
                       </td>
 
                       {/* Last post */}
-                      <td className="px-4 py-3.5 text-xs text-slate-400 whitespace-nowrap">
+                      <td className="hidden lg:table-cell px-4 py-3.5 text-xs text-slate-400 whitespace-nowrap">
                         {d.lastPost
                           ? formatDistanceToNow(parseISO(d.lastPost), { addSuffix: true })
                           : <span className="text-slate-300">Never</span>}

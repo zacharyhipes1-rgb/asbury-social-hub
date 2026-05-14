@@ -5,6 +5,8 @@ import { PostsProvider } from './context/PostsContext'
 import { ToastProvider } from './context/ToastContext'
 import Layout from './components/layout/Layout'
 import LoginPage from './pages/LoginPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import SignUpPage from './pages/SignUpPage'
 import DashboardPage from './pages/DashboardPage'
 import UploadPage from './pages/UploadPage'
 import CalendarPage from './pages/CalendarPage'
@@ -25,6 +27,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
       <Route
         path="/"
         element={

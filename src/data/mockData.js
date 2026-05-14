@@ -1,4 +1,19 @@
+// The single demo account is the only one with a UI-exposed default password.
+// Delete this user from the Team Members page to remove unauthenticated easy-login access.
+// Real employees seed without a default password — they must use "Forgot Password" to set one.
+export const DEMO_USER_ID = 'demo-admin'
+export const DEMO_USER_PASSWORD = 'Demo2026!'
+
 export const MOCK_USERS = [
+  {
+    id: DEMO_USER_ID,
+    email: 'demo@asburysocial.app',
+    name: 'Demo Admin',
+    role: 'admin',
+    title: 'Demo Account · Delete to remove easy access',
+    initials: 'DA',
+    defaultPassword: DEMO_USER_PASSWORD,
+  },
   {
     id: 'chad-davis',
     email: 'cdavis@asburyauto.com',
@@ -6,7 +21,6 @@ export const MOCK_USERS = [
     role: 'admin',
     title: 'DSC Sr. Manager',
     initials: 'CD',
-    defaultPassword: 'Demo2026!',
   },
   {
     id: 'zach-hipes',
@@ -15,7 +29,6 @@ export const MOCK_USERS = [
     role: 'admin',
     title: 'SEO | AEO Strategist',
     initials: 'ZH',
-    defaultPassword: 'Demo2026!',
   },
   {
     id: 'rikki-niblett',
@@ -24,7 +37,6 @@ export const MOCK_USERS = [
     role: 'social_media',
     title: 'DSC Social Specialist',
     initials: 'RN',
-    defaultPassword: 'Demo2026!',
   },
   {
     id: 'ben-mcdaniel',
@@ -33,7 +45,6 @@ export const MOCK_USERS = [
     role: 'social_media',
     title: 'DSC Social Specialist',
     initials: 'BM',
-    defaultPassword: 'Demo2026!',
   },
   {
     id: 'chatham-ashmead',
@@ -42,7 +53,6 @@ export const MOCK_USERS = [
     role: 'viewer',
     title: 'DSC Digital Advisor',
     initials: 'CA',
-    defaultPassword: 'Demo2026!',
   },
   {
     id: 'kathryn-tuck',
@@ -51,7 +61,6 @@ export const MOCK_USERS = [
     role: 'viewer',
     title: 'DSC Digital Advisor',
     initials: 'KT',
-    defaultPassword: 'Demo2026!',
   },
 ]
 

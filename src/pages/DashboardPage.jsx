@@ -36,7 +36,6 @@ function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to })
 
 function PostRow({ post, onClick, onEdit, isSocialMedia, currentUser }) {
   const { getUserByEmail } = useUsers()
-  const platform    = getPlatform(post.platform)
   const ct          = getContentType(post.platform, post.content_type)
   const ContentIcon = ICON_MAP[ct?.icon] || File
   const dealership  = DEALERSHIPS.find((d) => d.id === post.dealership_id)
@@ -84,6 +83,52 @@ function PostRow({ post, onClick, onEdit, isSocialMedia, currentUser }) {
         </div>
       </td>
     </tr>
+  )
+}
+
+function PostCard({ post, onClick, onEdit, isSocialMedia, currentUser }) {
+  const { getUserByEmail } = useUsers()
+  const ct          = getContentType(post.platform, post.content_type)
+  const ContentIcon = ICON_MAP[ct?.icon] || File
+  const dealership  = DEALERSHIPS.find((d) => d.id === post.dealership_id)
+  const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
+  const canEdit = isSocialMedia && post.approval_status === 'flagged' && post.uploaded_by === currentUser?.email
+
+  return (
+    <div
+      onClick={() => onClick(post)}
+      className="px-4 py-3.5 border-b border-slate-50 last:border-0 active:bg-slate-50 transition-colors cursor-pointer"
+    >
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-slate-800 truncate">{dealership?.name}</p>
+          <p className="text-xs text-slate-400 truncate">{dealership?.location}</p>
+        </div>
+        <StatusBadge status={post.approval_status} compact />
+      </div>
+      <div className="flex items-center gap-2 flex-wrap mb-2">
+        <PlatformBadge platformId={post.platform} compact />
+        <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
+          <ContentIcon size={11} />
+          {ct?.name}
+        </span>
+      </div>
+      {post.caption && (
+        <p className="text-sm text-slate-600 line-clamp-2 mb-2">{post.caption}</p>
+      )}
+      <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400">
+        <span className="truncate">{uploaderName}</span>
+        <span className="flex-shrink-0">Scheduled {post.scheduled_for || '—'}</span>
+      </div>
+      {canEdit && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit(post) }}
+          className="mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors min-h-[40px]"
+        >
+          <Edit size={11} /> Revise this post
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -213,7 +258,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-7">
         <StatCard
           label="This Week"
           value={thisWeekPosts.length}
@@ -356,19 +401,24 @@ export default function DashboardPage() {
 
       {/* Recent posts */}
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 gap-3">
-          <h2 className="font-semibold text-slate-900 flex-shrink-0">Recent Submissions</h2>
-          <div className="relative flex-1 max-w-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 gap-2 sm:gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-semibold text-slate-900 flex-shrink-0">Recent Submissions</h2>
+            <Link to="/calendar" className="sm:hidden text-sm text-indigo-600 font-medium flex items-center gap-1">
+              Calendar <ArrowRight size={13} />
+            </Link>
+          </div>
+          <div className="relative flex-1 sm:max-w-xs">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by dealership, caption…"
-              className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-slate-400 bg-white"
+              className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-slate-400 bg-white"
             />
           </div>
-          <Link to="/calendar" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 flex-shrink-0">
+          <Link to="/calendar" className="hidden sm:flex text-sm text-indigo-600 hover:text-indigo-700 font-medium items-center gap-1 flex-shrink-0">
             View calendar <ArrowRight size={13} />
           </Link>
         </div>
@@ -383,31 +433,47 @@ export default function DashboardPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
-                  {['Dealership', 'Platform', 'Type', 'Caption', 'Uploaded by', 'Scheduled', 'Status'].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                      {h}
-                    </th>
+          <>
+            {/* Mobile: stacked cards */}
+            <div className="lg:hidden">
+              {recentPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onClick={setSelectedPost}
+                  onEdit={(p) => navigate(`/upload?edit=${p.id}`)}
+                  isSocialMedia={isSocialMedia}
+                  currentUser={currentUser}
+                />
+              ))}
+            </div>
+            {/* Desktop: table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/60">
+                    {['Dealership', 'Platform', 'Type', 'Caption', 'Uploaded by', 'Scheduled', 'Status'].map((h) => (
+                      <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentPosts.map((post) => (
+                    <PostRow
+                      key={post.id}
+                      post={post}
+                      onClick={setSelectedPost}
+                      onEdit={(p) => navigate(`/upload?edit=${p.id}`)}
+                      isSocialMedia={isSocialMedia}
+                      currentUser={currentUser}
+                    />
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentPosts.map((post) => (
-                  <PostRow
-                    key={post.id}
-                    post={post}
-                    onClick={setSelectedPost}
-                    onEdit={(p) => navigate(`/upload?edit=${p.id}`)}
-                    isSocialMedia={isSocialMedia}
-                    currentUser={currentUser}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -155,6 +155,36 @@ function DeleteConfirmModal({ user, onClose, onConfirm }) {
   )
 }
 
+function UserActions({ user, onEdit, onToggle, onDelete, canDelete, deleteTitle, alwaysVisible = false }) {
+  return (
+    <div className={`flex items-center gap-1 ${alwaysVisible ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}>
+      <button onClick={() => onEdit(user)}
+        className="p-2 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center" title="Edit">
+        <Pencil size={15} />
+      </button>
+      <button onClick={() => onToggle(user)}
+        className={`p-2 rounded-lg transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center ${
+          user.active
+            ? 'hover:bg-amber-50 text-slate-400 hover:text-amber-600'
+            : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
+        }`} title={user.active ? 'Deactivate' : 'Reactivate'}>
+        {user.active ? <UserX size={15} /> : <UserCheck size={15} />}
+      </button>
+      <button
+        onClick={() => canDelete && onDelete(user)}
+        disabled={!canDelete}
+        title={deleteTitle}
+        className={`p-2 rounded-lg transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center ${
+          canDelete
+            ? 'hover:bg-red-50 text-slate-400 hover:text-red-600 cursor-pointer'
+            : 'text-slate-200 cursor-not-allowed'
+        }`}>
+        <Trash2 size={15} />
+      </button>
+    </div>
+  )
+}
+
 function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin, postCount }) {
   const canDelete = !isCurrentUser && !isLastAdmin
   const deleteTitle = isCurrentUser ? "You can't delete your own account"
@@ -198,33 +228,58 @@ function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin,
         </span>
       </td>
       <td className="px-5 py-4">
-        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => onEdit(user)}
-            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors" title="Edit">
-            <Pencil size={14} />
-          </button>
-          <button onClick={() => onToggle(user)}
-            className={`p-1.5 rounded-lg transition-colors ${
-              user.active
-                ? 'hover:bg-amber-50 text-slate-400 hover:text-amber-600'
-                : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
-            }`} title={user.active ? 'Deactivate' : 'Reactivate'}>
-            {user.active ? <UserX size={14} /> : <UserCheck size={14} />}
-          </button>
-          <button
-            onClick={() => canDelete && onDelete(user)}
-            disabled={!canDelete}
-            title={deleteTitle}
-            className={`p-1.5 rounded-lg transition-colors ${
-              canDelete
-                ? 'hover:bg-red-50 text-slate-400 hover:text-red-600 cursor-pointer'
-                : 'text-slate-200 cursor-not-allowed'
-            }`}>
-            <Trash2 size={14} />
-          </button>
-        </div>
+        <UserActions
+          user={user} onEdit={onEdit} onToggle={onToggle} onDelete={onDelete}
+          canDelete={canDelete} deleteTitle={deleteTitle}
+        />
       </td>
     </tr>
+  )
+}
+
+function UserCard({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin, postCount }) {
+  const canDelete = !isCurrentUser && !isLastAdmin
+  const deleteTitle = isCurrentUser ? "You can't delete your own account"
+    : isLastAdmin ? "Can't delete the only admin account"
+    : 'Delete user permanently'
+
+  return (
+    <div className="px-4 py-4 border-b border-slate-50 last:border-0">
+      <div className="flex items-start gap-3 mb-3">
+        <Avatar name={user.name} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+              <p className="text-xs text-slate-400 truncate">{user.title || '—'}</p>
+            </div>
+            <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+              user.active
+                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                : 'text-slate-500 bg-slate-50 border-slate-200'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${user.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+              {user.active ? 'Active' : 'Off'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1 truncate flex items-center gap-1">
+            <AtSign size={11} className="text-slate-400 flex-shrink-0" />
+            {user.email}
+          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <RoleBadge role={user.role} />
+            <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+              <FileText size={11} className="text-slate-400" />
+              {postCount} {postCount === 1 ? 'post' : 'posts'}
+            </span>
+          </div>
+        </div>
+      </div>
+      <UserActions
+        user={user} onEdit={onEdit} onToggle={onToggle} onDelete={onDelete}
+        canDelete={canDelete} deleteTitle={deleteTitle} alwaysVisible
+      />
+    </div>
   )
 }
 
@@ -278,23 +333,24 @@ export default function UsersPage() {
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-7">
-        <div>
+      <div className="flex items-start justify-between gap-3 mb-7">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Team Members</h1>
           <p className="text-slate-400 mt-1 text-sm">Manage user accounts, roles, and access levels</p>
         </div>
         <button
           onClick={() => setModal({ mode: 'add' })}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+          className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}
         >
           <UserPlus size={15} />
-          Add User
+          <span className="hidden sm:inline">Add User</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-7">
         {[
           { label: 'Total Users',   value: counts.total,  icon: Users,  from: 'from-slate-600', to: 'to-slate-800' },
           { label: 'Admins',        value: counts.admin,  icon: Shield, from: 'from-violet-500', to: 'to-purple-700' },
@@ -314,8 +370,8 @@ export default function UsersPage() {
       {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-          <div className="relative flex-1 max-w-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100">
+          <div className="relative flex-1 sm:max-w-xs">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={search}
@@ -324,7 +380,7 @@ export default function UsersPage() {
               className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             />
           </div>
-          <div className="flex items-center gap-1.5 ml-auto">
+          <div className="flex items-center gap-1.5 sm:ml-auto overflow-x-auto scrollbar-hide -mx-1 px-1">
             {[
               { value: 'all',        label: 'All' },
               { value: 'admin',      label: 'Admin' },
@@ -334,7 +390,7 @@ export default function UsersPage() {
               <button
                 key={f.value}
                 onClick={() => setRoleFilter(f.value)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex-shrink-0 ${
                   roleFilter === f.value
                     ? 'bg-indigo-600 text-white'
                     : 'text-slate-500 hover:bg-slate-100'
@@ -345,7 +401,25 @@ export default function UsersPage() {
             ))}
           </div>
         </div>
-        <div className="overflow-x-auto">
+        {/* Mobile: cards */}
+        <div className="lg:hidden">
+          {filtered.length === 0 ? (
+            <div className="py-16 text-center text-sm text-slate-400">No users match your search.</div>
+          ) : filtered.map(user => (
+            <UserCard
+              key={user.id}
+              user={user}
+              onEdit={u => setModal({ mode: 'edit', user: u })}
+              onToggle={handleToggle}
+              onDelete={setDeleteTarget}
+              isCurrentUser={user.id === currentUser?.id}
+              isLastAdmin={user.role === 'admin' && adminCount === 1}
+              postCount={postCountByEmail[user.email] || 0}
+            />
+          ))}
+        </div>
+        {/* Desktop: table */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
