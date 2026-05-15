@@ -8,12 +8,19 @@ export default async function handler(req, res) {
   if (!targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`
 
   try {
-    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=${strategy}`
+    const key = process.env.GOOGLE_PAGESPEED_API_KEY ? `&key=${process.env.GOOGLE_PAGESPEED_API_KEY}` : ''
+    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=${strategy}${key}`
     const response = await fetch(apiUrl, {
       signal: AbortSignal.timeout(60000),
     })
     const data = await response.json()
-    if (data.error) return res.status(400).json({ error: data.error.message || 'PageSpeed API error' })
+    if (data.error) {
+      const msg = data.error.message || 'PageSpeed API error'
+      const friendly = msg.includes('Quota exceeded')
+        ? 'Daily API quota exceeded. Add a GOOGLE_PAGESPEED_API_KEY in Vercel to get a higher limit — the key is free.'
+        : msg
+      return res.status(400).json({ error: friendly })
+    }
     return res.status(200).json(data)
   } catch (err) {
     const msg = err.name === 'TimeoutError' ? 'Request timed out — PageSpeed tests can take up to 60s' : err.message
