@@ -16,6 +16,7 @@ import AdminPage from './pages/AdminPage'
 import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import ToolsPage from './pages/ToolsPage'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { currentUser, isAdmin, authLoaded } = useAuth()
@@ -92,6 +93,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout><AssetsPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tools"
+        element={
+          <ProtectedRoute>
+            <Layout><ToolsPage /></Layout>
           </ProtectedRoute>
         }
       />
