@@ -3,7 +3,7 @@ import {
   Wrench, Search, Link2, Tag, Hash, Image, Clock,
   Globe, Zap, Share2, BarChart2, Map,
   ExternalLink, ChevronRight, Monitor, Smartphone,
-  Code2, CheckCircle, AlertCircle
+  Code2, CheckCircle, AlertCircle, FileSearch, Gauge
 } from 'lucide-react'
 
 // ── Platform constants ────────────────────────────────────────────────────────
@@ -689,16 +689,263 @@ function SchemaValidator() {
   )
 }
 
+// ── Tool: Meta Tag Inspector ──────────────────────────────────────────────────
+
+function MetaRow({ label, value }) {
+  return (
+    <div className="flex items-start gap-3 px-4 py-2.5">
+      <p className="text-[11px] font-mono text-indigo-600 font-semibold min-w-[160px] flex-shrink-0 pt-0.5 break-all">{label}</p>
+      <p className="text-xs text-slate-600 break-all">{value || <span className="text-slate-300 italic">empty</span>}</p>
+    </div>
+  )
+}
+
+function MetaGroup({ label, tags }) {
+  if (!tags.length) return null
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-100">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label} <span className="text-slate-300 font-normal">({tags.length})</span></p>
+      </div>
+      <div className="divide-y divide-slate-50">
+        {tags.map((tag, i) => {
+          const key = tag.property || tag.name || tag['http-equiv'] || 'meta'
+          return <MetaRow key={i} label={key} value={tag.content} />
+        })}
+      </div>
+    </div>
+  )
+}
+
+function MetaInspector() {
+  const [url,     setUrl]     = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result,  setResult]  = useState(null)
+  const [error,   setError]   = useState('')
+
+  const inspect = async () => {
+    setLoading(true); setError(''); setResult(null)
+    try {
+      const res = await fetch('/api/fetch-meta', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch')
+      setResult(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const cats = result ? (() => {
+    const og      = result.metas.filter(m => m.property?.startsWith('og:'))
+    const twitter = result.metas.filter(m => m.name?.startsWith('twitter:') || m.property?.startsWith('twitter:'))
+    const seo     = result.metas.filter(m => !m.property?.startsWith('og:') && !m.name?.startsWith('twitter:') && !m.property?.startsWith('twitter:') && (m.name || m.property))
+    return { og, twitter, seo }
+  })() : null
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <input
+          value={url}
+          onChange={e => { setUrl(e.target.value); setResult(null); setError('') }}
+          onKeyDown={e => e.key === 'Enter' && url.trim() && !loading && inspect()}
+          placeholder="https://asburyauto.com/dealers/crown-honda"
+          className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
+        />
+        <button
+          onClick={inspect}
+          disabled={!url.trim() || loading}
+          className="px-4 py-2.5 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+        >
+          {loading ? 'Fetching…' : 'Inspect'}
+        </button>
+      </div>
+
+      {error && <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700">{error}</div>}
+
+      {loading && (
+        <div className="bg-white border border-slate-200 rounded-xl px-4 py-8 text-center">
+          <div className="w-7 h-7 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-slate-400">Fetching {url}…</p>
+        </div>
+      )}
+
+      {result && (
+        <div className="space-y-3">
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Page Title</p>
+            {result.title
+              ? <>
+                  <p className="text-sm font-semibold text-slate-800">{result.title}</p>
+                  <p className={`text-xs mt-1 ${result.title.length > 60 ? 'text-rose-500' : 'text-slate-400'}`}>{result.title.length}/60 characters</p>
+                </>
+              : <p className="text-sm text-slate-400 italic">No title tag found</p>
+            }
+          </div>
+          <MetaGroup label="SEO" tags={cats.seo} />
+          <MetaGroup label="Open Graph" tags={cats.og} />
+          <MetaGroup label="Twitter / X Card" tags={cats.twitter} />
+          {result.jsonLdBlocks.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  Structured Data <span className="text-slate-300 font-normal">({result.jsonLdBlocks.length} block{result.jsonLdBlocks.length !== 1 ? 's' : ''})</span>
+                </p>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {result.jsonLdBlocks.map((block, i) => (
+                  <div key={i} className="px-4 py-3">
+                    <p className="text-xs font-semibold text-indigo-600 mb-1.5">
+                      {Array.isArray(block['@type']) ? block['@type'].join(', ') : block['@type'] || 'Unknown'}
+                    </p>
+                    <pre className="text-[10px] text-slate-500 overflow-x-auto leading-relaxed whitespace-pre-wrap">{JSON.stringify(block, null, 2)}</pre>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Tool: PageSpeed Score ─────────────────────────────────────────────────────
+
+function PageSpeedScore() {
+  const [url,      setUrl]      = useState('')
+  const [strategy, setStrategy] = useState('mobile')
+  const [loading,  setLoading]  = useState(false)
+  const [result,   setResult]   = useState(null)
+  const [error,    setError]    = useState('')
+
+  const run = async () => {
+    setLoading(true); setError(''); setResult(null)
+    try {
+      const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url.trim())}&strategy=${strategy}`
+      const res  = await fetch(apiUrl)
+      const data = await res.json()
+      if (data.error) throw new Error(data.error.message || 'API error')
+      setResult(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const scoreStyle = s => {
+    if (s == null) return { text: 'text-slate-400', ring: 'ring-slate-100' }
+    if (s >= 0.9)  return { text: 'text-emerald-600', ring: 'ring-emerald-200' }
+    if (s >= 0.5)  return { text: 'text-amber-600',   ring: 'ring-amber-200'   }
+    return               { text: 'text-rose-600',    ring: 'ring-rose-200'    }
+  }
+
+  const perfScore = result?.lighthouseResult?.categories?.performance?.score
+  const audits    = result?.lighthouseResult?.audits
+
+  const METRICS = [
+    { key: 'first-contentful-paint',  label: 'FCP',   desc: 'First Contentful Paint'  },
+    { key: 'largest-contentful-paint',label: 'LCP',   desc: 'Largest Contentful Paint' },
+    { key: 'speed-index',             label: 'SI',    desc: 'Speed Index'              },
+    { key: 'total-blocking-time',     label: 'TBT',   desc: 'Total Blocking Time'      },
+    { key: 'cumulative-layout-shift', label: 'CLS',   desc: 'Cumulative Layout Shift'  },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <input
+          value={url}
+          onChange={e => { setUrl(e.target.value); setResult(null); setError('') }}
+          onKeyDown={e => e.key === 'Enter' && url.trim() && !loading && run()}
+          placeholder="https://asburyauto.com"
+          className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
+        />
+        <div className="flex border border-slate-200 rounded-lg overflow-hidden">
+          {([['mobile', Smartphone], ['desktop', Monitor]]).map(([s, Icon]) => (
+            <button
+              key={s}
+              onClick={() => setStrategy(s)}
+              className={`px-3 py-2 transition-colors ${strategy === s ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+              <Icon size={14} />
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={run}
+          disabled={!url.trim() || loading}
+          className="px-4 py-2.5 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+        >
+          {loading ? 'Running…' : 'Run Test'}
+        </button>
+      </div>
+      <p className="text-xs text-slate-400">Powered by Google PageSpeed Insights · Tests can take 15–30 seconds</p>
+
+      {error && <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700">{error}</div>}
+
+      {loading && (
+        <div className="bg-white border border-slate-200 rounded-xl px-4 py-10 text-center">
+          <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Analyzing {url}…</p>
+          <p className="text-xs text-slate-400 mt-1">This usually takes 15–30 seconds</p>
+        </div>
+      )}
+
+      {result && perfScore != null && (
+        <div className="space-y-3">
+          <div className={`bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-5`}>
+            <div className={`w-16 h-16 rounded-full ring-4 ${scoreStyle(perfScore).ring} flex items-center justify-center flex-shrink-0`}>
+              <span className={`text-xl font-bold ${scoreStyle(perfScore).text}`}>{Math.round(perfScore * 100)}</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Performance</p>
+              <p className="text-xs text-slate-400 mt-0.5 capitalize">{strategy} · {result.lighthouseResult?.fetchTime ? new Date(result.lighthouseResult.fetchTime).toLocaleTimeString() : ''}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {perfScore >= 0.9 ? '✓ Good — fast for users' : perfScore >= 0.5 ? '⚠ Needs improvement' : '✗ Poor — users are impacted'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {METRICS.map(m => {
+              const audit  = audits?.[m.key]
+              const s      = audit?.score
+              const styles = scoreStyle(s)
+              return (
+                <div key={m.key} className="bg-white border border-slate-200 rounded-xl p-3 text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{m.label}</p>
+                  <p className={`text-base font-bold mt-1 ${styles.text}`}>{audit?.displayValue || '—'}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{m.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Interactive tools config ──────────────────────────────────────────────────
 
 const TOOLS = [
-  { id: 'serp',     label: 'SERP Preview',    icon: Search, desc: 'Preview how your page renders in Google results',       component: SerpPreview     },
-  { id: 'utm',      label: 'UTM Builder',     icon: Link2,  desc: 'Build tracking links for every social post',            component: UtmBuilder      },
-  { id: 'caption',  label: 'Caption Counter', icon: Tag,    desc: 'Check character and hashtag limits per platform',       component: CaptionCounter  },
-  { id: 'hashtags', label: 'Hashtag Sets',    icon: Hash,   desc: 'Pre-built hashtag collections for Asbury content',     component: HashtagPlanner  },
-  { id: 'image',    label: 'Image Sizes',     icon: Image,  desc: 'Optimal dimensions for every platform and format',     component: ImageGuide      },
-  { id: 'times',    label: 'Best Post Times', icon: Clock,  desc: 'Optimal publishing windows by platform',               component: BestTimes       },
-  { id: 'schema',   label: 'Schema Validator',icon: Code2,  desc: 'Validate JSON-LD structured data against schema.org',  component: SchemaValidator },
+  { id: 'serp',      label: 'SERP Preview',    icon: Search,      desc: 'Preview how your page renders in Google results',              component: SerpPreview     },
+  { id: 'utm',       label: 'UTM Builder',     icon: Link2,       desc: 'Build tracking links for every social post',                   component: UtmBuilder      },
+  { id: 'caption',   label: 'Caption Counter', icon: Tag,         desc: 'Check character and hashtag limits per platform',              component: CaptionCounter  },
+  { id: 'hashtags',  label: 'Hashtag Sets',    icon: Hash,        desc: 'Pre-built hashtag collections for Asbury content',            component: HashtagPlanner  },
+  { id: 'image',     label: 'Image Sizes',     icon: Image,       desc: 'Optimal dimensions for every platform and format',            component: ImageGuide      },
+  { id: 'times',     label: 'Best Post Times', icon: Clock,       desc: 'Optimal publishing windows by platform',                      component: BestTimes       },
+  { id: 'schema',    label: 'Schema Validator',icon: Code2,       desc: 'Validate JSON-LD structured data against schema.org',         component: SchemaValidator },
+  { id: 'meta',      label: 'Meta Inspector',  icon: FileSearch,  desc: 'Inspect meta tags, OG data, and structured data on any URL',  component: MetaInspector   },
+  { id: 'pagespeed', label: 'PageSpeed',       icon: Gauge,       desc: 'Check Core Web Vitals and performance scores for any URL',    component: PageSpeedScore  },
 ]
 
 // ── Resource Directory config ─────────────────────────────────────────────────
