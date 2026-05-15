@@ -5,7 +5,7 @@ import {
   eachDayOfInterval, isSameMonth
 } from 'date-fns'
 import {
-  ChevronLeft, ChevronRight, Image, Video, Layout, Type,
+  ChevronLeft, ChevronRight, ChevronDown, Image, Video, Layout, Type,
   Calendar, Circle, Music, FileText, BookOpen, File, AlertCircle, X
 } from 'lucide-react'
 import { usePosts } from '../../context/PostsContext'
@@ -595,6 +595,21 @@ export default function CalendarView() {
   const [jumpToDay, setJumpToDay]               = useState(null)
   const [dayDetailDate, setDayDetailDate]       = useState(null)
   const [tooltip, setTooltip]                   = useState(null)
+  const [dealerSearch, setDealerSearch]         = useState('')
+  const [dealerOpen, setDealerOpen]             = useState(false)
+
+  const filteredDealers = DEALERSHIPS.filter(d =>
+    d.name.toLowerCase().includes(dealerSearch.toLowerCase())
+  )
+
+  useEffect(() => {
+    if (!dealerOpen) return
+    const handler = e => {
+      if (!e.target.closest('[data-dealer-dropdown]')) setDealerOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [dealerOpen])
 
   // Called from mobile month view when user taps a date — drill into week view
   const handleMonthDaySelect = (day) => {
@@ -690,14 +705,41 @@ export default function CalendarView() {
           </div>
           {/* Dealership filter + urgent badge */}
           <div className="flex items-center gap-2">
-            <select
-              value={dealershipFilter}
-              onChange={e => setDealershipFilter(e.target.value)}
-              className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
-            >
-              <option value="all">All Dealerships</option>
-              {DEALERSHIPS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
+            <div className="relative flex-1" data-dealer-dropdown="">
+              <button
+                type="button"
+                onClick={() => setDealerOpen(o => !o)}
+                className="w-full flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-slate-400 transition-colors"
+              >
+                <span className="flex-1 text-left truncate">
+                  {dealershipFilter === 'all'
+                    ? 'All Dealerships'
+                    : DEALERSHIPS.find(d => d.id === dealershipFilter)?.name || 'Select…'}
+                </span>
+                <ChevronDown size={13} className={`text-slate-400 flex-shrink-0 transition-transform ${dealerOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {dealerOpen && (
+                <div className="absolute top-full left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="p-2 border-b border-slate-100">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={dealerSearch}
+                      onChange={e => setDealerSearch(e.target.value)}
+                      placeholder="Search dealerships…"
+                      className="w-full text-sm px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400"
+                    />
+                  </div>
+                  <div className="max-h-56 overflow-y-auto py-1">
+                    <button type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === 'all' ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter('all'); setDealerOpen(false); setDealerSearch('') }}>All Dealerships</button>
+                    {filteredDealers.map(d => (
+                      <button key={d.id} type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === d.id ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter(d.id); setDealerOpen(false); setDealerSearch('') }}>{d.name}</button>
+                    ))}
+                    {filteredDealers.length === 0 && <p className="text-xs text-slate-400 px-4 py-3">No matches</p>}
+                  </div>
+                </div>
+              )}
+            </div>
             {urgentCount > 0 && (
               <span className="flex items-center gap-1 text-xs font-medium text-red-600 whitespace-nowrap">
                 <AlertCircle size={12} />{urgentCount} urgent
@@ -743,14 +785,41 @@ export default function CalendarView() {
                 </button>
               ))}
             </div>
-            <select
-              value={dealershipFilter}
-              onChange={e => setDealershipFilter(e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
-            >
-              <option value="all">All Dealerships</option>
-              {DEALERSHIPS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
+            <div className="relative" data-dealer-dropdown="">
+              <button
+                type="button"
+                onClick={() => setDealerOpen(o => !o)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 min-w-[170px] hover:border-slate-400 transition-colors"
+              >
+                <span className="flex-1 text-left truncate">
+                  {dealershipFilter === 'all'
+                    ? 'All Dealerships'
+                    : DEALERSHIPS.find(d => d.id === dealershipFilter)?.name || 'Select…'}
+                </span>
+                <ChevronDown size={13} className={`text-slate-400 flex-shrink-0 transition-transform ${dealerOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {dealerOpen && (
+                <div className="absolute top-full left-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="p-2 border-b border-slate-100">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={dealerSearch}
+                      onChange={e => setDealerSearch(e.target.value)}
+                      placeholder="Search dealerships…"
+                      className="w-full text-sm px-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400"
+                    />
+                  </div>
+                  <div className="max-h-56 overflow-y-auto py-1">
+                    <button type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === 'all' ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter('all'); setDealerOpen(false); setDealerSearch('') }}>All Dealerships</button>
+                    {filteredDealers.map(d => (
+                      <button key={d.id} type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === d.id ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter(d.id); setDealerOpen(false); setDealerSearch('') }}>{d.name}</button>
+                    ))}
+                    {filteredDealers.length === 0 && <p className="text-xs text-slate-400 px-4 py-3">No matches</p>}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

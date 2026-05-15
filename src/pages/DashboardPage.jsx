@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval, isToday, differenceInHours } from 'date-fns'
+import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval, isToday, differenceInHours, formatDistanceToNow } from 'date-fns'
 import {
   Upload, CalendarDays, ShieldCheck, TrendingUp, Clock,
   CheckCircle, AlertTriangle, Image, Video, Layout, Type,
@@ -16,6 +16,27 @@ import { getPlatform, getContentType } from '../data/platforms'
 import { DEALERSHIPS } from '../data/dealerships'
 
 const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File }
+
+function useCountUp(target, duration = 900) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    if (target == null || typeof target !== 'number') return
+    let frame = 0
+    const totalFrames = Math.ceil(duration / 16)
+    const timer = setInterval(() => {
+      frame++
+      const progress = frame / totalFrames
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplay(Math.round(target * eased))
+      if (frame >= totalFrames) {
+        setDisplay(target)
+        clearInterval(timer)
+      }
+    }, 16)
+    return () => clearInterval(timer)
+  }, [target, duration])
+  return display
+}
 
 function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to, benchmarkLabel, benchmarkColor }) {
   const inner = (
@@ -99,8 +120,23 @@ function PostRow({ post, onClick, onEdit, isSocialMedia, currentUser }) {
         </p>
       </td>
       <td className="px-5 py-3.5 cursor-pointer" onClick={() => onClick(post)}>
-        <p className="text-xs text-slate-500">{uploaderName}</p>
-        <p className="text-xs text-slate-400">{post.uploaded_at ? format(parseISO(post.uploaded_at), 'MMM d') : '—'}</p>
+        <p className="text-xs text-slate-700">{uploaderName}</p>
+        {post.uploaded_at && (
+          <p className="text-[10px] text-slate-400 mt-0.5">
+            {formatDistanceToNow(parseISO(post.uploaded_at), { addSuffix: true })}
+          </p>
+        )}
+        {post.chad_action_at && (
+          <p className={`text-[10px] mt-0.5 font-medium ${
+            post.approval_status === 'approved'  ? 'text-emerald-600' :
+            post.approval_status === 'flagged'   ? 'text-amber-600'   :
+            'text-slate-400'
+          }`}>
+            {post.approval_status === 'approved' ? 'Approved ' :
+             post.approval_status === 'flagged'  ? 'Flagged '  : ''}
+            {formatDistanceToNow(parseISO(post.chad_action_at), { addSuffix: true })}
+          </p>
+        )}
       </td>
       <td className="px-5 py-3.5 text-sm text-slate-500 whitespace-nowrap cursor-pointer" onClick={() => onClick(post)}>
         {post.scheduled_for}
@@ -154,7 +190,11 @@ function PostCard({ post, onClick, onEdit, isSocialMedia, currentUser }) {
       )}
       <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400">
         <span className="truncate">{uploaderName}</span>
-        <span className="flex-shrink-0">Scheduled {post.scheduled_for || '—'}</span>
+        <span className="flex-shrink-0">
+          {post.uploaded_at
+            ? formatDistanceToNow(parseISO(post.uploaded_at), { addSuffix: true })
+            : post.scheduled_for || '—'}
+        </span>
       </div>
       {canEdit && (
         <button
@@ -218,6 +258,22 @@ export default function DashboardPage() {
   const dealershipsWithPosts = new Set(thisWeekPosts.map(p => p.dealership_id))
   const inactiveDealerships = DEALERSHIPS.filter(d => !dealershipsWithPosts.has(d.id))
 
+  const dealershipHealth = DEALERSHIPS.map(d => {
+    const recentPosts = activePosts.filter(p =>
+      p.dealership_id === d.id &&
+      isWithinInterval(
+        (() => { try { return parseISO(p.uploaded_at) } catch { return new Date(0) } })(),
+        weekInterval
+      )
+    )
+    const status =
+      recentPosts.length === 0                                            ? 'inactive' :
+      recentPosts.some(p => p.approval_status === 'flagged')             ? 'flagged'  :
+      recentPosts.some(p => p.approval_status === 'pending')             ? 'pending'  :
+      'active'
+    return { ...d, recentCount: recentPosts.length, status }
+  })
+
   // Search filter
   const recentPosts = useMemo(() => {
     const sorted = [...activePosts].sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))
@@ -235,6 +291,10 @@ export default function DashboardPage() {
   }, [activePosts, search])
 
   const firstName = currentUser?.name?.split(' ')[0] || 'there'
+
+  const animatedWeek    = useCountUp(thisWeekPosts.length)
+  const animatedPending = useCountUp(pendingPosts.length)
+  const animatedRate    = useCountUp(approvalRate ?? 0)
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -302,7 +362,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-7">
         <StatCard
           label="This Week"
-          value={thisWeekPosts.length}
+          value={animatedWeek}
           color="text-indigo-700"
           bgGradient="bg-gradient-to-br from-indigo-500 to-indigo-700"
           icon={CalendarDays}
@@ -311,7 +371,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Pending Approval"
-          value={pendingPosts.length}
+          value={animatedPending}
           color="text-amber-700"
           bgGradient="bg-gradient-to-br from-amber-400 to-orange-500"
           icon={Clock}
@@ -320,7 +380,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Approval Rate"
-          value={approvalRate !== null ? `${approvalRate}%` : '—'}
+          value={approvalRate !== null ? `${animatedRate}%` : '—'}
           color="text-emerald-700"
           bgGradient="bg-gradient-to-br from-emerald-400 to-teal-600"
           icon={BarChart2}
@@ -427,17 +487,31 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Inactive dealerships alert — admin only */}
-      {isAdmin && inactiveDealerships.length > 0 && (
-        <div className="flex items-start gap-3 p-4 mb-4 bg-slate-50 border border-slate-200 rounded-2xl">
-          <AlertCircle size={15} className="text-slate-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-slate-700">
-              {inactiveDealerships.length} dealership{inactiveDealerships.length !== 1 ? 's' : ''} with no content scheduled this week
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {inactiveDealerships.slice(0, 5).map(d => d.name).join(', ')}{inactiveDealerships.length > 5 ? ` +${inactiveDealerships.length - 5} more` : ''}
-            </p>
+      {/* Dealership health cards — admin only */}
+      {isAdmin && (
+        <div className="mb-7">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dealership Activity — This Week</p>
+            <p className="text-xs text-slate-400">{dealershipHealth.filter(d => d.status === 'inactive').length} inactive</p>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {dealershipHealth.map(d => (
+              <div
+                key={d.id}
+                className="flex-shrink-0 w-28 bg-white border border-slate-100 rounded-xl p-3 text-center shadow-sm"
+              >
+                <div className={`w-2.5 h-2.5 rounded-full mx-auto mb-2 ${
+                  d.status === 'active'   ? 'bg-emerald-500' :
+                  d.status === 'pending'  ? 'bg-amber-400'   :
+                  d.status === 'flagged'  ? 'bg-red-500'     :
+                  'bg-slate-200'
+                }`} />
+                <p className="text-xs font-semibold text-slate-700 leading-tight truncate" title={d.name}>
+                  {d.name.replace(/^(Nalley|David McDavid|Coggin|Crown|North Point|Plaza|Courtesy|Asbury)\s+/i, '')}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">{d.recentCount} post{d.recentCount !== 1 ? 's' : ''}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

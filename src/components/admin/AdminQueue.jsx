@@ -78,6 +78,18 @@ export default function AdminQueue() {
   const [actionState, setActionState] = useState({ post: null, action: null })
   const [clonePost, setClonePost]     = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const [flashedIds, setFlashedIds] = useState(new Set())
+
+  const flashRow = (id) => {
+    setFlashedIds(prev => new Set([...prev, id]))
+    setTimeout(() => {
+      setFlashedIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }, 1200)
+  }
 
   const filtered = posts.filter(p => {
     if (statusFilter !== 'all' && p.approval_status !== statusFilter) return false
@@ -280,7 +292,7 @@ export default function AdminQueue() {
                       <Eye size={18} />
                     </button>
                     {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
-                      <button onClick={() => handleAction(post, 'approve')} title="Approve"
+                      <button onClick={() => { handleAction(post, 'approve'); flashRow(post.id) }} title="Approve"
                         className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
                         <CheckCircle size={18} />
                       </button>
@@ -347,7 +359,12 @@ export default function AdminQueue() {
                   const hasMedia     = !!(post.file_url || post.file_preview)
 
                   return (
-                    <tr key={post.id} className="hover:bg-slate-50/70 transition-colors group">
+                    <tr
+                      key={post.id}
+                      className={`hover:bg-slate-50/70 transition-colors group ${
+                        flashedIds.has(post.id) ? 'bg-green-50' : ''
+                      }`}
+                    >
                       <td className="pl-5 pr-2 py-3.5 w-10">
                         {post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                           <input

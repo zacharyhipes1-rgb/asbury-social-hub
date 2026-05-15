@@ -22,7 +22,7 @@ function NavItem({ to, icon: Icon, label, badge, onClick }) {
       <Icon size={17} className="flex-shrink-0" />
       <span className="flex-1 leading-none">{label}</span>
       {badge > 0 && (
-        <span className="bg-indigo-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">
+        <span className="bg-indigo-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none animate-pulse">
           {badge}
         </span>
       )}
