@@ -219,7 +219,7 @@ src/
 
 | Date | Time | Hash | Change |
 |---|---|---|---|
-| May 15 | — | — | feat: Asset Library — global shared media repo with Cloudinary upload, realtime sync, admin soft-delete, FormWizard integration |
+| May 15 | — | d09f338 | feat: Asset Library — global shared media repo with Cloudinary upload, realtime sync, admin soft-delete, FormWizard integration |
 | May 1 | 4:04 PM | 8ce7c57 | fix: remove content_pillar from schema set, apply toDb to updatePost |
 | May 1 | 4:03 PM | 8be06bb | fix: strip unknown fields before Supabase insert (toDb helper) |
 | May 1 | 3:46 PM | d32a48a | fix: await addPost in FormWizard + fix polling race condition |
