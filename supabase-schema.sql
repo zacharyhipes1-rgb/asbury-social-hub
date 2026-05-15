@@ -88,3 +88,36 @@ CREATE POLICY "anon read"  ON public.dealership_integrations FOR SELECT TO anon 
 CREATE POLICY "anon write" ON public.dealership_integrations FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon update" ON public.dealership_integrations FOR UPDATE TO anon USING (true) WITH CHECK (true);
 -- DELETE again intentionally omitted
+
+
+-- ── Asset Library ────────────────────────────────────────────
+-- Global pool of reusable media (images, video, files). Any authorized
+-- user can upload; any user can reference an asset when creating a post.
+-- Soft-delete only — admins flip deleted=true; manual cleanup of
+-- Cloudinary blobs is left to ops.
+CREATE TABLE IF NOT EXISTS public.assets (
+  id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  file_name        TEXT         NOT NULL,
+  file_size        BIGINT       NOT NULL DEFAULT 0,
+  file_type        TEXT         NOT NULL DEFAULT '',
+  file_url         TEXT         NOT NULL,
+  thumbnail_url    TEXT,
+  description      TEXT         DEFAULT '',
+  uploaded_by      TEXT         NOT NULL,
+  uploaded_by_name TEXT,
+  uploaded_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  deleted          BOOLEAN      NOT NULL DEFAULT FALSE
+);
+
+ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon read"   ON public.assets;
+DROP POLICY IF EXISTS "anon insert" ON public.assets;
+DROP POLICY IF EXISTS "anon update" ON public.assets;
+
+CREATE POLICY "anon read"   ON public.assets FOR SELECT TO anon USING (true);
+CREATE POLICY "anon insert" ON public.assets FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon update" ON public.assets FOR UPDATE TO anon USING (true) WITH CHECK (true);
+-- DELETE intentionally omitted — admins soft-delete via UPDATE deleted=true
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.assets;

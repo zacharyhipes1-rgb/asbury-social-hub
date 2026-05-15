@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { usePosts } from '../../context/PostsContext'
+import { useAssets } from '../../context/AssetsContext'
 import { useToast } from '../../context/ToastContext'
 import { useUsers } from '../../context/UsersContext'
 import { notifyNewUpload } from '../../services/emailService'
@@ -67,9 +68,11 @@ export default function FormWizard() {
   const [searchParams] = useSearchParams()
   const demoStep = parseInt(searchParams.get('demo') || '0')
   const editPostId = searchParams.get('edit')
+  const assetId = searchParams.get('asset')
 
   const { currentUser } = useAuth()
   const { addPost, updatePost, getPostById } = usePosts()
+  const { getAssetById, loaded: assetsLoaded } = useAssets()
   const { addToast } = useToast()
   const { getAdmins, getSocialTeam } = useUsers()
   const navigate = useNavigate()
@@ -83,6 +86,25 @@ export default function FormWizard() {
   const [step, setStep] = useState(demoStep >= 1 && demoStep <= 5 ? demoStep : 1)
   const [formData, setFormData] = useState(initialData)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Hydrate file fields from ?asset=<id> once the Assets context has loaded.
+  // Falls back to a toast if the asset is missing (e.g., soft-deleted).
+  useEffect(() => {
+    if (!assetId || editPostId || !assetsLoaded) return
+    const asset = getAssetById(assetId)
+    if (!asset) {
+      addToast('Asset not found — it may have been removed.', 'error')
+      return
+    }
+    setFormData((prev) => ({
+      ...prev,
+      file_name:    asset.file_name,
+      file_size:    asset.file_size,
+      file_type:    asset.file_type,
+      file_url:     asset.file_url,
+      file_preview: asset.file_url,
+    }))
+  }, [assetId, editPostId, assetsLoaded, getAssetById, addToast])
 
   const updateForm = (updates) => setFormData((prev) => ({ ...prev, ...updates }))
 

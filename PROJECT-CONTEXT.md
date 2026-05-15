@@ -45,6 +45,7 @@ An internal social media content management platform built for Asbury Automotive
 | `/users` | User management | Admin only |
 | `/settings` | Settings + integrations | Admin only |
 | `/analytics` | Analytics + dealership scoreboard | All users |
+| `/assets` | Asset Library | All users |
 
 ---
 
@@ -106,10 +107,16 @@ src/
 │   ├── UploadPage.jsx               # Content submission (wraps FormWizard)
 │   ├── CalendarPage.jsx             # Content calendar
 │   ├── AnalyticsPage.jsx            # KPIs, recharts, per-dealership scoreboard
+│   ├── AssetsPage.jsx               # Asset Library page — search, upload, grid
 │   ├── UsersPage.jsx                # User management
 │   ├── SettingsPage.jsx             # Settings + per-dealership integrations
 │   └── LoginPage.jsx                # Auth screen
 ├── components/
+│   ├── assets/
+│   │   ├── AssetCard.jsx            # Thumbnail card for grid view
+│   │   ├── AssetDetailModal.jsx     # Full detail, download, use-in-post, soft-delete
+│   │   ├── AssetPickerModal.jsx     # In-wizard picker for FormWizard Step 4
+│   │   └── AssetUploadModal.jsx     # Drag-drop upload modal with validation
 │   ├── form/
 │   │   ├── FormWizard.jsx           # 5-step upload wizard controller
 │   │   ├── Step1Dealership.jsx      # Step 1: Select dealership
@@ -134,6 +141,7 @@ src/
 │       ├── Modal.jsx                # Generic modal
 │       └── Toast.jsx                # Toast notifications
 ├── context/
+│   ├── AssetsContext.jsx            # Assets state — Supabase fetch + real-time
 │   ├── AuthContext.jsx              # Auth state — login, logout, roles
 │   ├── PostsContext.jsx             # Posts state — Supabase fetch + real-time
 │   ├── UsersContext.jsx             # Users state
@@ -143,6 +151,7 @@ src/
 │   ├── platforms.js                 # Social platforms (FB, IG, TikTok, LinkedIn, etc.)
 │   └── mockData.js                  # 10 mock posts + 6 mock users (seed data)
 ├── lib/
+│   ├── cloudinary.js                # Cloudinary upload + validation helpers (shared)
 │   └── supabase.js                  # Supabase client
 ├── services/
 │   └── emailService.js              # Email notification service
@@ -189,12 +198,28 @@ src/
 | fields | JSONB | Platform-specific credentials |
 | updated_at | TIMESTAMPTZ | |
 
+### `assets` table
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | gen_random_uuid() |
+| file_name | TEXT | |
+| file_size | BIGINT | |
+| file_type | TEXT | |
+| file_url | TEXT | Cloudinary URL |
+| thumbnail_url | TEXT | Cloudinary transform URL (null for raw files) |
+| description | TEXT | Optional free-text, max 500 chars |
+| uploaded_by | TEXT | Email |
+| uploaded_by_name | TEXT | |
+| uploaded_at | TIMESTAMPTZ | |
+| deleted | BOOLEAN | Soft-delete flag — admins only |
+
 ---
 
 ## Full Update History (Git Log)
 
 | Date | Time | Hash | Change |
 |---|---|---|---|
+| May 15 | — | — | feat: Asset Library — global shared media repo with Cloudinary upload, realtime sync, admin soft-delete, FormWizard integration |
 | May 1 | 4:04 PM | 8ce7c57 | fix: remove content_pillar from schema set, apply toDb to updatePost |
 | May 1 | 4:03 PM | 8be06bb | fix: strip unknown fields before Supabase insert (toDb helper) |
 | May 1 | 3:46 PM | d32a48a | fix: await addPost in FormWizard + fix polling race condition |
@@ -242,8 +267,8 @@ src/
 
 ---
 
-## Last Known State (May 1, 2026 @ 4:04 PM)
+## Last Known State (May 15, 2026)
 
-The last work session focused entirely on the Supabase migration. The final bug fixed was `content_pillar` still existing in the form's field set despite not being a column in the Supabase `posts` table — causing silent insert failures. A `toDb()` whitelist helper was added to strip unknown fields before any Supabase write, and applied to both `addPost` (new submissions) and `updatePost` (flagged post revisions).
+Asset Library is live. The Supabase `assets` table has been created and is connected to realtime. The Asset Library page (/assets) is accessible to all authenticated users. Admins and social_media users can upload images, video, PDFs, and ZIPs (100 MB cap, Cloudinary-hosted). Any asset can be reused in a post via "Use in post" (navigates to /upload?asset=<id>) or via the "Pick from Library" button inside the upload wizard Step 4. Admins can soft-delete assets. Client-side search filters by filename and description.
 
-**To verify everything is working:** confirm a post submitted on one device/login appears on another without a page refresh.
+Cloudinary note: the upload preset must have "raw" resource type enabled for PDFs and ZIPs to upload correctly. Image and video uploads work with the standard preset.

@@ -1,5 +1,11 @@
 import { useState, useRef } from 'react'
-import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader, Bookmark, BookmarkCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader, Bookmark, BookmarkCheck, Library } from 'lucide-react'
+import {
+  validateFile,
+  uploadToCloudinary,
+  isCloudinaryConfigured,
+} from '../../lib/cloudinary'
+import AssetPickerModal from '../assets/AssetPickerModal'
 
 function getPresets() {
   try { return JSON.parse(localStorage.getItem('asbury_hashtag_presets') || '{}') } catch { return {} }
@@ -8,56 +14,11 @@ function savePresets(presets) {
   localStorage.setItem('asbury_hashtag_presets', JSON.stringify(presets))
 }
 
-function getCloudinaryConfig() {
-  try { return JSON.parse(localStorage.getItem('asbury_cloudinary_config') || '{}') } catch { return {} }
-}
-
-async function uploadToCloudinary(file, cfg) {
-  const fd = new FormData()
-  fd.append('file', file)
-  fd.append('upload_preset', cfg.uploadPreset)
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/upload`, { method: 'POST', body: fd })
-  if (!res.ok) throw new Error(await res.text())
-  const data = await res.json()
-  return data.secure_url
-}
-
-// File validation — runs before any preview/upload to keep dangerous payloads out
-const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100 MB
-const ALLOWED_MIME_TYPES = new Set([
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
-  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska',
-  'application/pdf',
-  'application/zip', 'application/x-zip-compressed',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-])
-const ALLOWED_EXTENSIONS = /\.(jpe?g|png|gif|webp|heic|heif|mp4|mov|webm|avi|mkv|pdf|zip|pptx?|)$/i
-
-function validateFile(file) {
-  if (!file) return 'No file selected.'
-  if (file.size > MAX_FILE_SIZE) {
-    return `File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Max ${MAX_FILE_SIZE / (1024 * 1024)} MB.`
-  }
-  if (file.size === 0) return 'File is empty.'
-  const okMime = ALLOWED_MIME_TYPES.has(file.type)
-  const okExt  = ALLOWED_EXTENSIONS.test(file.name)
-  if (!okMime && !okExt) {
-    return `Unsupported file type${file.type ? ` (${file.type})` : ''}. Allowed: images, video, PDF, ZIP, PowerPoint.`
-  }
-  // SVGs and HTML can carry script payloads; reject explicitly even if extension is allowed
-  if (/\.(svg|html?|xhtml|js|mjs|jsx?|ts|tsx|exe|bat|sh|cmd|app|dmg|msi)$/i.test(file.name)
-      || file.type === 'image/svg+xml'
-      || file.type === 'text/html') {
-    return 'That file type is not allowed for security reasons.'
-  }
-  return null
-}
-
 function FileDropZone({ onFile, currentFile, contentType }) {
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const inputRef = useRef(null)
 
   const isTextOnly = ['text_post', 'text_caption', 'text_update'].includes(contentType)
@@ -70,15 +31,12 @@ function FileDropZone({ onFile, currentFile, contentType }) {
     const error = validateFile(file)
     if (error) { setUploadError(error); return }
 
-    const cfg = getCloudinaryConfig()
-    const hasCloudinary = !!(cfg.cloudName && cfg.uploadPreset)
-
-    if (hasCloudinary) {
+    if (isCloudinaryConfigured()) {
       setUploading(true)
       onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: null, file_url: null })
       try {
-        const url = await uploadToCloudinary(file, cfg)
-        onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: url, file_url: url })
+        const { secure_url } = await uploadToCloudinary(file)
+        onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: secure_url, file_url: secure_url })
       } catch {
         setUploadError('Cloudinary upload failed — check your config in Settings.')
         // Fall back to local preview so the uploader can still see their file this session
@@ -90,6 +48,16 @@ function FileDropZone({ onFile, currentFile, contentType }) {
       const localPreview = await getLocalPreview(file)
       onFile({ file_name: file.name, file_size: file.size, file_type: file.type, file_preview: localPreview, file_url: null })
     }
+  }
+
+  const handlePickFromLibrary = (asset) => {
+    onFile({
+      file_name:    asset.file_name,
+      file_size:    asset.file_size,
+      file_type:    asset.file_type,
+      file_preview: asset.file_url,
+      file_url:     asset.file_url,
+    })
   }
 
   // Returns a preview URL for the file:
@@ -180,11 +148,29 @@ function FileDropZone({ onFile, currentFile, contentType }) {
           />
         </div>
       )}
+
+      {!currentFile?.file_name && (
+        <div className="flex items-center gap-2 mt-3">
+          <div className="flex-1 h-px bg-slate-100" />
+          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">or</span>
+          <div className="flex-1 h-px bg-slate-100" />
+        </div>
+      )}
+      {!currentFile?.file_name && (
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 text-sm font-medium text-slate-700 rounded-xl transition-colors min-h-[44px]"
+        >
+          <Library size={14} /> Pick from Asset Library
+        </button>
+      )}
+
       {uploadError && (
         <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><AlertCircle size={11} />{uploadError}</p>
       )}
       {!uploadError && currentFile?.file_url && (
-        <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1"><CheckCircle size={11} />Uploaded to Cloudinary — Chad can view this.</p>
+        <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1"><CheckCircle size={11} />Uploaded to Cloudinary — your team can view this.</p>
       )}
       {!uploadError && currentFile?.file_name && !currentFile?.file_url && !uploading && (
         <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
@@ -192,6 +178,12 @@ function FileDropZone({ onFile, currentFile, contentType }) {
           Preview available in this browser session. Configure Cloudinary in Settings for permanent hosting.
         </p>
       )}
+
+      <AssetPickerModal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handlePickFromLibrary}
+      />
     </div>
   )
 }

@@ -2,12 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { UsersProvider } from './context/UsersContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { PostsProvider } from './context/PostsContext'
+import { AssetsProvider } from './context/AssetsContext'
 import { ToastProvider } from './context/ToastContext'
 import Layout from './components/layout/Layout'
 import LoginPage from './pages/LoginPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import SignUpPage from './pages/SignUpPage'
 import DashboardPage from './pages/DashboardPage'
+import AssetsPage from './pages/AssetsPage'
 import UploadPage from './pages/UploadPage'
 import CalendarPage from './pages/CalendarPage'
 import AdminPage from './pages/AdminPage'
@@ -85,6 +87,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/assets"
+        element={
+          <ProtectedRoute>
+            <Layout><AssetsPage /></Layout>
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
@@ -96,9 +106,11 @@ export default function App() {
       <UsersProvider>
         <AuthProvider>
           <PostsProvider>
-            <ToastProvider>
-              <AppRoutes />
-            </ToastProvider>
+            <AssetsProvider>
+              <ToastProvider>
+                <AppRoutes />
+              </ToastProvider>
+            </AssetsProvider>
           </PostsProvider>
         </AuthProvider>
       </UsersProvider>

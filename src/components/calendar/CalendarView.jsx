@@ -6,7 +6,7 @@ import {
 } from 'date-fns'
 import {
   ChevronLeft, ChevronRight, Image, Video, Layout, Type,
-  Calendar, Circle, Music, FileText, BookOpen, File, AlertCircle
+  Calendar, Circle, Music, FileText, BookOpen, File, AlertCircle, X
 } from 'lucide-react'
 import { usePosts } from '../../context/PostsContext'
 import { DEALERSHIPS } from '../../data/dealerships'
@@ -48,7 +48,9 @@ function PostChip({ post, onClick }) {
 
   return (
     <button
-      onClick={() => onClick(post)}
+      // stopPropagation so clicking a chip inside a clickable month-view cell
+      // doesn't also open the day-detail modal.
+      onClick={(e) => { e.stopPropagation(); onClick(post) }}
       className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity mb-1 last:mb-0 truncate ${
         urgent ? 'ring-2 ring-red-400 ring-offset-1' : ''
       }`}
@@ -60,6 +62,102 @@ function PostChip({ post, onClick }) {
       <span className="truncate flex-1">{ct?.name}</span>
       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_DOT[post.approval_status] || 'bg-slate-300'}`} />
     </button>
+  )
+}
+
+// ─── Day detail modal (desktop month view drill-in) ───────────────────────────
+function DayPostsModal({ day, posts, dealershipFilter, onPostClick, onJumpToWeek, onClose }) {
+  // Listen for ESC even if open is conditional — early-return after the hook
+  useEffect(() => {
+    if (!day) return
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [day, onClose])
+
+  if (!day) return null
+
+  const dayPosts = posts.filter(p => {
+    if (p.approval_status === 'deleted') return false
+    if (dealershipFilter !== 'all' && p.dealership_id !== dealershipFilter) return false
+    try { return isSameDay(parseISO(p.scheduled_for), day) } catch { return false }
+  })
+
+  const urgentCnt = dayPosts.filter(isUrgent).length
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-8"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-100 flex-shrink-0">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+              {format(day, 'EEEE')}
+            </p>
+            <h3 className="text-lg font-semibold text-slate-900 leading-tight truncate">
+              {format(day, 'MMMM d, yyyy')}
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {dayPosts.length === 0
+                ? 'No posts scheduled'
+                : `${dayPosts.length} post${dayPosts.length !== 1 ? 's' : ''} scheduled`}
+              {urgentCnt > 0 && (
+                <span className="ml-2 text-red-600 font-medium inline-flex items-center gap-0.5">
+                  <AlertCircle size={10} />
+                  {urgentCnt} urgent
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors flex-shrink-0"
+            aria-label="Close"
+          >
+            <X size={18} />
+            <span className="sr-only">Close</span>
+          </button>
+        </div>
+
+        {/* Posts list */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {dayPosts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Calendar size={32} className="text-slate-200 mb-2" />
+              <p className="text-sm text-slate-400">Nothing scheduled for this day.</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {dayPosts.map(post => (
+                <MobilePostCard key={post.id} post={post} onClick={onPostClick} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-2 flex-shrink-0">
+          <button
+            onClick={() => { onJumpToWeek(day); onClose() }}
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            Open in week view →
+          </button>
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-white transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -411,7 +509,7 @@ function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, on
 }
 
 // ─── Desktop month view ───────────────────────────────────────────────────────
-function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
+function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick, onDayClick }) {
   const monthStart = startOfMonth(monthDate)
   const monthEnd   = endOfMonth(monthDate)
   const gridStart  = startOfWeek(monthStart, { weekStartsOn: 1 })
@@ -439,7 +537,16 @@ function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
           const todayDay  = isToday(day)
           const urgentCnt = dayPosts.filter(isUrgent).length
           return (
-            <div key={day.toISOString()} className={`bg-white min-h-[100px] p-2 ${!inMonth ? 'opacity-40' : ''}`}>
+            <div
+              key={day.toISOString()}
+              onClick={() => onDayClick(day)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onDayClick(day) } }}
+              className={`bg-white min-h-[100px] p-2 cursor-pointer hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-300 transition-colors ${
+                !inMonth ? 'opacity-40' : ''
+              }`}
+            >
               <div className="flex items-center justify-between mb-1">
                 <span className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
                   todayDay ? 'bg-blue-600 text-white' : 'text-slate-700'
@@ -457,7 +564,12 @@ function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick }) {
                   <PostChip key={post.id} post={post} onClick={onPostClick} />
                 ))}
                 {dayPosts.length > 3 && (
-                  <p className="text-xs text-slate-400 pl-1">+{dayPosts.length - 3} more</p>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDayClick(day) }}
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:underline pl-1 mt-0.5"
+                  >
+                    +{dayPosts.length - 3} more
+                  </button>
                 )}
               </div>
             </div>
@@ -477,9 +589,19 @@ export default function CalendarView() {
   const [dealershipFilter, setDealershipFilter] = useState('all')
   const [dragState, setDragState]               = useState({ post: null, overCell: null })
   const [jumpToDay, setJumpToDay]               = useState(null)
+  const [dayDetailDate, setDayDetailDate]       = useState(null)
 
   // Called from mobile month view when user taps a date — drill into week view
   const handleMonthDaySelect = (day) => {
+    setWeekStart(startOfWeek(day, { weekStartsOn: 1 }))
+    setJumpToDay(day)
+    setViewMode('week')
+  }
+
+  // Called from desktop month view when user clicks a day cell or "+N more"
+  // Opens a modal listing every post for that day instead of switching views,
+  // so the user keeps their month-level context.
+  const handleDayDetailJumpToWeek = (day) => {
     setWeekStart(startOfWeek(day, { weekStartsOn: 1 }))
     setJumpToDay(day)
     setViewMode('week')
@@ -693,6 +815,7 @@ export default function CalendarView() {
           posts={posts}
           dealershipFilter={dealershipFilter}
           onPostClick={setSelectedPost}
+          onDayClick={setDayDetailDate}
           className="hidden lg:flex flex-col flex-1"
         />
       ) : (
@@ -767,6 +890,15 @@ export default function CalendarView() {
       )}
 
       <PostDetailModal post={selectedPost} isOpen={!!selectedPost} onClose={() => setSelectedPost(null)} />
+
+      <DayPostsModal
+        day={dayDetailDate}
+        posts={posts}
+        dealershipFilter={dealershipFilter}
+        onPostClick={(p) => { setDayDetailDate(null); setSelectedPost(p) }}
+        onJumpToWeek={handleDayDetailJumpToWeek}
+        onClose={() => setDayDetailDate(null)}
+      />
     </div>
   )
 }

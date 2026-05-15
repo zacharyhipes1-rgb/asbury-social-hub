@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, CalendarDays, ShieldCheck, X,
-  Users, Settings, BarChart2
+  Users, Settings, BarChart2, Library
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { usePosts } from '../../context/PostsContext'
@@ -69,11 +69,10 @@ export default function Sidebar({ onClose }) {
         <NavItem to="/calendar" icon={CalendarDays} label="Content Calendar" onClick={onClose} />
         <NavItem to="/analytics" icon={BarChart2} label="Analytics" onClick={onClose} />
 
+        <SectionLabel>Content</SectionLabel>
+        <NavItem to="/assets" icon={Library} label="Asset Library" onClick={onClose} />
         {isSocialMedia && (
-          <>
-            <SectionLabel>Content</SectionLabel>
-            <NavItem to="/upload" icon={Upload} label="Upload Content" onClick={onClose} />
-          </>
+          <NavItem to="/upload" icon={Upload} label="Upload Content" onClick={onClose} />
         )}
 
         {isAdmin && (
