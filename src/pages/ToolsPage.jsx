@@ -2,7 +2,8 @@ import { useState } from 'react'
 import {
   Wrench, Search, Link2, Tag, Hash, Image, Clock,
   Globe, Zap, Share2, BarChart2, Map,
-  ExternalLink, ChevronRight, Monitor, Smartphone
+  ExternalLink, ChevronRight, Monitor, Smartphone,
+  Code2, CheckCircle, AlertCircle
 } from 'lucide-react'
 
 // ── Platform constants ────────────────────────────────────────────────────────
@@ -500,6 +501,194 @@ function HashtagPlanner() {
   )
 }
 
+// ── Tool: Schema Validator ────────────────────────────────────────────────────
+
+const SCHEMA_RULES = {
+  LocalBusiness:  { required: ['name', 'address'], recommended: ['telephone', 'url', 'openingHours', 'priceRange', 'geo', 'sameAs'] },
+  AutoDealer:     { required: ['name', 'address'], recommended: ['telephone', 'url', 'openingHours', 'priceRange', 'geo', 'sameAs', 'hasMap'] },
+  Organization:   { required: ['name'],            recommended: ['url', 'logo', 'contactPoint', 'address', 'sameAs', 'telephone'] },
+  Corporation:    { required: ['name'],            recommended: ['url', 'logo', 'address', 'sameAs'] },
+  WebPage:        { required: ['name'],            recommended: ['url', 'description', 'breadcrumb', 'dateModified'] },
+  WebSite:        { required: ['name', 'url'],     recommended: ['potentialAction', 'description'] },
+  Article:        { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'publisher', 'dateModified', 'description'],
+    custom: (s, e, w) => { if (s.headline?.length > 110) w.push(`headline is ${s.headline.length} chars — Google truncates at 110`) } },
+  NewsArticle:    { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'publisher', 'dateModified', 'description'] },
+  BlogPosting:    { required: ['headline', 'author', 'datePublished'], recommended: ['image', 'publisher', 'dateModified', 'description'] },
+  Product:        { required: ['name'],            recommended: ['description', 'image', 'brand', 'offers', 'sku', 'aggregateRating'] },
+  Vehicle:        { required: ['name'],            recommended: ['description', 'image', 'brand', 'offers', 'vehicleIdentificationNumber', 'mileageFromOdometer'] },
+  Offer:          { required: ['price', 'priceCurrency'], recommended: ['availability', 'url', 'priceValidUntil', 'itemCondition'] },
+  Review:         { required: ['itemReviewed', 'reviewRating', 'author'], recommended: ['datePublished', 'reviewBody', 'publisher'] },
+  AggregateRating:{ required: ['ratingValue'],     recommended: ['bestRating', 'worstRating'],
+    custom: (s, e) => { if (!s.reviewCount && !s.ratingCount) e.push('AggregateRating requires reviewCount or ratingCount') } },
+  Event:          { required: ['name', 'startDate', 'location'], recommended: ['endDate', 'description', 'image', 'organizer', 'eventStatus'] },
+  Person:         { required: ['name'],            recommended: ['url', 'email', 'jobTitle', 'affiliation', 'sameAs', 'image'] },
+  Service:        { required: ['name'],            recommended: ['description', 'provider', 'serviceType', 'areaServed', 'url'] },
+  FAQPage: {
+    required: ['mainEntity'], recommended: [],
+    custom: (s, e, w) => {
+      const items = s.mainEntity
+      if (!Array.isArray(items) || !items.length) { e.push('mainEntity must be a non-empty array of Question objects'); return }
+      items.forEach((q, i) => {
+        if (q['@type'] !== 'Question') w.push(`mainEntity[${i}] should have @type "Question"`)
+        if (!q.name) e.push(`mainEntity[${i}] missing required property: name`)
+        if (!q.acceptedAnswer) e.push(`mainEntity[${i}] missing required property: acceptedAnswer`)
+        else if (!q.acceptedAnswer.text) e.push(`mainEntity[${i}].acceptedAnswer missing required property: text`)
+      })
+    },
+  },
+  BreadcrumbList: {
+    required: ['itemListElement'], recommended: [],
+    custom: (s, e) => {
+      const items = s.itemListElement
+      if (!Array.isArray(items) || !items.length) { e.push('itemListElement must be a non-empty array of ListItem objects'); return }
+      items.forEach((item, i) => {
+        if (item.position == null) e.push(`itemListElement[${i}] missing required property: position`)
+        if (!item.name && !item.item) e.push(`itemListElement[${i}] must have name or item`)
+      })
+    },
+  },
+}
+
+const KNOWN_TYPES = new Set([
+  ...Object.keys(SCHEMA_RULES),
+  'PostalAddress', 'GeoCoordinates', 'ImageObject', 'VideoObject', 'ContactPoint',
+  'OpeningHoursSpecification', 'Rating', 'ListItem', 'Question', 'Answer',
+  'ItemList', 'SearchAction', 'ReadAction', 'EntryPoint', 'AggregateOffer',
+  'PropertyValue', 'MonetaryAmount', 'QuantitativeValue', 'Distance',
+])
+
+function validateOneSchema(schema) {
+  const errors = [], warnings = []
+  const ctx = schema['@context']
+  if (!ctx) {
+    errors.push('Missing @context — should be "https://schema.org"')
+  } else if (!['https://schema.org', 'http://schema.org', 'https://schema.org/', 'http://schema.org/'].includes(ctx)) {
+    warnings.push(`Unexpected @context: "${ctx}" — use "https://schema.org"`)
+  }
+  const type = Array.isArray(schema['@type']) ? schema['@type'][0] : schema['@type']
+  if (!type) { errors.push('Missing @type'); return { errors, warnings, type: null } }
+  if (!KNOWN_TYPES.has(type)) warnings.push(`"${type}" is not a recognized schema.org type — verify spelling`)
+  const rules = SCHEMA_RULES[type]
+  if (rules) {
+    rules.required?.forEach(p => { if (schema[p] == null) errors.push(`Missing required property: ${p}`) })
+    rules.recommended?.forEach(p => { if (schema[p] == null) warnings.push(`Missing recommended property: ${p}`) })
+    rules.custom?.(schema, errors, warnings)
+  }
+  return { errors, warnings, type }
+}
+
+function SchemaValidator() {
+  const [input, setInput]   = useState('')
+  const [results, setResults] = useState(null)
+  const [parseErr, setParseErr] = useState('')
+
+  const prettify = () => {
+    try { setInput(JSON.stringify(JSON.parse(input.trim()), null, 2)); setParseErr('') }
+    catch (e) { setParseErr(`Invalid JSON: ${e.message}`) }
+  }
+
+  const clear = () => { setInput(''); setResults(null); setParseErr('') }
+
+  const validate = () => {
+    setParseErr(''); setResults(null)
+    let parsed
+    try { parsed = JSON.parse(input.trim()) }
+    catch (e) { setParseErr(`Invalid JSON: ${e.message}`); return }
+    const schemas = Array.isArray(parsed) ? parsed : [parsed]
+    setResults(schemas.map((s, i) => ({ index: i, ...validateOneSchema(s) })))
+  }
+
+  const totalErrors   = results?.reduce((n, r) => n + r.errors.length, 0) ?? 0
+  const totalWarnings = results?.reduce((n, r) => n + r.warnings.length, 0) ?? 0
+  const isValid = results && totalErrors === 0
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">JSON-LD Markup</label>
+          <div className="flex gap-2">
+            <button onClick={prettify} disabled={!input.trim()} className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition-colors">Format</button>
+            <button onClick={clear}    disabled={!input}        className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition-colors">Clear</button>
+          </div>
+        </div>
+        <textarea
+          value={input}
+          onChange={e => { setInput(e.target.value); setResults(null); setParseErr('') }}
+          placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "AutoDealer",\n  "name": "Crown Honda",\n  "address": { "@type": "PostalAddress", "addressLocality": "Dublin", "addressRegion": "OH" }\n}'}
+          rows={10}
+          spellCheck={false}
+          className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors resize-none font-mono text-slate-700 leading-relaxed"
+        />
+        {parseErr && <p className="text-xs text-rose-600 mt-1 font-medium">{parseErr}</p>}
+      </div>
+
+      <button
+        onClick={validate}
+        disabled={!input.trim()}
+        className="w-full py-2.5 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+      >
+        Validate Schema
+      </button>
+
+      {results && (
+        <div className="space-y-3">
+          <div className={`rounded-xl px-4 py-3 flex items-center gap-3 border ${isValid ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isValid ? 'bg-emerald-100' : 'bg-rose-100'}`}>
+              {isValid
+                ? <CheckCircle size={16} className="text-emerald-600" />
+                : <AlertCircle size={16} className="text-rose-600" />}
+            </div>
+            <div>
+              <p className={`text-sm font-semibold ${isValid ? 'text-emerald-800' : 'text-rose-800'}`}>
+                {isValid ? 'Valid schema' : `${totalErrors} error${totalErrors !== 1 ? 's' : ''} found`}
+              </p>
+              <p className={`text-xs ${isValid ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {totalWarnings > 0 ? `${totalWarnings} warning${totalWarnings !== 1 ? 's' : ''}${isValid ? ' — consider adding recommended properties' : ''}` : isValid ? 'No issues detected' : ''}
+              </p>
+            </div>
+          </div>
+
+          {results.map((r, i) => (
+            <div key={i} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {r.type || 'Unknown type'}
+                    {results.length > 1 && <span className="text-slate-400 font-normal ml-2">#{i + 1}</span>}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {r.errors.length === 0 && r.warnings.length === 0 ? '✓ No issues' : `${r.errors.length} error${r.errors.length !== 1 ? 's' : ''} · ${r.warnings.length} warning${r.warnings.length !== 1 ? 's' : ''}`}
+                  </p>
+                </div>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.errors.length === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                  {r.errors.length === 0 ? 'Pass' : 'Fail'}
+                </span>
+              </div>
+              {(r.errors.length > 0 || r.warnings.length > 0) && (
+                <div className="divide-y divide-slate-50">
+                  {r.errors.map((msg, j) => (
+                    <div key={`e${j}`} className="flex items-start gap-2.5 px-4 py-2.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0 mt-1.5" />
+                      <p className="text-xs text-slate-700">{msg}</p>
+                    </div>
+                  ))}
+                  {r.warnings.map((msg, j) => (
+                    <div key={`w${j}`} className="flex items-start gap-2.5 px-4 py-2.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 mt-1.5" />
+                      <p className="text-xs text-slate-600">{msg}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Interactive tools config ──────────────────────────────────────────────────
 
 const TOOLS = [
@@ -509,6 +698,7 @@ const TOOLS = [
   { id: 'hashtags', label: 'Hashtag Sets',    icon: Hash,   desc: 'Pre-built hashtag collections for Asbury content',     component: HashtagPlanner  },
   { id: 'image',    label: 'Image Sizes',     icon: Image,  desc: 'Optimal dimensions for every platform and format',     component: ImageGuide      },
   { id: 'times',    label: 'Best Post Times', icon: Clock,  desc: 'Optimal publishing windows by platform',               component: BestTimes       },
+  { id: 'schema',   label: 'Schema Validator',icon: Code2,  desc: 'Validate JSON-LD structured data against schema.org',  component: SchemaValidator },
 ]
 
 // ── Resource Directory config ─────────────────────────────────────────────────
