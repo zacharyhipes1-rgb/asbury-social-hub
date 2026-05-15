@@ -40,7 +40,7 @@ const STATUS_BADGE = {
 }
 
 // ─── Desktop post chip (week/month table cells) ───────────────────────────────
-function PostChip({ post, onClick }) {
+function PostChip({ post, onClick, onSetTooltip }) {
   const platform    = getPlatform(post.platform)
   const ct          = getContentType(post.platform, post.content_type)
   const ContentIcon = ICON_MAP[ct?.icon] || File
@@ -48,9 +48,13 @@ function PostChip({ post, onClick }) {
 
   return (
     <button
-      // stopPropagation so clicking a chip inside a clickable month-view cell
-      // doesn't also open the day-detail modal.
       onClick={(e) => { e.stopPropagation(); onClick(post) }}
+      onMouseEnter={e => {
+        if (!onSetTooltip) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        onSetTooltip({ post, x: Math.min(rect.left, window.innerWidth - 240), y: rect.bottom + 8 })
+      }}
+      onMouseLeave={() => onSetTooltip && onSetTooltip(null)}
       className={`w-full text-left px-2 py-1.5 rounded-lg text-xs font-medium text-white flex items-center gap-1.5 hover:opacity-90 transition-opacity mb-1 last:mb-0 truncate ${
         urgent ? 'ring-2 ring-red-400 ring-offset-1' : ''
       }`}
@@ -383,7 +387,7 @@ function MobileMonthView({ monthDate, posts, dealershipFilter, onPostClick, onDa
 }
 
 // ─── Single-dealership full-week column view ──────────────────────────────────
-function SingleDealershipWeekView({ dealership, weekDays, posts, onPostClick, dragState, onDragStart, onDragOver, onDrop }) {
+function SingleDealershipWeekView({ dealership, weekDays, posts, onPostClick, dragState, onDragStart, onDragOver, onDrop, onSetTooltip }) {
   const dealershipPosts = posts.filter(
     p => p.dealership_id === dealership.id && p.approval_status !== 'deleted'
   )
@@ -432,7 +436,7 @@ function SingleDealershipWeekView({ dealership, weekDays, posts, onPostClick, dr
             <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
               {dayPosts.map(post => (
                 <div key={post.id} draggable onDragStart={() => onDragStart(post)} className="cursor-grab active:cursor-grabbing">
-                  <PostChip post={post} onClick={onPostClick} />
+                  <PostChip post={post} onClick={onPostClick} onSetTooltip={onSetTooltip} />
                 </div>
               ))}
             </div>
@@ -444,7 +448,7 @@ function SingleDealershipWeekView({ dealership, weekDays, posts, onPostClick, dr
 }
 
 // ─── Desktop week view ────────────────────────────────────────────────────────
-function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, onDragStart, onDragOver, onDrop }) {
+function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, onDragStart, onDragOver, onDrop, onSetTooltip }) {
   const dealershipPosts = posts.filter(
     p => p.dealership_id === dealership.id && p.approval_status !== 'deleted'
   )
@@ -491,7 +495,7 @@ function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, on
             {dayPosts.length > 0 ? (
               dayPosts.map(post => (
                 <div key={post.id} draggable onDragStart={() => onDragStart(post)} className="cursor-grab active:cursor-grabbing">
-                  <PostChip post={post} onClick={onPostClick} />
+                  <PostChip post={post} onClick={onPostClick} onSetTooltip={onSetTooltip} />
                 </div>
               ))
             ) : (
@@ -509,7 +513,7 @@ function DealershipRow({ dealership, weekDays, posts, onPostClick, dragState, on
 }
 
 // ─── Desktop month view ───────────────────────────────────────────────────────
-function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick, onDayClick }) {
+function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick, onDayClick, onSetTooltip }) {
   const monthStart = startOfMonth(monthDate)
   const monthEnd   = endOfMonth(monthDate)
   const gridStart  = startOfWeek(monthStart, { weekStartsOn: 1 })
@@ -561,7 +565,7 @@ function DesktopMonthView({ monthDate, posts, dealershipFilter, onPostClick, onD
               </div>
               <div className="space-y-0.5">
                 {dayPosts.slice(0, 3).map(post => (
-                  <PostChip key={post.id} post={post} onClick={onPostClick} />
+                  <PostChip key={post.id} post={post} onClick={onPostClick} onSetTooltip={onSetTooltip} />
                 ))}
                 {dayPosts.length > 3 && (
                   <button
@@ -590,6 +594,7 @@ export default function CalendarView() {
   const [dragState, setDragState]               = useState({ post: null, overCell: null })
   const [jumpToDay, setJumpToDay]               = useState(null)
   const [dayDetailDate, setDayDetailDate]       = useState(null)
+  const [tooltip, setTooltip]                   = useState(null)
 
   // Called from mobile month view when user taps a date — drill into week view
   const handleMonthDaySelect = (day) => {
@@ -816,6 +821,7 @@ export default function CalendarView() {
           dealershipFilter={dealershipFilter}
           onPostClick={setSelectedPost}
           onDayClick={setDayDetailDate}
+          onSetTooltip={setTooltip}
           className="hidden lg:flex flex-col flex-1"
         />
       ) : (
@@ -838,6 +844,7 @@ export default function CalendarView() {
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
+              onSetTooltip={setTooltip}
             />
           </div>
         ) : (
@@ -881,12 +888,59 @@ export default function CalendarView() {
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
+                    onSetTooltip={setTooltip}
                   />
                 ))}
               </tbody>
             </table>
           </div>
         )
+      )}
+
+      {tooltip && (
+        <div
+          className="fixed z-50 w-56 bg-white border border-slate-200 rounded-xl shadow-xl p-3 pointer-events-none"
+          style={{ left: tooltip.x, top: tooltip.y }}
+        >
+          {(tooltip.post.file_url || tooltip.post.file_preview) &&
+           !tooltip.post.file_type?.startsWith('application/') && (
+            <div className="w-full h-28 rounded-lg overflow-hidden mb-2 bg-slate-100">
+              {tooltip.post.file_type?.startsWith('video/') ? (
+                <video
+                  src={tooltip.post.file_url || tooltip.post.file_preview}
+                  className="w-full h-full object-cover"
+                  muted
+                />
+              ) : (
+                <img
+                  src={tooltip.post.file_url || tooltip.post.file_preview}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+          )}
+          <p className="text-xs text-slate-700 leading-snug mb-2">
+            {tooltip.post.caption
+              ? `${tooltip.post.caption.slice(0, 90)}${tooltip.post.caption.length > 90 ? '…' : ''}`
+              : <span className="italic text-slate-400">No caption</span>
+            }
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-slate-400 truncate">
+              {tooltip.post.uploaded_by_name || tooltip.post.uploaded_by}
+            </span>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
+              tooltip.post.approval_status === 'approved'  ? 'bg-green-100 text-green-700'  :
+              tooltip.post.approval_status === 'pending'   ? 'bg-amber-100 text-amber-700'  :
+              tooltip.post.approval_status === 'flagged'   ? 'bg-red-100 text-red-700'      :
+              tooltip.post.approval_status === 'published' ? 'bg-blue-100 text-blue-700'    :
+              'bg-slate-100 text-slate-600'
+            }`}>
+              {tooltip.post.approval_status}
+            </span>
+          </div>
+        </div>
       )}
 
       <PostDetailModal post={selectedPost} isOpen={!!selectedPost} onClose={() => setSelectedPost(null)} />

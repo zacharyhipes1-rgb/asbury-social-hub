@@ -2,7 +2,8 @@ import { useMemo, useState, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import {
   format, parseISO, subWeeks, startOfWeek, endOfWeek,
-  isWithinInterval, differenceInHours, subMonths, formatDistanceToNow
+  isWithinInterval, differenceInHours, subMonths, formatDistanceToNow,
+  subDays, startOfDay
 } from 'date-fns'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -236,6 +237,32 @@ export default function AnalyticsPage() {
     return { ...totals, engRate, count: published.length }
   }, [drillPosts])
 
+  // Weekly bar chart — last 7 days
+  const weeklyData = Array.from({ length: 7 }, (_, i) => {
+    const day = subDays(new Date(), 6 - i)
+    const dayStart = startOfDay(day).getTime()
+    const dayEnd = dayStart + 86_400_000
+    return {
+      day: format(day, 'EEE'),
+      posts: posts.filter(p => {
+        const t = new Date(p.uploaded_at).getTime()
+        return t >= dayStart && t < dayEnd
+      }).length
+    }
+  })
+
+  // Platform donut
+  const platformCounts = posts.reduce((acc, p) => {
+    if (p.approval_status === 'deleted') return acc
+    acc[p.platform] = (acc[p.platform] || 0) + 1
+    return acc
+  }, {})
+  const platformData = Object.entries(platformCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+
+  const CHART_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899']
+
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
 
@@ -316,6 +343,65 @@ export default function AnalyticsPage() {
             {b}
           </button>
         ))}
+      </div>
+
+      {/* ── Charts ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Weekly submissions */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <p className="text-sm font-semibold text-slate-700 mb-4">Submissions — Last 7 Days</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={weeklyData} barSize={30}>
+              <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={20} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                cursor={{ fill: '#f1f5f9' }}
+              />
+              <Bar dataKey="posts" fill="#6366f1" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Platform breakdown */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <p className="text-sm font-semibold text-slate-700 mb-4">By Platform</p>
+          {platformData.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-12">No data yet</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={platformData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={48}
+                  outerRadius={72}
+                  dataKey="value"
+                  paddingAngle={2}
+                >
+                  {platformData.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: 'none' }}
+                  formatter={(value, name) => [value, name]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+          {platformData.length > 0 && (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 justify-center">
+              {platformData.map((d, i) => (
+                <span key={d.name} className="flex items-center gap-1 text-xs text-slate-500">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                  {d.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Dealership Scoreboard ── */}

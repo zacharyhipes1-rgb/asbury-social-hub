@@ -293,6 +293,35 @@ const PLATFORM_CAPTION = {
 export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
   const isTextOnly = ['text_post', 'text_caption', 'text_update'].includes(data.content_type)
   const needsAltText = ['single_image', 'carousel', 'stories'].includes(data.content_type)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiCaptions, setAiCaptions] = useState([])
+  const [aiError, setAiError] = useState('')
+  const [aiContext, setAiContext] = useState('')
+
+  const handleGenerateCaptions = async () => {
+    setAiLoading(true)
+    setAiError('')
+    setAiCaptions([])
+    try {
+      const res = await fetch('/api/generate-caption', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          dealership: data.dealership_ids?.[0] || data.dealership_id || '',
+          platform: data.platforms?.[0] || data.platform || '',
+          contentType: data.content_type || '',
+          context: aiContext.trim(),
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Generation failed')
+      setAiCaptions(json.captions || [])
+    } catch (err) {
+      setAiError(err.message || 'Something went wrong')
+    } finally {
+      setAiLoading(false)
+    }
+  }
   // Multi-select aware: fall back to legacy singular fields when present
   const platformIds   = data.platforms?.length      ? data.platforms      : (data.platform      ? [data.platform]      : [])
   const dealershipIds = data.dealership_ids?.length ? data.dealership_ids : (data.dealership_id ? [data.dealership_id] : [])
@@ -360,6 +389,49 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
               {data.caption.length}/{platformCaption.limit}
               {data.caption.length > platformCaption.soft && ` · over ${platformCaption.soft} soft limit`}
             </p>
+          </div>
+
+          {/* AI Caption Generator */}
+          <div className="mt-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Generate with AI</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={aiContext}
+                onChange={e => setAiContext(e.target.value)}
+                placeholder="Optional context (e.g. 'weekend sale, family SUVs')…"
+                className="flex-1 text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400 bg-white"
+              />
+              <button
+                type="button"
+                onClick={handleGenerateCaptions}
+                disabled={aiLoading}
+                className="px-3 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors"
+              >
+                {aiLoading ? 'Generating…' : 'Generate'}
+              </button>
+            </div>
+            {aiError && (
+              <p className="text-xs text-red-500 mt-2">{aiError}</p>
+            )}
+            {aiCaptions.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {aiCaptions.map((caption, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      onUpdate({ caption })
+                      setAiCaptions([])
+                    }}
+                    className="w-full text-left text-sm p-3 bg-white border border-indigo-100 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 transition-all leading-relaxed"
+                  >
+                    {caption}
+                  </button>
+                ))}
+                <p className="text-xs text-slate-400">Click any option to use it as your caption.</p>
+              </div>
+            )}
           </div>
         </div>
 

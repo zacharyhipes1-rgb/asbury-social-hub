@@ -17,7 +17,7 @@ import { DEALERSHIPS } from '../data/dealerships'
 
 const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File }
 
-function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to }) {
+function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to, benchmarkLabel, benchmarkColor }) {
   const inner = (
     <div className={`bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-sm transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
       <div className="flex items-start justify-between mb-3">
@@ -29,6 +29,20 @@ function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to })
       <p className={`text-2xl sm:text-3xl font-bold tracking-tight ${color}`}>{value}</p>
       <p className="text-xs sm:text-sm font-medium text-slate-700 mt-1">{label}</p>
       {subtitle && <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">{subtitle}</p>}
+      {benchmarkLabel && (
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            benchmarkColor === 'green' ? 'bg-emerald-500' :
+            benchmarkColor === 'amber' ? 'bg-amber-400' :
+            'bg-red-500'
+          }`} />
+          <span className={`text-xs font-medium ${
+            benchmarkColor === 'green' ? 'text-emerald-600' :
+            benchmarkColor === 'amber' ? 'text-amber-600' :
+            'text-red-600'
+          }`}>{benchmarkLabel}</span>
+        </div>
+      )}
     </div>
   )
   return to ? <Link to={to}>{inner}</Link> : inner
@@ -195,6 +209,11 @@ export default function DashboardPage() {
     return Math.round(total / resolved.length)
   }, [activePosts])
 
+  const reviewBenchmark = avgApprovalHours === null ? null :
+    avgApprovalHours <= 12 ? { label: 'On target', color: 'green' } :
+    avgApprovalHours <= 24 ? { label: 'Monitor', color: 'amber' } :
+    { label: 'Needs attention', color: 'red' }
+
   // Dealerships with no posts this week
   const dealershipsWithPosts = new Set(thisWeekPosts.map(p => p.dealership_id))
   const inactiveDealerships = DEALERSHIPS.filter(d => !dealershipsWithPosts.has(d.id))
@@ -314,8 +333,10 @@ export default function DashboardPage() {
           color="text-slate-900"
           bgGradient="bg-gradient-to-br from-slate-600 to-slate-800"
           icon={TrendingUp}
-          subtitle="From submit to decision"
+          subtitle="From submit to decision · Target: < 12h"
           to="/analytics"
+          benchmarkLabel={reviewBenchmark?.label}
+          benchmarkColor={reviewBenchmark?.color}
         />
       </div>
 
