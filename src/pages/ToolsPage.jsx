@@ -945,7 +945,7 @@ const TOOLS = [
   { id: 'caption',   label: 'Caption Counter', icon: Tag,         desc: 'Check character and hashtag limits per platform',              component: CaptionCounter  },
   { id: 'hashtags',  label: 'Hashtag Sets',    icon: Hash,        desc: 'Pre-built hashtag collections for Asbury content',            component: HashtagPlanner  },
   { id: 'image',     label: 'Image Sizes',     icon: Image,       desc: 'Optimal dimensions for every platform and format',            component: ImageGuide      },
-  { id: 'times',     label: 'Best Post Times', icon: Clock,       desc: 'Optimal publishing windows by platform',                      component: BestTimes       },
+  { id: 'times',     label: 'Posting Times',    icon: Clock,       desc: 'Industry benchmark publishing windows by platform',           component: BestTimes       },
   { id: 'schema',    label: 'Schema Validator',icon: Code2,       desc: 'Validate JSON-LD structured data against schema.org',         component: SchemaValidator },
   { id: 'meta',      label: 'Meta Inspector',  icon: FileSearch,  desc: 'Inspect meta tags, OG data, and structured data on any URL',  component: MetaInspector   },
   { id: 'pagespeed', label: 'PageSpeed',       icon: Gauge,       desc: 'Check Core Web Vitals and performance scores for any URL',    component: PageSpeedScore  },
