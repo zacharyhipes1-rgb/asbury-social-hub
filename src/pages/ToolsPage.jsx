@@ -828,10 +828,13 @@ function PageSpeedScore() {
   const run = async () => {
     setLoading(true); setError(''); setResult(null)
     try {
-      const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url.trim())}&strategy=${strategy}`
-      const res  = await fetch(apiUrl)
+      const res  = await fetch('/api/pagespeed', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url: url.trim(), strategy }),
+      })
       const data = await res.json()
-      if (data.error) throw new Error(data.error.message || 'API error')
+      if (!res.ok) throw new Error(data.error || 'API error')
       setResult(data)
     } catch (err) {
       setError(err.message)

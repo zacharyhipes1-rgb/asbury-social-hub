@@ -1,0 +1,22 @@
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const { url, strategy = 'mobile' } = req.body || {}
+  if (!url) return res.status(400).json({ error: 'URL is required' })
+
+  let targetUrl = url.trim()
+  if (!targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`
+
+  try {
+    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=${strategy}`
+    const response = await fetch(apiUrl, {
+      signal: AbortSignal.timeout(60000),
+    })
+    const data = await response.json()
+    if (data.error) return res.status(400).json({ error: data.error.message || 'PageSpeed API error' })
+    return res.status(200).json(data)
+  } catch (err) {
+    const msg = err.name === 'TimeoutError' ? 'Request timed out — PageSpeed tests can take up to 60s' : err.message
+    return res.status(500).json({ error: msg })
+  }
+}
