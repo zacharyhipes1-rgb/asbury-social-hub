@@ -77,6 +77,7 @@ export default function AdminQueue() {
   const [viewPost, setViewPost]       = useState(null)
   const [actionState, setActionState] = useState({ post: null, action: null })
   const [clonePost, setClonePost]     = useState(null)
+  const [selectedIds, setSelectedIds] = useState(new Set())
 
   const filtered = posts.filter(p => {
     if (statusFilter !== 'all' && p.approval_status !== statusFilter) return false
@@ -90,6 +91,10 @@ export default function AdminQueue() {
     }
     return true
   }).sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))
+
+  const selectablePosts = filtered.filter(p =>
+    p.approval_status !== 'deleted' && p.approval_status !== 'published'
+  )
 
   const pendingCount   = posts.filter(p => p.approval_status === 'pending').length
   const approvedCount  = posts.filter(p => p.approval_status === 'approved').length
@@ -198,6 +203,33 @@ export default function AdminQueue() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl">
+          <span className="text-sm font-medium text-indigo-800">
+            {selectedIds.size} post{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={async () => {
+              for (const id of [...selectedIds]) {
+                await approvePost(id, '')
+              }
+              addToast(`Approved ${selectedIds.size} post${selectedIds.size !== 1 ? 's' : ''}.`, 'success')
+              setSelectedIds(new Set())
+            }}
+            className="px-4 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Approve All ({selectedIds.size})
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-sm text-indigo-600 hover:text-indigo-800"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         {filtered.length === 0 ? (
@@ -287,6 +319,18 @@ export default function AdminQueue() {
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
+                  <th className="pl-5 pr-2 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size > 0 && selectedIds.size === selectablePosts.length}
+                      ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < selectablePosts.length }}
+                      onChange={e => {
+                        if (e.target.checked) setSelectedIds(new Set(selectablePosts.map(p => p.id)))
+                        else setSelectedIds(new Set())
+                      }}
+                      className="rounded border-slate-300 text-indigo-600"
+                    />
+                  </th>
                   {['Dealership', 'Platform & Type', 'Caption', 'Uploader', 'Scheduled', 'Status', 'Actions'].map(h => (
                     <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                       {h}
@@ -304,6 +348,22 @@ export default function AdminQueue() {
 
                   return (
                     <tr key={post.id} className="hover:bg-slate-50/70 transition-colors group">
+                      <td className="pl-5 pr-2 py-3.5 w-10">
+                        {post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(post.id)}
+                            onChange={e => {
+                              const next = new Set(selectedIds)
+                              if (e.target.checked) next.add(post.id)
+                              else next.delete(post.id)
+                              setSelectedIds(next)
+                            }}
+                            onClick={e => e.stopPropagation()}
+                            className="rounded border-slate-300 text-indigo-600"
+                          />
+                        )}
+                      </td>
 
                       {/* Dealership + optional thumbnail */}
                       <td className="px-5 py-3.5">

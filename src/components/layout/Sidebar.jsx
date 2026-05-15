@@ -71,7 +71,7 @@ export default function Sidebar({ onClose }) {
 
         <SectionLabel>Content</SectionLabel>
         <NavItem to="/assets" icon={Library} label="Asset Library" onClick={onClose} />
-        {isSocialMedia && (
+        {(isSocialMedia || isAdmin) && (
           <NavItem to="/upload" icon={Upload} label="Upload Content" onClick={onClose} />
         )}
 

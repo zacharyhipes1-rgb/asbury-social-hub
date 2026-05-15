@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import {
   Image, Video, Layout, Type, Calendar, Circle, Music,
@@ -10,6 +11,8 @@ import { StatusBadge, PlatformBadge } from '../common/Badge'
 import { getPlatform, getContentType } from '../../data/platforms'
 import { DEALERSHIPS } from '../../data/dealerships'
 import { useUsers } from '../../context/UsersContext'
+import { usePosts } from '../../context/PostsContext'
+import { useAuth } from '../../context/AuthContext'
 
 const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File }
 
@@ -28,7 +31,38 @@ function DetailRow({ icon: Icon, label, value }) {
 
 export default function PostDetailModal({ post, isOpen, onClose }) {
   const { getUserByEmail } = useUsers()
+  const { approvePost, flagPost, deletePost } = usePosts()
+  const { isAdmin } = useAuth()
+  const [flagMode, setFlagMode] = useState(false)
+  const [flagNote, setFlagNote] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
   if (!post) return null
+
+  const handleApprove = async () => {
+    setActionLoading(true)
+    await approvePost(post.id, '')
+    setActionLoading(false)
+    onClose()
+  }
+
+  const handleFlag = async () => {
+    if (!flagNote.trim()) return
+    setActionLoading(true)
+    await flagPost(post.id, flagNote.trim())
+    setActionLoading(false)
+    setFlagMode(false)
+    setFlagNote('')
+    onClose()
+  }
+
+  const handleDelete = async () => {
+    setActionLoading(true)
+    await deletePost(post.id)
+    setActionLoading(false)
+    setConfirmDelete(false)
+    onClose()
+  }
 
   const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
   const platform = getPlatform(post.platform)
@@ -170,6 +204,13 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
           )
         })()}
 
+        {post.approval_status === 'flagged' && post.chad_notes && (
+          <div className="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-xs font-semibold text-amber-700 mb-1 uppercase tracking-wide">Admin Notes</p>
+            <p className="text-sm text-amber-900 leading-relaxed">{post.chad_notes}</p>
+          </div>
+        )}
+
         {/* Caption */}
         {post.caption && (
           <div className="mb-5">
@@ -208,6 +249,89 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
             <DetailRow icon={Clock}        label="Uploaded at"   value={formatDate(post.uploaded_at)} />
           </div>
         </div>
+
+        {isAdmin && (
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            {!flagMode && !confirmDelete && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
+              <div className="flex gap-2">
+                {post.approval_status !== 'approved' && (
+                  <button
+                    onClick={handleApprove}
+                    disabled={actionLoading}
+                    className="flex-1 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {actionLoading ? 'Saving…' : 'Approve'}
+                  </button>
+                )}
+                {post.approval_status !== 'flagged' && (
+                  <button
+                    onClick={() => setFlagMode(true)}
+                    disabled={actionLoading}
+                    className="flex-1 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                  >
+                    Flag
+                  </button>
+                )}
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={actionLoading}
+                  className="py-2.5 px-4 bg-red-50 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-100 border border-red-200 disabled:opacity-50 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+
+            {flagMode && (
+              <div>
+                <p className="text-sm font-medium text-slate-700 mb-2">Reason for revision request:</p>
+                <textarea
+                  value={flagNote}
+                  onChange={e => setFlagNote(e.target.value)}
+                  placeholder="Tell the uploader what needs to change…"
+                  rows={3}
+                  className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl resize-none focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200 transition-all"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={handleFlag}
+                    disabled={!flagNote.trim() || actionLoading}
+                    className="flex-1 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                  >
+                    {actionLoading ? 'Saving…' : 'Send for Revision'}
+                  </button>
+                  <button
+                    onClick={() => { setFlagMode(false); setFlagNote('') }}
+                    className="py-2.5 px-4 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {confirmDelete && (
+              <div>
+                <p className="text-sm text-slate-700 mb-3">Remove this post from the queue? This cannot be undone.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDelete}
+                    disabled={actionLoading}
+                    className="flex-1 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {actionLoading ? 'Deleting…' : 'Confirm Delete'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="py-2.5 px-4 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Chad's notes */}
         {post.chad_notes && (

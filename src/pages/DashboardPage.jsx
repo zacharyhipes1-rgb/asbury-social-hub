@@ -44,6 +44,28 @@ function PostRow({ post, onClick, onEdit, isSocialMedia, currentUser }) {
 
   return (
     <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/70 transition-colors group">
+      <td className="px-5 py-3.5 w-12" onClick={() => onClick(post)}>
+        {(post.file_url || post.file_preview) ? (
+          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 bg-slate-100 flex-shrink-0 cursor-pointer relative">
+            {post.file_type?.startsWith('video/') ? (
+              <video src={post.file_url || post.file_preview} className="w-full h-full object-cover" muted />
+            ) : (
+              <img src={post.file_url || post.file_preview} alt="" className="w-full h-full object-cover" />
+            )}
+            {post.file_type?.startsWith('video/') && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <svg className="w-3 h-3 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            )}
+          </div>
+        ) : post.file_name ? (
+          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <File size={14} className="text-slate-400" />
+          </div>
+        ) : null}
+      </td>
       <td className="px-5 py-3.5 cursor-pointer" onClick={() => onClick(post)}>
         <p className="text-sm font-semibold text-slate-800">{dealership?.name}</p>
         <p className="text-xs text-slate-400 mt-0.5">{dealership?.location}</p>
@@ -452,6 +474,7 @@ export default function DashboardPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/60">
+                    <th className="px-5 py-3 w-12" />
                     {['Dealership', 'Platform', 'Type', 'Caption', 'Uploaded by', 'Scheduled', 'Status'].map((h) => (
                       <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                         {h}
