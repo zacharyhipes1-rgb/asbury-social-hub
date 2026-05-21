@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { X, UploadCloud, AlertCircle, Loader, CheckCircle, ExternalLink } from 'lucide-react'
+import { X, UploadCloud, AlertCircle, Loader, CheckCircle, ExternalLink, Tag } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useAssets } from '../../context/AssetsContext'
 import { useToast } from '../../context/ToastContext'
@@ -19,6 +19,8 @@ export default function AssetUploadModal({ isOpen, onClose }) {
 
   const [file, setFile] = useState(null)
   const [description, setDescription] = useState('')
+  const [tagInput, setTagInput] = useState('')
+  const [tags, setTags] = useState([])
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -30,9 +32,22 @@ export default function AssetUploadModal({ isOpen, onClose }) {
   const reset = () => {
     setFile(null)
     setDescription('')
+    setTagInput('')
+    setTags([])
     setError('')
     setDragging(false)
     setUploading(false)
+  }
+
+  const addTag = (raw) => {
+    const t = raw.trim().toLowerCase()
+    if (t && !tags.includes(t)) setTags(prev => [...prev, t])
+    setTagInput('')
+  }
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput) }
+    if (e.key === 'Backspace' && !tagInput && tags.length) setTags(prev => prev.slice(0, -1))
   }
 
   const handleClose = () => {
@@ -54,7 +69,8 @@ export default function AssetUploadModal({ isOpen, onClose }) {
     setError('')
     setUploading(true)
     try {
-      await addAsset({ file, description, currentUser })
+      const finalTags = tagInput.trim() ? [...tags, tagInput.trim().toLowerCase()] : tags
+      await addAsset({ file, description, tags: finalTags, currentUser })
       addToast(`Uploaded: ${file.name}`, 'success')
       reset()
       onClose()
@@ -155,6 +171,42 @@ export default function AssetUploadModal({ isOpen, onClose }) {
               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 resize-none disabled:opacity-60"
             />
             <p className="text-[10px] text-slate-400 mt-1 text-right">{description.length}/500</p>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Tags <span className="normal-case font-normal text-slate-400">(optional — press Enter or comma to add)</span>
+            </label>
+            <div
+              className="flex flex-wrap gap-1.5 min-h-[42px] px-3 py-2 border border-slate-200 rounded-xl bg-white focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 cursor-text"
+              onClick={() => document.getElementById('tag-input-upload')?.focus()}
+            >
+              {tags.map(tag => (
+                <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+                  <Tag size={9} />
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setTags(prev => prev.filter(t => t !== tag)) }}
+                    className="hover:text-red-500 transition-colors ml-0.5"
+                    disabled={uploading}
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+              <input
+                id="tag-input-upload"
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={() => tagInput.trim() && addTag(tagInput)}
+                placeholder={tags.length === 0 ? 'e.g. inventory, promotion, bmw…' : ''}
+                disabled={uploading}
+                className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-slate-300 disabled:opacity-60"
+              />
+            </div>
           </div>
         </div>
 

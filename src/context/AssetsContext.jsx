@@ -8,7 +8,7 @@ import {
 
 const AssetsContext = createContext(null)
 
-// Supabase row → app shape (camelCase passthrough for the few columns we use)
+// Supabase row → app shape
 function fromRow(r) {
   return {
     id:                r.id,
@@ -18,6 +18,7 @@ function fromRow(r) {
     file_url:          r.file_url,
     thumbnail_url:     r.thumbnail_url,
     description:       r.description || '',
+    tags:              Array.isArray(r.tags) ? r.tags : [],
     uploaded_by:       r.uploaded_by,
     uploaded_by_name:  r.uploaded_by_name,
     uploaded_at:       r.uploaded_at,
@@ -25,15 +26,17 @@ function fromRow(r) {
   }
 }
 
+function normalizeTags(raw) {
+  return [...new Set((raw || []).map(t => t.trim().toLowerCase()).filter(Boolean))]
+}
+
 export function AssetsProvider({ children }) {
   const [assets, setAssets] = useState([])
   const [loaded, setLoaded] = useState(false)
-  // tableMissing = true when Supabase returns "relation does not exist" (42P01
-  // from PostgreSQL) or "table not in schema cache" (PGRST205 from PostgREST).
-  // Used to surface a setup hint to admins and stop the polling spam.
+  // tableMissing = true when Supabase returns "relation does not exist" (42P01)
+  // or "table not in schema cache" (PGRST205). Stops polling spam.
   const [tableMissing, setTableMissing] = useState(false)
 
-  // Initial fetch
   const fetchAll = useCallback(async () => {
     const { data, error } = await supabase
       .from('assets')
@@ -42,7 +45,6 @@ export function AssetsProvider({ children }) {
       .order('uploaded_at', { ascending: false })
     if (error) {
       if (error.code === '42P01' || error.code === 'PGRST205') {
-        // Log once; the empty state on the page guides the admin to migrate.
         if (!tableMissing) console.warn('[Assets] table "assets" not found — run supabase-schema.sql to create it.')
         setTableMissing(true)
         setAssets([])
@@ -57,32 +59,20 @@ export function AssetsProvider({ children }) {
     setLoaded(true)
   }, [tableMissing])
 
-  useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
+  useEffect(() => { fetchAll() }, [fetchAll])
 
-  // Realtime subscription + 8s polling fallback (matches Posts pattern).
-  // If the table is missing, skip both subscription and polling — re-mount
-  // once the schema is in place will recover.
+  // Realtime + 8s polling fallback
   useEffect(() => {
     if (tableMissing) return
-
     const channel = supabase
       .channel('assets-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, () => {
-        fetchAll()
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, () => fetchAll())
       .subscribe()
-
     const poll = setInterval(fetchAll, 8000)
-
-    return () => {
-      supabase.removeChannel(channel)
-      clearInterval(poll)
-    }
+    return () => { supabase.removeChannel(channel); clearInterval(poll) }
   }, [fetchAll, tableMissing])
 
-  const addAsset = useCallback(async ({ file, description, currentUser }) => {
+  const addAsset = useCallback(async ({ file, description, tags, currentUser }) => {
     const validationError = validateFile(file)
     if (validationError) throw new Error(validationError)
 
@@ -96,6 +86,7 @@ export function AssetsProvider({ children }) {
       file_url:         secure_url,
       thumbnail_url,
       description:      (description || '').trim().slice(0, 500),
+      tags:             normalizeTags(tags),
       uploaded_by:      currentUser?.email,
       uploaded_by_name: currentUser?.name,
     }
@@ -105,6 +96,19 @@ export function AssetsProvider({ children }) {
 
     const fresh = fromRow(data)
     setAssets(prev => [fresh, ...prev.filter(a => a.id !== fresh.id)])
+    return fresh
+  }, [])
+
+  const updateAssetTags = useCallback(async (id, tags) => {
+    const { data, error } = await supabase
+      .from('assets')
+      .update({ tags: normalizeTags(tags) })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(error.message || 'Failed to update tags.')
+    const fresh = fromRow(data)
+    setAssets(prev => prev.map(a => a.id === id ? fresh : a))
     return fresh
   }, [])
 
@@ -127,7 +131,8 @@ export function AssetsProvider({ children }) {
     if (!q) return assets
     return assets.filter(a =>
       a.file_name?.toLowerCase().includes(q) ||
-      a.description?.toLowerCase().includes(q)
+      a.description?.toLowerCase().includes(q) ||
+      (a.tags || []).some(t => t.includes(q))
     )
   }, [assets])
 
@@ -138,6 +143,7 @@ export function AssetsProvider({ children }) {
         loaded,
         tableMissing,
         addAsset,
+        updateAssetTags,
         softDeleteAsset,
         getAssetById,
         searchAssets,

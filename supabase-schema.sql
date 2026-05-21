@@ -103,11 +103,14 @@ CREATE TABLE IF NOT EXISTS public.assets (
   file_url         TEXT         NOT NULL,
   thumbnail_url    TEXT,
   description      TEXT         DEFAULT '',
+  tags             TEXT[]       NOT NULL DEFAULT '{}',
   uploaded_by      TEXT         NOT NULL,
   uploaded_by_name TEXT,
   uploaded_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   deleted          BOOLEAN      NOT NULL DEFAULT FALSE
 );
+-- Safe migration for existing deployments — no-op if column already exists
+ALTER TABLE public.assets ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}';
 
 ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
 

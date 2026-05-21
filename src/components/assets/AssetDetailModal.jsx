@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
   X, Download, ExternalLink, Send, Trash2, AlertTriangle,
-  User, Clock, AlignLeft, File as FileIcon, FileText, Film, FileArchive
+  User, Clock, AlignLeft, File as FileIcon, FileText, Film, FileArchive,
+  Tag, Check, Pencil,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useAssets } from '../../context/AssetsContext'
@@ -30,14 +31,22 @@ function formatDate(dateStr) {
 
 export default function AssetDetailModal({ asset, isOpen, onClose }) {
   const { isAdmin, isSocialMedia } = useAuth()
-  const { softDeleteAsset } = useAssets()
+  const { softDeleteAsset, updateAssetTags } = useAssets()
   const { addToast } = useToast()
   const navigate = useNavigate()
+  const tagInputRef = useRef(null)
+
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfDownloading, setPdfDownloading] = useState(false)
+
+  // Tag editing state
+  const [editingTags, setEditingTags] = useState(false)
+  const [tagDraft, setTagDraft] = useState([])
+  const [tagInput, setTagInput] = useState('')
+  const [savingTags, setSavingTags] = useState(false)
 
   // Fetch PDF via same-origin proxy → blob URL → bypasses X-Frame-Options: DENY
   // Only runs when the modal is open and the asset is a PDF.
@@ -97,6 +106,32 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
     } catch { /* silent */ } finally {
       setPdfDownloading(false)
     }
+  }
+
+  const startEditTags = () => { setTagDraft([...(asset.tags || [])]); setTagInput(''); setEditingTags(true) }
+  const cancelEditTags = () => { setEditingTags(false); setTagInput('') }
+
+  const addTagToDraft = (raw) => {
+    const t = raw.trim().toLowerCase()
+    if (t && !tagDraft.includes(t)) setTagDraft(prev => [...prev, t])
+    setTagInput('')
+  }
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTagToDraft(tagInput) }
+    if (e.key === 'Backspace' && !tagInput && tagDraft.length) setTagDraft(prev => prev.slice(0, -1))
+  }
+
+  const saveTags = async () => {
+    const finalDraft = tagInput.trim() ? [...tagDraft, tagInput.trim().toLowerCase()] : tagDraft
+    setSavingTags(true)
+    try {
+      await updateAssetTags(asset.id, finalDraft)
+      addToast('Tags updated', 'success')
+      setEditingTags(false)
+      setTagInput('')
+    } catch (err) {
+      addToast(err.message || 'Failed to save tags', 'error')
+    } finally { setSavingTags(false) }
   }
 
   const handleUseInPost = () => {
@@ -234,6 +269,74 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
               <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{asset.description}</p>
             </div>
           )}
+
+          {/* Tags */}
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tags</p>
+              {isAdmin && !editingTags && (
+                <button
+                  onClick={startEditTags}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors"
+                >
+                  <Pencil size={10} /> Edit
+                </button>
+              )}
+            </div>
+
+            {editingTags ? (
+              <div className="space-y-2">
+                <div
+                  className="flex flex-wrap gap-1.5 min-h-[42px] px-3 py-2 border border-indigo-300 rounded-xl bg-white ring-2 ring-indigo-100 cursor-text"
+                  onClick={() => tagInputRef.current?.focus()}
+                >
+                  {tagDraft.map(tag => (
+                    <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+                      <Tag size={9} />
+                      {tag}
+                      <button type="button" onClick={e => { e.stopPropagation(); setTagDraft(prev => prev.filter(t => t !== tag)) }} className="hover:text-red-500 ml-0.5">
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    ref={tagInputRef}
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    onBlur={() => tagInput.trim() && addTagToDraft(tagInput)}
+                    placeholder={tagDraft.length === 0 ? 'Type a tag, press Enter…' : ''}
+                    className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-slate-300"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={saveTags}
+                    disabled={savingTags}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                  >
+                    <Check size={11} /> {savingTags ? 'Saving…' : 'Save'}
+                  </button>
+                  <button onClick={cancelEditTags} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 text-xs font-medium hover:bg-slate-50 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {(asset.tags || []).length === 0 ? (
+                  <p className="text-xs text-slate-300 italic">{isAdmin ? 'No tags — click Edit to add some.' : 'No tags.'}</p>
+                ) : (
+                  (asset.tags || []).map(tag => (
+                    <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">
+                      <Tag size={10} /> {tag}
+                    </span>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Meta */}
           <div className="rounded-xl border border-slate-200 overflow-hidden">

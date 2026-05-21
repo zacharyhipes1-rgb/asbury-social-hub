@@ -65,6 +65,20 @@ export default function AssetCard({ asset, onClick }) {
           <p className="text-[10px] text-slate-300 flex-shrink-0">{formatSize(asset.file_size)}</p>
         </div>
         {date && <p className="text-[10px] text-slate-300 mt-0.5">{date}</p>}
+        {asset.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {asset.tags.slice(0, 3).map(tag => (
+              <span key={tag} className="px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[9px] font-semibold leading-none">
+                {tag}
+              </span>
+            ))}
+            {asset.tags.length > 3 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-400 text-[9px] font-semibold leading-none">
+                +{asset.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </button>
   )
