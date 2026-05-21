@@ -4,7 +4,7 @@ import {
   Globe, Zap, Share2, BarChart2, Map,
   ExternalLink, ChevronRight, Monitor, Smartphone,
   Code2, CheckCircle, AlertCircle, FileSearch, Gauge,
-  Grid3x3, RefreshCw
+  QrCode, RefreshCw
 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabase'
@@ -2420,7 +2420,7 @@ const TOOLS = [
   { id: 'og',          label: 'OG Card Preview', icon: Share2,      desc: 'See how links render when shared on social platforms',               component: OgPreview          },
   { id: 'image',       label: 'Image Sizes',     icon: Image,       desc: 'Optimal dimensions for every platform and format',                   component: ImageGuide         },
   { id: 'contrast',    label: 'Color Contrast',  icon: CheckCircle, desc: 'Check WCAG AA/AAA contrast ratios for text on background',           component: ColorContrast      },
-  { id: 'qr',          label: 'QR Code',         icon: Grid3x3,     desc: 'Generate QR codes for URLs, phone numbers, or plain text',          component: QrGenerator        },
+  { id: 'qr',          label: 'QR Code',         icon: QrCode,      desc: 'Generate tracked QR codes — scan counts appear in Analytics',       component: QrGenerator        },
   { id: 'readability', label: 'Readability',     icon: Gauge,       desc: 'Score any copy for reading level, clarity, and complexity',         component: ReadabilityScorer  },
   { id: 'times',       label: 'Posting Times',   icon: Clock,       desc: 'Industry benchmark publishing windows by platform',                  component: BestTimes          },
 ]

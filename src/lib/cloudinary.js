@@ -56,10 +56,13 @@ export function deriveThumbnailUrl(secureUrl, fileType) {
   return null
 }
 
-// Force-download URL for Cloudinary assets (inserts fl_attachment).
-// Non-Cloudinary URLs are returned unchanged.
+// Force-download URL for Cloudinary image/video assets (inserts fl_attachment).
+// Raw resources (PDF, ZIP, etc.) do NOT support Cloudinary transformations —
+// applying fl_attachment to a /raw/upload/ URL causes ERR_INVALID_RESPONSE.
+// For raw files, return the URL unchanged and use a fetch→blob download instead.
 export function forceDownloadUrl(src) {
   if (!src || !src.includes('res.cloudinary.com') || !src.includes('/upload/')) return src
+  if (src.includes('/raw/upload/')) return src  // transformations invalid on raw resources
   return src.replace('/upload/', '/upload/fl_attachment/')
 }
 
