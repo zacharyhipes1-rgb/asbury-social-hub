@@ -26,7 +26,7 @@ export default function AssetCard({ asset, onClick }) {
     <button
       type="button"
       onClick={() => onClick(asset)}
-      className="group text-left bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      className="card-hover group text-left bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-300"
     >
       {/* Preview */}
       <div className="aspect-square bg-slate-50 flex items-center justify-center overflow-hidden relative">

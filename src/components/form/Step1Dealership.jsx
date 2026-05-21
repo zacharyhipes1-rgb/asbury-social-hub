@@ -55,7 +55,7 @@ function ContentBrief({ dealershipId }) {
                 <button onClick={() => { setDraft(brief || ''); setEditing(false) }} className="flex items-center gap-1 px-2.5 py-1 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50">
                   <X size={10} /> Cancel
                 </button>
-                <button onClick={save} className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                <button onClick={save} className="btn-press flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
                   <Check size={10} /> Save
                 </button>
               </div>

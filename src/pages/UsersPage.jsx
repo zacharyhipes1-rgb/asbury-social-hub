@@ -115,7 +115,7 @@ function UserFormModal({ user, onClose, onSave }) {
             Cancel
           </button>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+            className="btn-press flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
             {saving ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={14} />}
             {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Add User'}
           </button>

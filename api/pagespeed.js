@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (!targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`
 
   try {
-    const key = process.env.PageSpeed_Insights_API ? `&key=${process.env.PageSpeed_Insights_API}` : ''
+    const key = process.env.GOOGLE_PAGESPEED_API_KEY ? `&key=${process.env.GOOGLE_PAGESPEED_API_KEY}` : ''
     const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=${strategy}${key}`
     const response = await fetch(apiUrl, {
       signal: AbortSignal.timeout(60000),

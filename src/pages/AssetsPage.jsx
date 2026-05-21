@@ -59,7 +59,7 @@ export default function AssetsPage() {
       )}
 
       {/* Toolbar */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-5">
+      <div className="card-hover bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-5">
         <div className="flex items-center gap-3 px-4 sm:px-5 py-3 border-b border-slate-100">
           <div className="relative flex-1">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />

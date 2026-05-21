@@ -144,7 +144,7 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
             <div className="mb-5">
               <div className="rounded-xl overflow-hidden border border-slate-200 relative bg-slate-50">
                 {showVideoPlayer ? (
-                  <video src={src} controls className="w-full max-h-72 object-contain bg-black" />
+                  <video src={src} controls className="w-full max-h-[70vh] object-contain bg-black" />
                 ) : (
                   <a
                     href={src}
@@ -156,7 +156,7 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
                     <img
                       src={src}
                       alt={post.alt_text || 'Post media'}
-                      className="w-full max-h-72 object-contain bg-slate-50 transition-opacity group-hover:opacity-95"
+                      className="w-full max-h-[70vh] object-contain bg-slate-50 transition-opacity group-hover:opacity-95"
                     />
                     {isVideo && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
@@ -171,14 +171,16 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
                 )}
               </div>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <a
-                  href={src}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors min-h-[36px]"
-                >
-                  <ExternalLink size={12} /> View full size
-                </a>
+                {!showVideoPlayer && (
+                  <a
+                    href={src}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors min-h-[36px]"
+                  >
+                    <ExternalLink size={12} /> View full size
+                  </a>
+                )}
                 <a
                   href={downloadHref}
                   download={downloadName}

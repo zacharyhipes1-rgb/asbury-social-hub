@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval, isToday, differenceInHours, formatDistanceToNow } from 'date-fns'
 import {
@@ -17,30 +17,29 @@ import { DEALERSHIPS } from '../data/dealerships'
 
 const ICON_MAP = { Image, Video, Layout, Type, Calendar, Circle, Music, FileText, BookOpen, File }
 
-function useCountUp(target, duration = 900) {
-  const [display, setDisplay] = useState(0)
+function useCountUp(target, duration = 600) {
+  const [value, setValue] = useState(0)
+  const raf = useRef(null)
+
   useEffect(() => {
-    if (target == null || typeof target !== 'number') return
-    let frame = 0
-    const totalFrames = Math.ceil(duration / 16)
-    const timer = setInterval(() => {
-      frame++
-      const progress = frame / totalFrames
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setDisplay(Math.round(target * eased))
-      if (frame >= totalFrames) {
-        setDisplay(target)
-        clearInterval(timer)
-      }
-    }, 16)
-    return () => clearInterval(timer)
+    if (target === 0) { setValue(0); return }
+    const start = performance.now()
+    const animate = (now) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      setValue(Math.round(eased * target))
+      if (progress < 1) raf.current = requestAnimationFrame(animate)
+    }
+    raf.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(raf.current)
   }, [target, duration])
-  return display
+
+  return value
 }
 
 function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to, benchmarkLabel, benchmarkColor }) {
   const inner = (
-    <div className={`bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-sm transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
+    <div className={`card-hover bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-sm transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${bgGradient}`}>
           <Icon size={16} className="text-white" />
@@ -295,6 +294,7 @@ export default function DashboardPage() {
   const animatedWeek    = useCountUp(thisWeekPosts.length)
   const animatedPending = useCountUp(pendingPosts.length)
   const animatedRate    = useCountUp(approvalRate ?? 0)
+  const animatedHours   = useCountUp(avgApprovalHours ?? 0)
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -389,7 +389,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Avg. Review Time"
-          value={avgApprovalHours !== null ? (avgApprovalHours < 24 ? `${avgApprovalHours}h` : `${Math.round(avgApprovalHours/24)}d`) : '—'}
+          value={avgApprovalHours !== null ? (avgApprovalHours < 24 ? `${animatedHours}h` : `${Math.round(animatedHours/24)}d`) : '—'}
           color="text-slate-900"
           bgGradient="bg-gradient-to-br from-slate-600 to-slate-800"
           icon={TrendingUp}
@@ -517,7 +517,7 @@ export default function DashboardPage() {
       )}
 
       {/* Recent posts */}
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+      <div className="card-hover bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 gap-2 sm:gap-3">
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold text-slate-900 flex-shrink-0">Recent Submissions</h2>

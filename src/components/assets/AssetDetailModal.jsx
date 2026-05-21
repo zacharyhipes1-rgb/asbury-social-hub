@@ -40,8 +40,13 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
 
   const isImage = asset.file_type?.startsWith('image/')
   const isVideo = asset.file_type?.startsWith('video/')
+  const isPDF   = asset.file_type === 'application/pdf'
   const Icon = fileIconFor(asset.file_type)
   const downloadHref = forceDownloadUrl(asset.file_url)
+  // For PDFs, open via Google Docs viewer so Chrome doesn't fail to render raw Cloudinary URLs
+  const viewHref = isPDF
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(asset.file_url)}`
+    : asset.file_url
 
   const handleUseInPost = () => {
     navigate(`/upload?asset=${asset.id}`)
@@ -85,7 +90,15 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
             {isVideo && (
               <video src={asset.file_url} controls className="w-full max-h-[60vh] object-contain bg-black" />
             )}
-            {!isImage && !isVideo && (
+            {isPDF && (
+              <iframe
+                src={`https://docs.google.com/viewer?url=${encodeURIComponent(asset.file_url)}&embedded=true`}
+                className="w-full rounded-sm"
+                style={{ height: '420px', border: 'none' }}
+                title={asset.file_name}
+              />
+            )}
+            {!isImage && !isVideo && !isPDF && (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
                 {Icon && <Icon size={48} />}
                 <p className="text-sm font-medium text-slate-700">{asset.file_name}</p>
@@ -97,7 +110,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
           {/* Action bar */}
           <div className="flex flex-wrap items-center gap-2 mb-5">
             <a
-              href={asset.file_url}
+              href={viewHref}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors min-h-[40px]"
