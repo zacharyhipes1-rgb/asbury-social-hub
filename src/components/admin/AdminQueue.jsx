@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
@@ -52,7 +53,7 @@ function CloneModal({ post, onClose, onClone }) {
           <button
             disabled={!targetId}
             onClick={() => onClone(targetId)}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-press px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Clone Post
           </button>
@@ -79,6 +80,7 @@ export default function AdminQueue() {
   const [clonePost, setClonePost]     = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [flashedIds, setFlashedIds] = useState(new Set())
+  const [exitingIds, setExitingIds] = useState({})
 
   const flashRow = (id) => {
     setFlashedIds(prev => new Set([...prev, id]))
@@ -120,16 +122,27 @@ export default function AdminQueue() {
     if (!post) return
     const dealershipName = DEALERSHIPS.find(d => d.id === post.dealership_id)?.name
     const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
-    if (action === 'approve') {
-      approvePost(post.id, notes)
-      addToast(`Approved: ${getPlatform(post.platform)?.name} post for ${dealershipName}`, 'success')
-    } else if (action === 'flag') {
-      flagPost(post.id, notes)
-      addToast(`Revision requested for ${uploaderName}'s post.`, 'warning')
-    } else if (action === 'delete') {
-      deletePost(post.id)
-      addToast(`Post removed from queue.`, 'error')
-    }
+    const exitDirection = action === 'approve' ? 'approve' : 'reject'
+
+    setExitingIds(prev => ({ ...prev, [post.id]: exitDirection }))
+
+    setTimeout(() => {
+      if (action === 'approve') {
+        approvePost(post.id, notes)
+        addToast(`Approved: ${getPlatform(post.platform)?.name} post for ${dealershipName}`, 'success')
+      } else if (action === 'flag') {
+        flagPost(post.id, notes)
+        addToast(`Revision requested for ${uploaderName}'s post.`, 'warning')
+      } else if (action === 'delete') {
+        deletePost(post.id)
+        addToast(`Post removed from queue.`, 'error')
+      }
+      setExitingIds(prev => {
+        const next = { ...prev }
+        delete next[post.id]
+        return next
+      })
+    }, 280)
   }
 
   const handlePublish = (post) => {
@@ -243,7 +256,7 @@ export default function AdminQueue() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="card-hover bg-white rounded-2xl border border-slate-200 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="py-20 text-center">
             <CheckCircle size={32} className="mx-auto text-slate-300 mb-3" />
@@ -254,12 +267,26 @@ export default function AdminQueue() {
           <>
           {/* ── Mobile: post cards ── */}
           <div className="lg:hidden divide-y divide-slate-100">
+            <AnimatePresence initial={false}>
             {filtered.map(post => {
               const dealership  = DEALERSHIPS.find(d => d.id === post.dealership_id)
               const ct          = getContentType(post.platform, post.content_type)
               const ContentIcon = ICON_MAP[ct?.icon] || File
+              const exiting = exitingIds[post.id]
               return (
-                <div key={`m-${post.id}`} className="p-4">
+                <motion.div
+                  key={`m-${post.id}`}
+                  layout
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={exiting
+                    ? { opacity: 0, x: exiting === 'approve' ? 60 : -60 }
+                    : { opacity: 1, y: 0, x: 0 }
+                  }
+                  exit={{ opacity: 0, x: exiting === 'approve' ? 60 : exiting === 'reject' ? -60 : 0, transition: { duration: 0.25 } }}
+                  transition={{ duration: 0.2 }}
+                  className="p-4 cursor-pointer"
+                  onClick={() => setViewPost(post)}
+                >
                   <div className="flex items-start gap-3 mb-2.5">
                     {(post.file_url || post.file_preview) && (
                       <div className="w-14 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100 bg-slate-50">
@@ -286,14 +313,14 @@ export default function AdminQueue() {
                   {post.caption && (
                     <p className="text-xs text-slate-600 mb-2.5 line-clamp-2 leading-relaxed">{post.caption}</p>
                   )}
-                  <div className="flex items-center gap-1 pt-2.5 border-t border-slate-100 flex-wrap">
+                  <div className="flex items-center gap-1 pt-2.5 border-t border-slate-100 flex-wrap" onClick={e => e.stopPropagation()}>
                     <button onClick={() => setViewPost(post)} title="View"
                       className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
                       <Eye size={18} />
                     </button>
                     {post.approval_status !== 'approved' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                       <button onClick={() => { handleAction(post, 'approve'); flashRow(post.id) }} title="Approve"
-                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
+                        className="btn-press min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
                         <CheckCircle size={18} />
                       </button>
                     )}
@@ -305,7 +332,7 @@ export default function AdminQueue() {
                     )}
                     {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                       <button onClick={() => handleAction(post, 'flag')} title="Request revision"
-                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                        className="btn-press min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
                         <AlertTriangle size={18} />
                       </button>
                     )}
@@ -322,9 +349,10 @@ export default function AdminQueue() {
                       </button>
                     )}
                   </div>
-                </div>
+                </motion.div>
               )
             })}
+            </AnimatePresence>
           </div>
           {/* ── Desktop: table ── */}
           <div className="hidden lg:block overflow-x-auto scrollbar-thin">
@@ -351,21 +379,32 @@ export default function AdminQueue() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
+                <AnimatePresence initial={false}>
                 {filtered.map(post => {
                   const dealership   = DEALERSHIPS.find(d => d.id === post.dealership_id)
                   const ct           = getContentType(post.platform, post.content_type)
                   const ContentIcon  = ICON_MAP[ct?.icon] || File
                   const uploaderName = getUserByEmail(post.uploaded_by)?.name || post.uploaded_by_name
                   const hasMedia     = !!(post.file_url || post.file_preview)
+                  const exiting = exitingIds[post.id]
 
                   return (
-                    <tr
+                    <motion.tr
                       key={post.id}
-                      className={`hover:bg-slate-50/70 transition-colors group ${
+                      layout
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={exiting
+                        ? { opacity: 0, x: exiting === 'approve' ? 60 : -60 }
+                        : { opacity: 1, y: 0, x: 0 }
+                      }
+                      exit={{ opacity: 0, x: exiting === 'approve' ? 60 : exiting === 'reject' ? -60 : 0, transition: { duration: 0.25 } }}
+                      transition={{ duration: 0.2 }}
+                      className={`hover:bg-slate-50/70 transition-colors group cursor-pointer ${
                         flashedIds.has(post.id) ? 'bg-green-50' : ''
                       }`}
+                      onClick={() => setViewPost(post)}
                     >
-                      <td className="pl-5 pr-2 py-3.5 w-10">
+                      <td className="pl-5 pr-2 py-3.5 w-10" onClick={e => e.stopPropagation()}>
                         {post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                           <input
                             type="checkbox"
@@ -376,7 +415,6 @@ export default function AdminQueue() {
                               else next.delete(post.id)
                               setSelectedIds(next)
                             }}
-                            onClick={e => e.stopPropagation()}
                             className="rounded border-slate-300 text-indigo-600"
                           />
                         )}
@@ -450,7 +488,7 @@ export default function AdminQueue() {
                       </td>
 
                       {/* Actions — grouped by type with a divider */}
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
                           {/* View */}
                           <button onClick={() => setViewPost(post)} title="View details"
@@ -469,7 +507,7 @@ export default function AdminQueue() {
                             </button>
                           ) : post.approval_status !== 'deleted' && post.approval_status !== 'published' ? (
                             <button onClick={() => handleAction(post, 'approve')} title="Approve"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
+                              className="btn-press p-1.5 rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors">
                               <CheckCircle size={14} />
                             </button>
                           ) : null}
@@ -477,7 +515,7 @@ export default function AdminQueue() {
                           {/* Flag */}
                           {post.approval_status !== 'flagged' && post.approval_status !== 'deleted' && post.approval_status !== 'published' && (
                             <button onClick={() => handleAction(post, 'flag')} title="Request revision"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition-colors">
+                              className="btn-press p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition-colors">
                               <AlertTriangle size={14} />
                             </button>
                           )}
@@ -504,9 +542,10 @@ export default function AdminQueue() {
                           )}
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   )
                 })}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>

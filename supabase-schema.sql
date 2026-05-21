@@ -121,3 +121,66 @@ CREATE POLICY "anon update" ON public.assets FOR UPDATE TO anon USING (true) WIT
 -- DELETE intentionally omitted — admins soft-delete via UPDATE deleted=true
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.assets;
+
+
+-- ── QR Codes ─────────────────────────────────────────────────
+-- Each row is one tracked QR code. The redirect endpoint looks up
+-- target_url by id and logs a scan before redirecting.
+CREATE TABLE IF NOT EXISTS public.qr_codes (
+  id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  target_url  TEXT         NOT NULL,
+  label       TEXT         NOT NULL DEFAULT '',
+  created_by  TEXT         NOT NULL DEFAULT '',
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  dealership  TEXT         DEFAULT ''
+);
+
+ALTER TABLE public.qr_codes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon read"   ON public.qr_codes;
+DROP POLICY IF EXISTS "anon insert" ON public.qr_codes;
+
+CREATE POLICY "anon read"   ON public.qr_codes FOR SELECT TO anon USING (true);
+CREATE POLICY "anon insert" ON public.qr_codes FOR INSERT TO anon WITH CHECK (true);
+-- No UPDATE/DELETE — codes are permanent once created
+
+
+-- ── QR Scans ─────────────────────────────────────────────────
+-- One row per scan event, written server-side by api/r/[id].js.
+-- user_agent is stored for device analytics (mobile vs desktop).
+CREATE TABLE IF NOT EXISTS public.qr_scans (
+  id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  qr_code_id  UUID         NOT NULL REFERENCES public.qr_codes(id) ON DELETE CASCADE,
+  scanned_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  user_agent  TEXT         DEFAULT ''
+);
+
+ALTER TABLE public.qr_scans ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon read"   ON public.qr_scans;
+DROP POLICY IF EXISTS "anon insert" ON public.qr_scans;
+
+CREATE POLICY "anon read"   ON public.qr_scans FOR SELECT TO anon USING (true);
+-- INSERT is intentionally left open to anon so the redirect function can log scans
+-- without requiring service-role credentials in a public-facing endpoint.
+CREATE POLICY "anon insert" ON public.qr_scans FOR INSERT TO anon WITH CHECK (true);
+
+
+-- ── Tool Events ──────────────────────────────────────────────
+-- Lightweight usage log: which tool was run, by whom, when.
+-- Fire-and-forget from the client. Used to drive the Tool Usage
+-- chart in Analytics.
+CREATE TABLE IF NOT EXISTS public.tool_events (
+  id       UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  tool_id  TEXT         NOT NULL,
+  used_by  TEXT         DEFAULT '',
+  used_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.tool_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon read"   ON public.tool_events;
+DROP POLICY IF EXISTS "anon insert" ON public.tool_events;
+
+CREATE POLICY "anon read"   ON public.tool_events FOR SELECT TO anon USING (true);
+CREATE POLICY "anon insert" ON public.tool_events FOR INSERT TO anon WITH CHECK (true);

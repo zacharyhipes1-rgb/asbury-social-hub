@@ -406,7 +406,7 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
                 type="button"
                 onClick={handleGenerateCaptions}
                 disabled={aiLoading}
-                className="px-3 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors"
+                className="btn-press px-3 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors"
               >
                 {aiLoading ? 'Generating…' : 'Generate'}
               </button>

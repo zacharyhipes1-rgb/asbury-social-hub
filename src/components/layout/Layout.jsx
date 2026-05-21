@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Header from './Header'
 import Sidebar from './Sidebar'
+import PageTransition from './PageTransition'
 import ToastContainer from '../common/Toast'
 
 export default function Layout({ children }) {
@@ -33,7 +34,7 @@ export default function Layout({ children }) {
           menuOpen={sidebarOpen}
         />
         <main className="flex-1 overflow-y-auto scrollbar-thin">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
 

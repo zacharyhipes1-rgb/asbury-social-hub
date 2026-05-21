@@ -1,4 +1,5 @@
-import { useMemo, useState, Fragment } from 'react'
+import { useMemo, useState, useEffect, useRef, Fragment } from 'react'
+import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
   format, parseISO, subWeeks, startOfWeek, endOfWeek,
@@ -11,8 +12,10 @@ import {
 } from 'recharts'
 import {
   TrendingUp, Clock, AlertTriangle, Zap, Info, BarChart2,
-  ChevronDown, ChevronUp, AlertCircle, Calendar, ArrowUpDown, X
+  ChevronDown, ChevronUp, AlertCircle, Calendar, ArrowUpDown, X,
+  QrCode, Wrench, RefreshCw, ExternalLink
 } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 import { usePosts } from '../context/PostsContext'
 import { DEALERSHIPS } from '../data/dealerships'
 import { getPlatform } from '../data/platforms'
@@ -90,6 +93,63 @@ export default function AnalyticsPage() {
   const [sortBy,          setSortBy]          = useState('approvalRate')
   const [sortDir,         setSortDir]         = useState('asc')   // asc = worst first for approvalRate
   const [selectedDealer,  setSelectedDealer]  = useState(null)
+  const scoreboardRef = useRef(null)
+
+  const focusScoreboard = (col, dir) => {
+    setSortBy(col)
+    setSortDir(dir)
+    setSelectedDealer(null)
+    setTimeout(() => scoreboardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
+  // ── QR Analytics ──────────────────────────────────────────────────────────
+  const [qrCodes,        setQrCodes]        = useState([])
+  const [qrLoading,      setQrLoading]      = useState(false)
+
+  // ── Tool Usage ────────────────────────────────────────────────────────────
+  const [toolEvents,     setToolEvents]     = useState([])
+  const [toolLoading,    setToolLoading]    = useState(false)
+
+  useEffect(() => {
+    loadQrData()
+    loadToolData()
+  }, [])
+
+  const loadQrData = async () => {
+    setQrLoading(true)
+    try {
+      const [{ data: codes }, { data: scans }] = await Promise.all([
+        supabase.from('qr_codes').select('*').order('created_at', { ascending: false }),
+        supabase.from('qr_scans').select('qr_code_id, scanned_at'),
+      ])
+      const counts = (scans || []).reduce((acc, s) => {
+        acc[s.qr_code_id] = (acc[s.qr_code_id] || 0) + 1
+        return acc
+      }, {})
+      setQrCodes((codes || []).map(c => ({ ...c, scan_count: counts[c.id] || 0 })))
+    } catch { /* silent */ } finally { setQrLoading(false) }
+  }
+
+  const loadToolData = async () => {
+    setToolLoading(true)
+    try {
+      const { data } = await supabase.from('tool_events').select('tool_id, used_at')
+      setToolEvents(data || [])
+    } catch { /* silent */ } finally { setToolLoading(false) }
+  }
+
+  // Derived: tool usage counts for chart
+  const toolUsageCounts = useMemo(() => {
+    const map = {}
+    toolEvents.forEach(e => { map[e.tool_id] = (map[e.tool_id] || 0) + 1 })
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([id, count]) => ({ id, count }))
+  }, [toolEvents])
+
+  // Derived: QR scans summary
+  const totalQrScans = useMemo(() => qrCodes.reduce((s, c) => s + c.scan_count, 0), [qrCodes])
 
   const now = new Date()
 
@@ -289,41 +349,53 @@ export default function AnalyticsPage() {
       {(needsAttention.length > 0 || inactiveCount > 0 || totalFlagged > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {needsAttention.length > 0 && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-rose-50 border border-rose-100">
+            <button
+              onClick={() => focusScoreboard('approvalRate', 'asc')}
+              className="flex items-center gap-3 p-4 rounded-xl bg-rose-50 border border-rose-100 hover:bg-rose-100 hover:border-rose-200 hover:shadow-sm transition-all text-left w-full"
+            >
               <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle size={15} className="text-rose-600" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-rose-800">
                   {needsAttention.length} dealership{needsAttention.length > 1 ? 's' : ''} need attention
                 </p>
-                <p className="text-xs text-rose-500 mt-0.5">
+                <p className="text-xs text-rose-500 mt-0.5 truncate">
                   {needsAttention.map(d => d.name).join(', ')}
                 </p>
               </div>
-            </div>
+              <ChevronDown size={13} className="text-rose-300 flex-shrink-0 -rotate-90" />
+            </button>
           )}
           {inactiveCount > 0 && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100">
+            <button
+              onClick={() => focusScoreboard('thisWeek', 'asc')}
+              className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100 hover:bg-amber-100 hover:border-amber-200 hover:shadow-sm transition-all text-left w-full"
+            >
               <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <Calendar size={15} className="text-amber-600" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-amber-800">{inactiveCount} inactive this week</p>
                 <p className="text-xs text-amber-500 mt-0.5">No posts submitted yet</p>
               </div>
-            </div>
+              <ChevronDown size={13} className="text-amber-300 flex-shrink-0 -rotate-90" />
+            </button>
           )}
           {totalFlagged > 0 && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-orange-50 border border-orange-100">
+            <button
+              onClick={() => focusScoreboard('flagged', 'desc')}
+              className="flex items-center gap-3 p-4 rounded-xl bg-orange-50 border border-orange-100 hover:bg-orange-100 hover:border-orange-200 hover:shadow-sm transition-all text-left w-full"
+            >
               <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
                 <AlertCircle size={15} className="text-orange-600" />
               </div>
-              <div>
-                <p className="text-sm font-semibold text-orange-800">{totalFlagged} posts flagged for revision</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-orange-800">{totalFlagged} post{totalFlagged > 1 ? 's' : ''} flagged for revision</p>
                 <p className="text-xs text-orange-500 mt-0.5">Awaiting resubmission</p>
               </div>
-            </div>
+              <ChevronDown size={13} className="text-orange-300 flex-shrink-0 -rotate-90" />
+            </button>
           )}
         </div>
       )}
@@ -348,7 +420,7 @@ export default function AnalyticsPage() {
       {/* ── Charts ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Weekly submissions */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="card-hover bg-white rounded-2xl border border-slate-200 p-5">
           <p className="text-sm font-semibold text-slate-700 mb-4">Submissions — Last 7 Days</p>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={weeklyData} barSize={30}>
@@ -364,7 +436,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Platform breakdown */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className="card-hover bg-white rounded-2xl border border-slate-200 p-5">
           <p className="text-sm font-semibold text-slate-700 mb-4">By Platform</p>
           {platformData.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-12">No data yet</p>
@@ -405,7 +477,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Dealership Scoreboard ── */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div ref={scoreboardRef} className="card-hover bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
           <div>
             <h2 className="font-semibold text-slate-900">Dealership Scoreboard</h2>
@@ -451,13 +523,16 @@ export default function AnalyticsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {sorted.map(d => {
+              {sorted.map((d, index) => {
                 const isSelected = selectedDealer === d.id
                 const noData     = d.total === 0
 
                 return (
                   <Fragment key={d.id}>
-                    <tr
+                    <motion.tr
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: Math.min(index * 0.025, 0.5), ease: 'easeOut' }}
                       onClick={() => setSelectedDealer(isSelected ? null : d.id)}
                       className={`cursor-pointer transition-colors ${
                         isSelected
@@ -520,7 +595,7 @@ export default function AnalyticsPage() {
                           ? formatDistanceToNow(parseISO(d.lastPost), { addSuffix: true })
                           : <span className="text-slate-300">Never</span>}
                       </td>
-                    </tr>
+                    </motion.tr>
 
                     {/* ── Drill-in panel ── */}
                     {isSelected && drillDealer && (
@@ -681,7 +756,7 @@ export default function AnalyticsPage() {
           </div>
           <Link
             to="/settings"
-            className="flex items-center gap-1.5 text-xs font-semibold text-white bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap flex-shrink-0"
+            className="btn-press flex items-center gap-1.5 text-xs font-semibold text-white bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap flex-shrink-0"
           >
             <Zap size={12} />Set up integrations
           </Link>
@@ -700,6 +775,136 @@ export default function AnalyticsPage() {
           </p>
           <p className="text-[10px] text-slate-300 mt-2">Planned for Phase 2 · Requires UTM discipline first</p>
         </div>
+      </div>
+
+      {/* ── QR Code Analytics ── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+              <QrCode size={15} className="text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-slate-900 text-sm">QR Code Analytics</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Scan counts for all tracked QR codes</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {qrCodes.length > 0 && (
+              <div className="flex gap-3">
+                <div className="text-right">
+                  <p className="text-lg font-bold text-slate-900 leading-none">{qrCodes.length}</p>
+                  <p className="text-[10px] text-slate-400">codes</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-indigo-600 leading-none">{totalQrScans}</p>
+                  <p className="text-[10px] text-slate-400">total scans</p>
+                </div>
+              </div>
+            )}
+            <button onClick={loadQrData} disabled={qrLoading}
+              className="text-slate-400 hover:text-indigo-500 transition-colors disabled:opacity-40 p-1">
+              <RefreshCw size={13} className={qrLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+        </div>
+
+        {qrLoading ? (
+          <div className="py-10 text-center text-sm text-slate-400">Loading…</div>
+        ) : qrCodes.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-slate-400">No tracked QR codes yet.</p>
+            <p className="text-xs text-slate-300 mt-1">Generate a Tracked QR in Tools → QR Code.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  {[['Label / URL', ''],['Target', 'hidden sm:table-cell'],['Created', 'hidden md:table-cell'],['Scans', '']].map(([h, cls]) => (
+                    <th key={h} className={`px-4 py-2.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider ${cls}`}>{h}</th>
+                  ))}
+                  <th className="px-4 py-2.5 w-8" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {qrCodes.map(code => (
+                  <tr key={code.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="px-4 py-3 max-w-[200px]">
+                      <p className="text-xs font-semibold text-slate-800 truncate">{code.label || code.target_url}</p>
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3 max-w-[220px]">
+                      <p className="text-xs text-slate-400 truncate">{code.target_url}</p>
+                    </td>
+                    <td className="hidden md:table-cell px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
+                      {new Date(code.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${
+                        code.scan_count > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        {code.scan_count}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <a href={code.target_url} target="_blank" rel="noopener noreferrer"
+                        className="text-slate-300 hover:text-indigo-500 transition-colors">
+                        <ExternalLink size={12} />
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── Tool Usage ── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <Wrench size={14} className="text-slate-500" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-slate-900 text-sm">Tool Usage</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Most-used interactive tools across the team</p>
+            </div>
+          </div>
+          <button onClick={loadToolData} disabled={toolLoading}
+            className="text-slate-400 hover:text-indigo-500 transition-colors disabled:opacity-40 p-1">
+            <RefreshCw size={13} className={toolLoading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+
+        {toolLoading ? (
+          <div className="py-10 text-center text-sm text-slate-400">Loading…</div>
+        ) : toolUsageCounts.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-slate-400">No tool usage recorded yet.</p>
+            <p className="text-xs text-slate-300 mt-1">Usage is logged when tools are run.</p>
+          </div>
+        ) : (
+          <div className="p-5">
+            <div className="space-y-2.5">
+              {toolUsageCounts.map(({ id, count }, i) => {
+                const pct = Math.round((count / toolUsageCounts[0].count) * 100)
+                return (
+                  <div key={id} className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400 w-4 flex-shrink-0">{i + 1}</span>
+                    <span className="text-xs font-semibold text-slate-700 w-24 flex-shrink-0 capitalize">{id}</span>
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-indigo-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-xs font-bold text-slate-600 w-8 text-right flex-shrink-0">{count}</span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[10px] text-slate-300 mt-4">Logged when PageSpeed tests run, Schema validates, or QR codes are generated.</p>
+          </div>
+        )}
       </div>
 
     </div>

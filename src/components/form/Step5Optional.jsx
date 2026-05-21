@@ -246,7 +246,7 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
         <button
           onClick={onSubmit}
           disabled={!valid || isSubmitting}
-          className="flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-green-600 text-white rounded-xl font-medium text-sm
+          className="btn-press flex items-center gap-2 px-5 sm:px-6 py-2.5 bg-green-600 text-white rounded-xl font-medium text-sm
             hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           {isSubmitting ? (
