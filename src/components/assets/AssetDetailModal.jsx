@@ -37,6 +37,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfDownloading, setPdfDownloading] = useState(false)
 
   // Fetch PDF via same-origin proxy → blob URL → bypasses X-Frame-Options: DENY
   // Only runs when the modal is open and the asset is a PDF.
@@ -76,6 +77,27 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
     : forceDownloadUrl(asset.file_url)
 
   const viewHref = isPDF ? proxyViewUrl : asset.file_url
+
+  const handlePdfDownload = async () => {
+    if (pdfDownloading) return
+    setPdfDownloading(true)
+    try {
+      const src = pdfBlobUrl
+        ? pdfBlobUrl
+        : await fetch(`/api/pdf?url=${encodeURIComponent(asset.file_url)}&dl=1`)
+            .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.blob() })
+            .then(b => URL.createObjectURL(b))
+      const a = document.createElement('a')
+      a.href = src
+      a.download = asset.file_name || 'document.pdf'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      if (!pdfBlobUrl) setTimeout(() => URL.revokeObjectURL(src), 5000)
+    } catch { /* silent */ } finally {
+      setPdfDownloading(false)
+    }
+  }
 
   const handleUseInPost = () => {
     navigate(`/upload?asset=${asset.id}`)
@@ -166,15 +188,25 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
             >
               <ExternalLink size={13} /> View full size
             </a>
-            <a
-              href={downloadHref}
-              download={isPDF ? undefined : asset.file_name}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors min-h-[40px]"
-            >
-              <Download size={13} /> Download
-            </a>
+            {isPDF ? (
+              <button
+                onClick={handlePdfDownload}
+                disabled={pdfDownloading}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors min-h-[40px] disabled:opacity-50"
+              >
+                <Download size={13} /> {pdfDownloading ? 'Downloading…' : 'Download'}
+              </button>
+            ) : (
+              <a
+                href={downloadHref}
+                download={asset.file_name}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors min-h-[40px]"
+              >
+                <Download size={13} /> Download
+              </a>
+            )}
             {(isAdmin || isSocialMedia) && (
               <button
                 onClick={handleUseInPost}
