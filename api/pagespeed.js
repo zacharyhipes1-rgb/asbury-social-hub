@@ -1,10 +1,11 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { url, strategy = 'mobile' } = req.body || {}
-  if (!url) return res.status(400).json({ error: 'URL is required' })
+  const { url } = req.body || {}
+  const strategy = ['mobile', 'desktop'].includes(req.body?.strategy) ? req.body.strategy : 'mobile'
+  if (!url || typeof url !== 'string') return res.status(400).json({ error: 'URL is required' })
 
-  let targetUrl = url.trim()
+  let targetUrl = url.trim().slice(0, 2048)
   if (!targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`
 
   try {

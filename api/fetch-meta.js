@@ -1,11 +1,22 @@
+function isBlockedUrl(urlStr) {
+  try {
+    const { hostname, protocol } = new URL(urlStr)
+    if (protocol !== 'http:' && protocol !== 'https:') return true
+    if (/^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+|169\.254\.\d+\.\d+|0\.0\.0\.0)/i.test(hostname)) return true
+    return false
+  } catch { return true }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { url } = req.body || {}
-  if (!url) return res.status(400).json({ error: 'URL is required' })
+  if (!url || typeof url !== 'string') return res.status(400).json({ error: 'URL is required' })
 
-  let targetUrl = url.trim()
+  let targetUrl = url.trim().slice(0, 2048)
   if (!targetUrl.startsWith('http')) targetUrl = `https://${targetUrl}`
+
+  if (isBlockedUrl(targetUrl)) return res.status(400).json({ error: 'Invalid URL' })
 
   try {
     const response = await fetch(targetUrl, {

@@ -6,7 +6,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { dealership, platform, contentType, context } = req.body || {}
+  const body = req.body || {}
+  const dealership = typeof body.dealership === 'string' ? body.dealership.slice(0, 200) : ''
+  const platform = typeof body.platform === 'string' ? body.platform.slice(0, 50) : ''
+  const contentType = typeof body.contentType === 'string' ? body.contentType.slice(0, 100) : ''
+  const context = typeof body.context === 'string' ? body.context.slice(0, 500) : ''
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: 'Caption AI is not configured. Add ANTHROPIC_API_KEY in Vercel settings.' })
