@@ -1,17 +1,44 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Mail, Lock, User, Briefcase, AlertCircle, CheckCircle, ArrowLeft, Zap, Eye, EyeOff } from 'lucide-react'
 import { useUsers } from '../context/UsersContext'
+import { useInvites } from '../context/InvitesContext'
+import { notifyNewUserRequest } from '../services/emailService'
 
 export default function SignUpPage() {
-  const { getUserByEmail, addUser } = useUsers()
+  const { getUserByEmail, addUser, getAdmins } = useUsers()
+  const { getValidInvite, acceptInvite } = useInvites()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // Invite-mode state
+  const [invite, setInvite] = useState(null)        // valid invite object, or null
+  const [inviteError, setInviteError] = useState('') // set when token is present but invalid
 
   const [form, setForm] = useState({ name: '', email: '', title: '', password: '', confirmPw: '' })
   const [showPw, setShowPw]   = useState(false)
   const [error, setError]     = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Check invite token on mount
+  useEffect(() => {
+    const token = searchParams.get('invite')
+    if (!token) return
+
+    const valid = getValidInvite(token)
+    if (valid) {
+      setInvite(valid)
+      setForm(f => ({
+        ...f,
+        email: valid.email,
+        name:  valid.name || f.name,
+      }))
+    } else {
+      setInviteError('This invite link is invalid or has expired. Please request a new one.')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -31,16 +58,40 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
-      await addUser({
-        name,
-        email,
-        title: form.title.trim(),
-        role: 'social_media',
-        password: form.password,
-        active: false,    // Pending admin activation
-      })
-      setSuccess(true)
-      setTimeout(() => navigate('/login', { replace: true }), 2600)
+      if (invite) {
+        // Invited path — immediately active
+        await addUser({
+          name,
+          email,
+          title: form.title.trim(),
+          role: invite.role || 'social_media',
+          password: form.password,
+          active: true,
+          registration_type: 'invited',
+        })
+        acceptInvite(invite.token)
+        setSuccess(true)
+        setTimeout(() => navigate('/login', { replace: true }), 2200)
+      } else {
+        // Self-registration path — pending admin approval
+        const user = await addUser({
+          name,
+          email,
+          title: form.title.trim(),
+          role: 'social_media',
+          password: form.password,
+          active: false,
+          registration_type: 'self',
+        })
+        // Notify all admins
+        try {
+          await notifyNewUserRequest({ user, admins: getAdmins() })
+        } catch {
+          // Email failure doesn't block registration
+        }
+        setSuccess(true)
+        setTimeout(() => navigate('/login', { replace: true }), 2800)
+      }
     } catch {
       setError('Unable to create account. Please try again.')
     } finally {
@@ -66,23 +117,65 @@ export default function SignUpPage() {
             style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 8px 32px rgba(99,102,241,0.4)' }}>
             <Zap size={20} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Request access</h1>
-          <p className="text-slate-400 mt-1 text-sm">An administrator will review your account</p>
+          {invite ? (
+            <>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Create your account</h1>
+              <p className="text-slate-400 mt-1 text-sm">You've been invited to Asbury Social Hub</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Request access</h1>
+              <p className="text-slate-400 mt-1 text-sm">An administrator will review your account</p>
+            </>
+          )}
         </div>
 
         <div className="rounded-2xl border border-white/10 p-6" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)' }}>
+
+          {/* Invalid invite banner */}
+          {inviteError && (
+            <div className="mb-4 flex items-start gap-2 px-3 py-3 rounded-xl text-red-400 text-sm"
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+              <span>{inviteError}</span>
+            </div>
+          )}
+
           {success ? (
             <div className="text-center py-3">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-500/20 mb-3">
                 <CheckCircle size={22} className="text-emerald-400" />
               </div>
-              <p className="text-white text-sm font-semibold">Account requested</p>
-              <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                Your account is pending administrator approval. You'll be able to sign in once it's activated.
-              </p>
+              {invite ? (
+                <>
+                  <p className="text-white text-sm font-semibold">Account created!</p>
+                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                    You can now sign in with your email and password.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-white text-sm font-semibold">Request submitted</p>
+                  <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                    Your account is pending administrator approval. You'll be notified when it's activated.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Invite role hint */}
+              {invite && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
+                  style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                  <span className="text-indigo-300">Role:</span>
+                  <span className="text-indigo-200 font-semibold">
+                    {invite.role === 'admin' ? 'Administrator' : invite.role === 'viewer' ? 'View Only' : 'Social Media'}
+                  </span>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Full name</label>
                 <div className="relative">
@@ -108,19 +201,22 @@ export default function SignUpPage() {
                   <input
                     type="email"
                     value={form.email}
-                    onChange={(e) => set('email', e.target.value)}
+                    onChange={(e) => !invite && set('email', e.target.value)}
+                    readOnly={!!invite}
                     placeholder="you@asburyauto.com"
                     required
                     autoComplete="email"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white placeholder:text-slate-600
-                      focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white placeholder:text-slate-600
+                      focus:outline-none focus:ring-1 focus:ring-indigo-500 ${invite ? 'opacity-70 cursor-default' : ''}`}
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Title <span className="normal-case font-normal text-slate-600">(optional)</span></label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Title <span className="normal-case font-normal text-slate-600">(optional)</span>
+                </label>
                 <div className="relative">
                   <Briefcase size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
@@ -189,12 +285,16 @@ export default function SignUpPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (!!inviteError && !invite)}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold text-white
                   disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}
               >
-                {loading ? 'Submitting…' : 'Request access'}
+                {loading
+                  ? 'Submitting…'
+                  : invite
+                    ? 'Create account'
+                    : 'Request access'}
               </button>
             </form>
           )}

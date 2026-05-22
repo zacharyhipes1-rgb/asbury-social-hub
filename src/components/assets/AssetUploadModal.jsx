@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { X, UploadCloud, AlertCircle, Loader, CheckCircle, ExternalLink, Tag } from 'lucide-react'
+import { X, UploadCloud, AlertCircle, Loader, CheckCircle, ExternalLink, Tag, Folder } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useAssets } from '../../context/AssetsContext'
 import { useToast } from '../../context/ToastContext'
@@ -11,7 +11,7 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export default function AssetUploadModal({ isOpen, onClose }) {
+export default function AssetUploadModal({ isOpen, onClose, currentFolderId = null, folderPath = [] }) {
   const { currentUser } = useAuth()
   const { addAsset } = useAssets()
   const { addToast } = useToast()
@@ -70,7 +70,7 @@ export default function AssetUploadModal({ isOpen, onClose }) {
     setUploading(true)
     try {
       const finalTags = tagInput.trim() ? [...tags, tagInput.trim().toLowerCase()] : tags
-      await addAsset({ file, description, tags: finalTags, currentUser })
+      await addAsset({ file, description, tags: finalTags, folderId: currentFolderId, currentUser })
       addToast(`Uploaded: ${file.name}`, 'success')
       reset()
       onClose()
@@ -92,6 +92,14 @@ export default function AssetUploadModal({ isOpen, onClose }) {
         </div>
 
         <div className="p-5 sm:p-6 space-y-4">
+          {/* Folder context */}
+          {currentFolderId && folderPath.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-700">
+              <Folder size={13} className="flex-shrink-0 text-indigo-400" />
+              <span className="font-medium">Uploading to: <span className="font-bold">{folderPath.map(f => f.name).join(' › ')}</span></span>
+            </div>
+          )}
+
           {!cloudinaryReady && (
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-amber-800 text-sm bg-amber-50 border border-amber-200">
               <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />

@@ -137,3 +137,86 @@ export function getNotificationLog() {
 export function clearNotificationLog() {
   localStorage.removeItem('asbury_notification_log')
 }
+
+// ── Auth & User notifications ──────────────────────────────────────────────
+
+export async function sendOtpCode({ recipient, code }) {
+  await sendTo({
+    recipient,
+    subject: 'Your Asbury Social Hub verification code',
+    bodyLines: [
+      `Hi ${recipient.name || 'there'},`,
+      `Your verification code is: ${code}`,
+      `This code is valid for 10 minutes. Do not share it with anyone.`,
+    ],
+    sender: { name: 'Asbury Social Hub', email: 'noreply@asburyauto.com' },
+    type: 'otp_code',
+    postId: null,
+  })
+}
+
+export async function notifyNewUserRequest({ user, admins }) {
+  const subject = `New access request: ${user.name}`
+  const bodyLines = [
+    `${user.name} has requested access to Asbury Social Hub.`,
+    `Email: ${user.email}${user.title ? `\nTitle: ${user.title}` : ''}`,
+    `Submitted: ${new Date().toLocaleString()}`,
+    `Log in to Asbury Social Hub and visit Users & Security → Pending Requests to approve or reject.`,
+  ]
+  await Promise.all(
+    (admins || []).map(admin =>
+      sendTo({ recipient: admin, subject, bodyLines, type: 'new_user_request', postId: null })
+    )
+  )
+}
+
+export async function sendInvite({ invite, invitedBy }) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const link = `${origin}/signup?invite=${invite.token}`
+  const roleName = invite.role === 'admin' ? 'Administrator'
+    : invite.role === 'viewer' ? 'View Only'
+    : 'Social Media'
+  await sendTo({
+    recipient: { name: invite.name || invite.email, email: invite.email },
+    subject: "You've been invited to Asbury Social Hub",
+    bodyLines: [
+      `${invite.invited_by_name || 'An administrator'} has invited you to join Asbury Social Hub.`,
+      `Role: ${roleName}`,
+      `Use the link below to create your account (expires in 7 days):`,
+      link,
+      `Questions? Contact ${invitedBy?.name || invite.invited_by_name || 'your administrator'}.`,
+    ],
+    sender: invitedBy || { name: 'Asbury Social Hub', email: 'noreply@asburyauto.com' },
+    type: 'invite',
+    postId: null,
+  })
+}
+
+export async function notifyUserApproved({ user }) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  await sendTo({
+    recipient: { name: user.name, email: user.email },
+    subject: 'Your Asbury Social Hub account is approved',
+    bodyLines: [
+      `Great news, ${user.name}! Your access request has been approved.`,
+      `You can now sign in using your email and password:`,
+      `${origin}/login`,
+    ],
+    type: 'user_approved',
+    postId: null,
+  })
+}
+
+export async function notifyUserRejected({ user }) {
+  await sendTo({
+    recipient: { name: user.name, email: user.email },
+    subject: 'Update on your Asbury Social Hub access request',
+    bodyLines: [
+      `Hi ${user.name},`,
+      `After review, your access request to Asbury Social Hub was not approved at this time.`,
+      `If you believe this is an error or have questions, please contact your manager.`,
+    ],
+    type: 'user_rejected',
+    postId: null,
+  })
+}

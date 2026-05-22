@@ -3,6 +3,8 @@ import { UsersProvider } from './context/UsersContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { PostsProvider } from './context/PostsContext'
 import { AssetsProvider } from './context/AssetsContext'
+import { FoldersProvider } from './context/FoldersContext'
+import { InvitesProvider } from './context/InvitesContext'
 import { ToastProvider } from './context/ToastContext'
 import Layout from './components/layout/Layout'
 import LoginPage from './pages/LoginPage'
@@ -114,13 +116,17 @@ export default function App() {
     <BrowserRouter>
       <UsersProvider>
         <AuthProvider>
-          <PostsProvider>
-            <AssetsProvider>
-              <ToastProvider>
-                <AppRoutes />
-              </ToastProvider>
-            </AssetsProvider>
-          </PostsProvider>
+          <InvitesProvider>
+            <PostsProvider>
+              <AssetsProvider>
+                <FoldersProvider>
+                  <ToastProvider>
+                    <AppRoutes />
+                  </ToastProvider>
+                </FoldersProvider>
+              </AssetsProvider>
+            </PostsProvider>
+          </InvitesProvider>
         </AuthProvider>
       </UsersProvider>
     </BrowserRouter>

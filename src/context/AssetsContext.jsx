@@ -19,6 +19,7 @@ function fromRow(r) {
     thumbnail_url:     r.thumbnail_url,
     description:       r.description || '',
     tags:              Array.isArray(r.tags) ? r.tags : [],
+    folder_id:         r.folder_id || null,
     uploaded_by:       r.uploaded_by,
     uploaded_by_name:  r.uploaded_by_name,
     uploaded_at:       r.uploaded_at,
@@ -33,8 +34,6 @@ function normalizeTags(raw) {
 export function AssetsProvider({ children }) {
   const [assets, setAssets] = useState([])
   const [loaded, setLoaded] = useState(false)
-  // tableMissing = true when Supabase returns "relation does not exist" (42P01)
-  // or "table not in schema cache" (PGRST205). Stops polling spam.
   const [tableMissing, setTableMissing] = useState(false)
 
   const fetchAll = useCallback(async () => {
@@ -72,7 +71,7 @@ export function AssetsProvider({ children }) {
     return () => { supabase.removeChannel(channel); clearInterval(poll) }
   }, [fetchAll, tableMissing])
 
-  const addAsset = useCallback(async ({ file, description, tags, currentUser }) => {
+  const addAsset = useCallback(async ({ file, description, tags, folderId, currentUser }) => {
     const validationError = validateFile(file)
     if (validationError) throw new Error(validationError)
 
@@ -87,6 +86,7 @@ export function AssetsProvider({ children }) {
       thumbnail_url,
       description:      (description || '').trim().slice(0, 500),
       tags:             normalizeTags(tags),
+      folder_id:        folderId || null,
       uploaded_by:      currentUser?.email,
       uploaded_by_name: currentUser?.name,
     }
@@ -111,6 +111,25 @@ export function AssetsProvider({ children }) {
     setAssets(prev => prev.map(a => a.id === id ? fresh : a))
     return fresh
   }, [])
+
+  const moveAsset = useCallback(async (id, folderId) => {
+    // Optimistic update first for snappy feel
+    setAssets(prev => prev.map(a => a.id === id ? { ...a, folder_id: folderId || null } : a))
+    const { data, error } = await supabase
+      .from('assets')
+      .update({ folder_id: folderId || null })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) {
+      // Rollback optimistic update
+      fetchAll()
+      throw new Error(error.message || 'Failed to move asset.')
+    }
+    const fresh = fromRow(data)
+    setAssets(prev => prev.map(a => a.id === id ? fresh : a))
+    return fresh
+  }, [fetchAll])
 
   const softDeleteAsset = useCallback(async (id) => {
     const { error } = await supabase
@@ -144,6 +163,7 @@ export function AssetsProvider({ children }) {
         tableMissing,
         addAsset,
         updateAssetTags,
+        moveAsset,
         softDeleteAsset,
         getAssetById,
         searchAssets,

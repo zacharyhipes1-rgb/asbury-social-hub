@@ -187,3 +187,33 @@ DROP POLICY IF EXISTS "anon insert" ON public.tool_events;
 
 CREATE POLICY "anon read"   ON public.tool_events FOR SELECT TO anon USING (true);
 CREATE POLICY "anon insert" ON public.tool_events FOR INSERT TO anon WITH CHECK (true);
+
+
+-- ── Asset Folders ─────────────────────────────────────────────
+-- Hierarchical folder structure for the asset library.
+-- parent_id = NULL means root level.
+-- Deleting a folder cascades to all descendant folders.
+-- Assets in deleted folders have folder_id set to NULL via ON DELETE SET NULL.
+CREATE TABLE IF NOT EXISTS public.asset_folders (
+  id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  name            TEXT         NOT NULL,
+  parent_id       UUID         REFERENCES public.asset_folders(id) ON DELETE CASCADE,
+  created_by      TEXT         NOT NULL DEFAULT '',
+  created_by_name TEXT                  DEFAULT '',
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.asset_folders ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon read folders"  ON public.asset_folders;
+DROP POLICY IF EXISTS "anon write folders" ON public.asset_folders;
+
+CREATE POLICY "anon read folders"  ON public.asset_folders FOR SELECT TO anon USING (true);
+CREATE POLICY "anon write folders" ON public.asset_folders FOR ALL    TO anon USING (true) WITH CHECK (true);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.asset_folders;
+
+-- Add folder_id to assets — safe migration, no-op if column already exists
+ALTER TABLE public.assets
+  ADD COLUMN IF NOT EXISTS folder_id UUID
+  REFERENCES public.asset_folders(id) ON DELETE SET NULL;

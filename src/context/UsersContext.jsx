@@ -98,7 +98,7 @@ export function UsersProvider({ children }) {
     }
   }, [users, initialized])
 
-  const addUser = async ({ name, email, role, title, password, active = true }) => {
+  const addUser = async ({ name, email, role, title, password, active = true, registration_type = 'self' }) => {
     const user = {
       id: `user-${Date.now()}`,
       name,
@@ -108,6 +108,7 @@ export function UsersProvider({ children }) {
       initials: initials(name),
       password_hash: await hashPassword(password),
       active,
+      registration_type,
       created_at: new Date().toISOString(),
     }
     setUsers((prev) => [...prev, user])
@@ -161,6 +162,9 @@ export function UsersProvider({ children }) {
 
   const getAdmins = () => users.filter((u) => u.active && u.role === 'admin')
 
+  // Users who requested access and are awaiting admin approval
+  const getPendingUsers = () => users.filter((u) => !u.active && u.registration_type === 'self')
+
   return (
     <UsersContext.Provider
       value={{
@@ -177,6 +181,7 @@ export function UsersProvider({ children }) {
         getActiveUsers,
         getSocialTeam,
         getAdmins,
+        getPendingUsers,
       }}
     >
       {children}
