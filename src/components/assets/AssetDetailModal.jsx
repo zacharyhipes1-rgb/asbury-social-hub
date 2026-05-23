@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import {
@@ -38,8 +38,6 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
 
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [pdfBlobUrl, setPdfBlobUrl] = useState(null)
-  const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfDownloading, setPdfDownloading] = useState(false)
 
   // Tag editing state
@@ -48,25 +46,6 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
   const [tagInput, setTagInput] = useState('')
   const [savingTags, setSavingTags] = useState(false)
 
-  // Fetch PDF via same-origin proxy → blob URL → bypasses X-Frame-Options: DENY
-  // Only runs when the modal is open and the asset is a PDF.
-  useEffect(() => {
-    if (!isOpen || !asset) return
-    if (asset.file_type !== 'application/pdf') { setPdfBlobUrl(null); return }
-
-    let blobUrl = null
-    setPdfLoading(true)
-    setPdfBlobUrl(null)
-
-    fetch(`/api/pdf?url=${encodeURIComponent(asset.file_url)}`)
-      .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.blob() })
-      .then(blob => { blobUrl = URL.createObjectURL(blob); setPdfBlobUrl(blobUrl) })
-      .catch(() => { /* silent — fallback UI shown when pdfBlobUrl is null */ })
-      .finally(() => setPdfLoading(false))
-
-    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl) }
-  }, [isOpen, asset?.id])  // eslint-disable-line react-hooks/exhaustive-deps
-
   if (!isOpen || !asset) return null
 
   const isImage = asset.file_type?.startsWith('image/')
@@ -74,36 +53,44 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
   const isPDF   = asset.file_type === 'application/pdf'
   const Icon = fileIconFor(asset.file_type)
 
-  // Proxy URL used for "View full size" (opens in new tab) and as fallback link
-  const proxyViewUrl = isPDF
-    ? `/api/pdf?url=${encodeURIComponent(asset.file_url)}`
-    : null
-
-  // Download URL: PDFs go through proxy with dl=1 (server sends Content-Disposition: attachment)
-  // Images/video use Cloudinary fl_attachment transform. Raw files returned as-is.
-  const downloadHref = isPDF
-    ? `/api/pdf?url=${encodeURIComponent(asset.file_url)}&dl=1&name=${encodeURIComponent(asset.file_name || 'document.pdf')}`
-    : forceDownloadUrl(asset.file_url)
-
-  const viewHref = isPDF ? proxyViewUrl : asset.file_url
+  // Images/video use Cloudinary fl_attachment. PDFs & raw: direct URL (transforms not valid on raw).
+  const downloadHref = isPDF ? null : forceDownloadUrl(asset.file_url)
 
   const handlePdfDownload = async () => {
     if (pdfDownloading) return
     setPdfDownloading(true)
+    let blobUrl = null
     try {
-      const src = pdfBlobUrl
-        ? pdfBlobUrl
-        : await fetch(`/api/pdf?url=${encodeURIComponent(asset.file_url)}&dl=1`)
-            .then(r => { if (!r.ok) throw new Error('fetch failed'); return r.blob() })
-            .then(b => URL.createObjectURL(b))
-      const a = document.createElement('a')
-      a.href = src
-      a.download = asset.file_name || 'document.pdf'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      if (!pdfBlobUrl) setTimeout(() => URL.revokeObjectURL(src), 5000)
-    } catch { /* silent */ } finally {
+      // Attempt 1: proxy (sets Content-Disposition: attachment server-side)
+      try {
+        const proxyUrl = `/api/pdf?url=${encodeURIComponent(asset.file_url)}&dl=1&name=${encodeURIComponent(asset.file_name || 'document.pdf')}`
+        const r = await fetch(proxyUrl)
+        if (r.ok) blobUrl = URL.createObjectURL(await r.blob())
+      } catch { /* proxy unavailable or returned error — fall through */ }
+
+      // Attempt 2: fetch directly from Cloudinary (connect-src now allows res.cloudinary.com)
+      if (!blobUrl) {
+        try {
+          const r = await fetch(asset.file_url)
+          if (r.ok) blobUrl = URL.createObjectURL(await r.blob())
+        } catch { /* CORS blocked — fall through */ }
+      }
+
+      if (blobUrl) {
+        const a = document.createElement('a')
+        a.href = blobUrl
+        a.download = asset.file_name || 'document.pdf'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000)
+      } else {
+        // Last resort: open in new tab — user can save manually
+        window.open(asset.file_url, '_blank', 'noopener,noreferrer')
+      }
+    } catch {
+      window.open(asset.file_url, '_blank', 'noopener,noreferrer')
+    } finally {
       setPdfDownloading(false)
     }
   }
@@ -177,24 +164,21 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
               <video src={asset.file_url} controls className="w-full max-h-[60vh] object-contain bg-black" />
             )}
             {isPDF && (
-              pdfLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                  <p className="text-sm text-slate-400">Loading PDF…</p>
-                </div>
-              ) : pdfBlobUrl ? (
-                <iframe
-                  src={pdfBlobUrl}
-                  className="w-full rounded-sm"
-                  style={{ height: '420px', border: 'none' }}
-                  title={asset.file_name}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
+              // <object> renders PDF inline using the browser's built-in viewer.
+              // CSP object-src allows https://res.cloudinary.com; no proxy or fetch needed.
+              // Fallback content (between tags) displays if the browser can't render it.
+              <object
+                data={asset.file_url}
+                type="application/pdf"
+                className="w-full"
+                style={{ height: '420px', display: 'block' }}
+                aria-label={asset.file_name}
+              >
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400" style={{ height: '420px' }}>
                   <FileText size={40} />
-                  <p className="text-sm text-slate-500">PDF preview unavailable</p>
+                  <p className="text-sm text-slate-500">PDF preview not available in this browser.</p>
                   <a
-                    href={proxyViewUrl}
+                    href={asset.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-semibold text-indigo-600 hover:underline flex items-center gap-1"
@@ -202,7 +186,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
                     <ExternalLink size={12} /> Open PDF in new tab
                   </a>
                 </div>
-              )
+              </object>
             )}
             {!isImage && !isVideo && !isPDF && (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
@@ -216,7 +200,7 @@ export default function AssetDetailModal({ asset, isOpen, onClose }) {
           {/* Action bar */}
           <div className="flex flex-wrap items-center gap-2 mb-5">
             <a
-              href={viewHref}
+              href={asset.file_url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors min-h-[40px]"
