@@ -177,7 +177,7 @@ export default function Header({ onMenuToggle, menuOpen }) {
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
                       >
                         <Users size={14} />
-                        Team Members
+                        Users & Security
                       </Link>
                       <Link
                         to="/settings"

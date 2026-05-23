@@ -126,7 +126,7 @@ export default function Sidebar({ onClose }) {
               badge={pendingCount}
               onClick={onClose}
             />
-            <NavItem to="/users" icon={Users} label="Team Members" onClick={onClose} />
+            <NavItem to="/users" icon={Users} label="Users & Security" onClick={onClose} />
             <NavItem to="/settings" icon={Settings} label="Settings" onClick={onClose} />
           </>
         )}

@@ -14,17 +14,24 @@ function logNotification(entry) {
 }
 
 async function sendViaEmailJS(config, templateParams) {
-  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id: config.serviceId,
-      template_id: config.templateId,
-      user_id: config.publicKey,
-      template_params: templateParams,
-    }),
-  })
-  if (!res.ok) throw new Error(`EmailJS ${res.status}`)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 8000)   // 8-second cap
+  try {
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        service_id: config.serviceId,
+        template_id: config.templateId,
+        user_id: config.publicKey,
+        template_params: templateParams,
+      }),
+    })
+    if (!res.ok) throw new Error(`EmailJS ${res.status}`)
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 async function sendTo({ recipient, subject, bodyLines, sender, type, postId }) {
