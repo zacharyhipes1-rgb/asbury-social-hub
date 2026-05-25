@@ -1,8 +1,14 @@
 // QR Code scan redirect handler
 // Logs the scan in qr_scans, then 302-redirects to the original target URL.
-// Falls back to /tools on any error so scanners are never left on a dead page.
+// Falls back to /tools on this deployment on any error so scanners are never
+// left on a dead page.
 
-const FALLBACK = 'https://asbury-social-hub.vercel.app/tools'
+// VERCEL_URL is auto-injected by Vercel (without protocol).
+// In dev it is undefined, so fall back to localhost.
+const origin = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : 'http://localhost:5173'
+const FALLBACK = `${origin}/tools`
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
@@ -10,8 +16,10 @@ export default async function handler(req, res) {
   const { id } = req.query
   if (!id) return res.redirect(302, FALLBACK)
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+  // Support both VITE_SUPABASE_URL and SUPABASE_URL so this works
+  // regardless of whether the VITE_ prefix was used in Vercel's env settings.
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
     console.error('[qr-redirect] Missing Supabase env vars')
