@@ -2218,7 +2218,8 @@ function QrGenerator() {
           .insert({ target_url: content, label: label.trim() || content })
           .select().single()
         if (err) throw err
-        const trackingUrl = `${window.location.origin}/api/r/${data.id}`
+        const appOrigin = import.meta.env.VITE_APP_URL || window.location.origin
+        const trackingUrl = `${appOrigin}/api/r/${data.id}`
         await drawQR(trackingUrl)
         setSavedCode({ ...data, scan_count: 0 })
         logToolEvent('qr')
@@ -2250,7 +2251,7 @@ function QrGenerator() {
 
   const reloadCode = async (code) => {
     if (!canvasRef.current) return
-    const url = `${window.location.origin}/api/r/${code.id}`
+    const url = `${import.meta.env.VITE_APP_URL || window.location.origin}/api/r/${code.id}`
     try { await drawQR(url); setSavedCode(code); setValue(code.target_url); setLabel(code.label) }
     catch (e) { setError(e.message) }
   }
