@@ -107,7 +107,11 @@ export default function Header({ onMenuToggle, menuOpen }) {
   }
 
   const handleProfileSave = async (form) => {
-    await updateUser(currentUser.id, form)
+    const updated = await updateUser(currentUser.id, form)
+    if (updated) {
+      const { password_hash, ...safe } = updated
+      localStorage.setItem('asbury_current_user', JSON.stringify(safe))
+    }
     refreshCurrentUser()
     setProfileOpen(false)
   }

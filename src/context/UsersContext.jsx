@@ -61,9 +61,9 @@ export function UsersProvider({ children }) {
 
       const parsed = JSON.parse(saved)
 
-      // Strip fake users — keep only real team member emails
-      const realEmails = new Set(MOCK_USERS.map(u => u.email.toLowerCase()))
-      const cleaned = parsed.filter(u => realEmails.has(u.email?.toLowerCase()))
+      // Keep mock users (by ID, since email may have been changed via profile) + any self-registered users
+      const mockIds = new Set(MOCK_USERS.map(u => u.id))
+      const cleaned = parsed.filter(u => mockIds.has(u.id) || u.registration_type === 'self' || u.registration_type === 'invite')
 
       // Patch stale titles
       const TITLE_PATCHES = { 'zhipes@asburyauto.com': 'SEO | AEO Strategist' }
@@ -72,9 +72,9 @@ export function UsersProvider({ children }) {
         return fix && u.title !== fix ? { ...u, title: fix } : u
       })
 
-      // Add any MOCK_USERS not yet in localStorage
-      const existingEmails = new Set(patched.map(u => u.email.toLowerCase()))
-      const missing = MOCK_USERS.filter(u => !existingEmails.has(u.email.toLowerCase()))
+      // Add any MOCK_USERS not yet in localStorage (match by ID since email may have changed)
+      const existingIds = new Set(patched.map(u => u.id))
+      const missing = MOCK_USERS.filter(u => !existingIds.has(u.id))
 
       if (missing.length > 0) {
         Promise.all(missing.map(seedUserFromMock))
@@ -137,9 +137,15 @@ export function UsersProvider({ children }) {
     }
     if (updates.name) extra.initials = initials(updates.name)
     const { password, ...safe } = updates
+    let merged = null
     setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, ...safe, ...extra } : u))
+      prev.map((u) => {
+        if (u.id !== id) return u
+        merged = { ...u, ...safe, ...extra }
+        return merged
+      })
     )
+    return merged
   }
 
   const deactivateUser = (id) =>
