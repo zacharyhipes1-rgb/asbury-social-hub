@@ -22,11 +22,25 @@ export default function AssetCard({ asset, onClick }) {
     try { return format(parseISO(asset.uploaded_at), 'MMM d, yyyy') } catch { return '' }
   })()
 
+  const handleDragStart = (e) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', asset.id)
+    e.dataTransfer.setData('application/x-asset-id', asset.id)
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(asset) }
+  }
+
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
+      draggable
+      onDragStart={handleDragStart}
       onClick={() => onClick(asset)}
-      className="card-hover group text-left bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-300"
+      onKeyDown={handleKeyDown}
+      className="card-hover group text-left bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-grab active:cursor-grabbing"
     >
       {/* Preview */}
       <div className="aspect-square bg-slate-50 flex items-center justify-center overflow-hidden relative">
@@ -80,6 +94,6 @@ export default function AssetCard({ asset, onClick }) {
           </div>
         )}
       </div>
-    </button>
+    </div>
   )
 }

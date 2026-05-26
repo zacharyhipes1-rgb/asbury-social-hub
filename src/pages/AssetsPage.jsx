@@ -73,8 +73,24 @@ function FolderNameInput({ initialValue = '', onSave, onCancel, placeholder = 'F
   )
 }
 
-function FolderCard({ folder, itemCount, onClick, onRename, onDelete }) {
+function FolderCard({ folder, itemCount, onClick, onRename, onDelete, onAssetDrop }) {
   const [renaming, setRenaming] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const handleDragOver = (e) => {
+    if (e.dataTransfer.types.includes('application/x-asset-id')) {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      if (!isDragOver) setIsDragOver(true)
+    }
+  }
+  const handleDragLeave = () => setIsDragOver(false)
+  const handleDrop = (e) => {
+    e.preventDefault()
+    const assetId = e.dataTransfer.getData('application/x-asset-id')
+    setIsDragOver(false)
+    if (assetId) onAssetDrop?.(assetId, folder.id)
+  }
 
   if (renaming) {
     return (
@@ -92,7 +108,15 @@ function FolderCard({ folder, itemCount, onClick, onRename, onDelete }) {
   }
 
   return (
-    <div className="group relative bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-sm">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`group relative border rounded-2xl p-4 cursor-pointer transition-all ${
+        isDragOver
+          ? 'bg-indigo-100 border-indigo-500 ring-2 ring-indigo-300 shadow-md scale-[1.02]'
+          : 'bg-slate-50 hover:bg-indigo-50 border-slate-200 hover:border-indigo-300 hover:shadow-sm'
+      }`}>
       <div className="absolute top-2 right-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={e => { e.stopPropagation(); setRenaming(true) }}
@@ -242,6 +266,19 @@ export default function AssetsPage() {
     }
   }
 
+  const handleAssetDrop = async (assetId, folderId) => {
+    const asset = assets.find(a => a.id === assetId)
+    if (!asset) return
+    if ((asset.folder_id || null) === (folderId || null)) return
+    try {
+      await moveAsset(assetId, folderId)
+      const folderName = folderId ? (folders.find(f => f.id === folderId)?.name || 'folder') : 'All Assets'
+      addToast(`Moved to ${folderName}`, 'success')
+    } catch (err) {
+      addToast(err.message || 'Failed to move asset', 'error')
+    }
+  }
+
   const handleDeleteFolder = async () => {
     if (!deletingFolder) return
     try {
@@ -261,6 +298,25 @@ export default function AssetsPage() {
   const folderAssetCount = deletingFolder ? assets.filter(a => a.folder_id === deletingFolder.id).length : 0
   const showFolderSection = subfolders.length > 0
   const showFilesDivider  = showFolderSection && filtered.length > 0
+
+  // Breadcrumb drop helpers — drag an asset onto Home or parent folder name to move it there
+  const [crumbDragOver, setCrumbDragOver] = useState(null) // null | 'root' | folderId
+  const crumbDragOverProps = (targetId /* null = root */, key = targetId ?? 'root') => ({
+    onDragOver: (e) => {
+      if (e.dataTransfer.types.includes('application/x-asset-id')) {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (crumbDragOver !== key) setCrumbDragOver(key)
+      }
+    },
+    onDragLeave: () => setCrumbDragOver(null),
+    onDrop: (e) => {
+      e.preventDefault()
+      const assetId = e.dataTransfer.getData('application/x-asset-id')
+      setCrumbDragOver(null)
+      if (assetId) handleAssetDrop(assetId, targetId)
+    },
+  })
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -317,7 +373,14 @@ export default function AssetsPage() {
           <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
             <button
               onClick={() => navigateTo(null)}
-              className={`flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap transition-colors ${currentFolderId === null ? 'text-slate-500 cursor-default' : 'text-indigo-600 hover:text-indigo-800'}`}
+              {...crumbDragOverProps(null, 'root')}
+              className={`flex items-center gap-1.5 px-2 py-1 -mx-1 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
+                crumbDragOver === 'root'
+                  ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-300'
+                  : currentFolderId === null
+                    ? 'text-slate-500 cursor-default'
+                    : 'text-indigo-600 hover:text-indigo-800'
+              }`}
             >
               <Home size={13} />
               <span>All Assets</span>
@@ -327,7 +390,14 @@ export default function AssetsPage() {
                 <ChevronRight size={13} className="text-slate-300 flex-shrink-0" />
                 <button
                   onClick={() => navigateTo(folder.id)}
-                  className={`text-sm font-semibold truncate transition-colors ${folder.id === currentFolderId ? 'text-slate-600 cursor-default' : 'text-indigo-600 hover:text-indigo-800'}`}
+                  {...crumbDragOverProps(folder.id)}
+                  className={`px-2 py-1 -mx-1 rounded-md text-sm font-semibold truncate transition-all ${
+                    crumbDragOver === folder.id
+                      ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-300'
+                      : folder.id === currentFolderId
+                        ? 'text-slate-600 cursor-default'
+                        : 'text-indigo-600 hover:text-indigo-800'
+                  }`}
                 >
                   {folder.name}
                 </button>
@@ -416,6 +486,7 @@ export default function AssetsPage() {
                         onClick={navigateTo}
                         onRename={handleRenameFolder}
                         onDelete={setDeletingFolder}
+                        onAssetDrop={handleAssetDrop}
                       />
                     ))}
                     <NewFolderCard onSubmit={name => handleCreateFolder(name, currentFolderId)} />
