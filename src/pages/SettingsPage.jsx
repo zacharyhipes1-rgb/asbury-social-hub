@@ -471,7 +471,17 @@ function DemoResetButton() {
 const LS_EMAIL_KEY = 'asbury_emailjs_config'
 const LS_CL_KEY    = 'asbury_cloudinary_config'
 
-function loadEmailConfig()  { try { return JSON.parse(localStorage.getItem(LS_EMAIL_KEY) || '{}') } catch { return {} } }
+function loadEmailConfig() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem(LS_EMAIL_KEY) || '{}')
+    // Migrate legacy single templateId → templateOtp
+    if (cfg.templateId && !cfg.templateOtp) {
+      cfg.templateOtp = cfg.templateId
+      delete cfg.templateId
+    }
+    return cfg
+  } catch { return {} }
+}
 function loadCloudinary()   { try { return JSON.parse(localStorage.getItem(LS_CL_KEY)    || '{}') } catch { return {} } }
 
 async function testCloudinary(cfg) {
@@ -483,19 +493,41 @@ async function testCloudinary(cfg) {
 }
 
 async function sendTestEmail(cfg, fromUser) {
+  // Use the OTP template for the test (it's the simplest)
+  const templateId = cfg.templateOtp || cfg.templateInvite || cfg.templateApproval || cfg.templateUpload || cfg.templateId
+  if (!templateId) throw new Error('No template ID configured')
   const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       service_id:  cfg.serviceId,
-      template_id: cfg.templateId,
+      template_id: templateId,
       user_id:     cfg.publicKey,
       template_params: {
-        to_email: fromUser.email,
-        to_name:  fromUser.name,
-        subject:  'Asbury Social Hub — Email Test',
-        message:  'Your EmailJS configuration is working correctly!',
-        from_name: 'Asbury Social Hub',
+        to_email:  fromUser.email,
+        to_name:   fromUser.name,
+        subject:   'Asbury Social Hub — Email Test',
+        otp_code:  '——',
+        // Approval/upload template vars (ignored if wrong template)
+        status_icon:  '✅',
+        status_label: 'Email Test',
+        status_color: '#16a34a',
+        status_bg:    '#f0fdf4',
+        platform:     'Test',
+        dealership:   'Asbury Social Hub',
+        scheduled_for:'Now',
+        notes:        'Your EmailJS configuration is working correctly!',
+        cta_url:      typeof window !== 'undefined' ? window.location.origin : '',
+        cta_label:    'Open Asbury Social Hub',
+        // Invite template vars
+        invited_by:   'Asbury Social Hub',
+        role_name:    'Test',
+        invite_url:   typeof window !== 'undefined' ? window.location.origin : '',
+        expires_note: 'This is a test email.',
+        // Upload template vars
+        uploader_name:  'Asbury Social Hub',
+        caption_preview:'Your EmailJS configuration is working correctly!',
+        review_url:     typeof window !== 'undefined' ? window.location.origin : '',
       },
     }),
   })
@@ -511,7 +543,10 @@ export default function SettingsPage() {
   const [emailSaved, setEmailSaved] = useState(false)
   const [emailTest,  setEmailTest]  = useState(false)
   const [emailResult,setEmailResult]= useState(null)
-  const emailConfigured = !!(emailCfg.serviceId && emailCfg.templateId && emailCfg.publicKey)
+  const emailConfigured = !!(
+    emailCfg.serviceId && emailCfg.publicKey &&
+    (emailCfg.templateOtp || emailCfg.templateInvite || emailCfg.templateApproval || emailCfg.templateUpload || emailCfg.templateId)
+  )
 
   // Cloudinary state
   const [cl,       setCl]       = useState(loadCloudinary)
@@ -625,12 +660,11 @@ export default function SettingsPage() {
           <EmailGuide />
           <div className="space-y-4">
             {[
-              { key: 'serviceId',  label: 'Service ID',  placeholder: 'service_xxxxxxx' },
-              { key: 'templateId', label: 'Template ID', placeholder: 'template_xxxxxxx' },
-              { key: 'publicKey',  label: 'Public Key',  placeholder: 'Your EmailJS public key' },
-            ].map(({ key, label, placeholder }) => (
+              { key: 'serviceId', label: 'Service ID', placeholder: 'service_xxxxxxx', note: 'From Email Services in EmailJS' },
+              { key: 'publicKey', label: 'Public Key', placeholder: 'Your EmailJS public key', note: 'From Account → General in EmailJS' },
+            ].map(({ key, label, placeholder, note }) => (
               <div key={key}>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{label} <span className="normal-case font-normal text-slate-400">— {note}</span></label>
                 <div className="relative">
                   <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input type="text" value={emailCfg[key] || ''} onChange={e => setEmail(key, e.target.value)}
@@ -639,6 +673,27 @@ export default function SettingsPage() {
                 </div>
               </div>
             ))}
+            <div className="pt-1">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Email Templates <span className="normal-case font-normal text-slate-400">— one per email type</span></p>
+              <div className="space-y-3">
+                {[
+                  { key: 'templateOtp',      label: 'Password Reset / OTP',      placeholder: 'template_xxxxxxx' },
+                  { key: 'templateInvite',   label: 'New User Invitation',       placeholder: 'template_xxxxxxx' },
+                  { key: 'templateApproval', label: 'Post Status (Approved / Revision / Rejected)', placeholder: 'template_xxxxxxx' },
+                  { key: 'templateUpload',   label: 'New Upload (Needs Review)', placeholder: 'template_xxxxxxx' },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
+                    <div className="relative">
+                      <Key size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" value={emailCfg[key] || ''} onChange={e => setEmail(key, e.target.value)}
+                        placeholder={placeholder}
+                        className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           {emailResult && (
             <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border ${
