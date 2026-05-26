@@ -15,7 +15,7 @@ function logNotification(entry) {
 
 async function sendViaEmailJS(config, templateParams) {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 8000)   // 8-second cap
+  const timer = setTimeout(() => controller.abort(), 8000)
   try {
     const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST',
@@ -34,7 +34,8 @@ async function sendViaEmailJS(config, templateParams) {
   }
 }
 
-async function sendTo({ recipient, subject, bodyLines, sender, type, postId }) {
+// bodyLines joined with <br><br>; otpCode shows the code box; ctaLabel/ctaUrl shows the button
+async function sendTo({ recipient, subject, bodyLines, sender, type, postId, otpCode = '', ctaUrl = '', ctaLabel = '' }) {
   const logEntry = {
     type,
     post_id: postId,
@@ -52,12 +53,17 @@ async function sendTo({ recipient, subject, bodyLines, sender, type, postId }) {
   if (configured) {
     try {
       await sendViaEmailJS(config, {
-        to_name: recipient.name,
-        to_email: recipient.email,
-        from_name: sender?.name || 'Asbury Social Hub',
-        from_email: sender?.email || 'noreply@asburyauto.com',
+        to_name:     recipient.name,
+        to_email:    recipient.email,
+        from_name:   sender?.name  || 'Asbury Social Hub',
+        from_email:  sender?.email || 'noreply@asburyauto.com',
         subject,
-        message: bodyLines.join('\n\n'),
+        message:     bodyLines.join('<br><br>'),
+        otp_code:    otpCode,
+        otp_display: otpCode   ? 'block' : 'none',
+        cta_url:     ctaUrl    || '#',
+        cta_label:   ctaLabel  || '',
+        cta_display: ctaLabel  ? 'block' : 'none',
       })
       logEntry.sent_via_email = true
     } catch (err) {
@@ -73,100 +79,102 @@ async function sendTo({ recipient, subject, bodyLines, sender, type, postId }) {
   return { sent: logEntry.sent_via_email, configured, error }
 }
 
+const origin = () => (typeof window !== 'undefined' ? window.location.origin : '')
+
 // ── Public API ─────────────────────────────────────────────────────────────
 
 export async function notifyNewUpload({ post, uploader, socialTeam, admin }) {
   const subject = `New content submitted: ${post.platform} post for ${post.dealership_id}`
   const body = [
-    `${uploader.name} submitted new content for review.`,
-    `Platform: ${post.platform}  |  Scheduled: ${post.scheduled_for}`,
-    `Caption: "${post.caption?.slice(0, 120)}${post.caption?.length > 120 ? '…' : ''}"`,
-    `Log in to Asbury Social Hub to review and approve.`,
+    `<strong>${uploader.name}</strong> submitted new content for review.`,
+    `<strong>Platform:</strong> ${post.platform}&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Scheduled:</strong> ${post.scheduled_for}`,
+    `<strong>Caption:</strong> "${post.caption?.slice(0, 120)}${post.caption?.length > 120 ? '…' : ''}"`,
+    `Click below to review and approve it in Asbury Social Hub.`,
   ]
-
   const recipients = [admin, ...socialTeam.filter(u => u.id !== uploader.id)]
   await Promise.all(
     recipients.map(r =>
-      sendTo({ recipient: r, subject, bodyLines: body, sender: uploader, type: 'new_upload', postId: post.id })
+      sendTo({ recipient: r, subject, bodyLines: body, sender: uploader, type: 'new_upload', postId: post.id,
+        ctaUrl: `${origin()}/`, ctaLabel: 'Review Content' })
     )
   )
 }
 
 export async function notifyApproval({ post, uploader, admin, notes }) {
-  const subject = `Approved: your ${post.platform} post for ${post.dealership_id}`
+  const subject = `✅ Approved: your ${post.platform} post for ${post.dealership_id}`
   const body = [
-    `Your content submission has been approved and is ready for the publishing queue.`,
-    `Dealership: ${post.dealership_id}  |  Scheduled: ${post.scheduled_for}`,
-    notes ? `Manager notes: ${notes}` : '',
-    `Log in to Asbury Social Hub to view full details.`,
-  ].filter(Boolean)
-
-  await sendTo({ recipient: uploader, subject, bodyLines: body, sender: admin, type: 'approved', postId: post.id })
+    `Great news! Your content has been <strong>approved</strong> and is ready for the publishing queue.`,
+    `<strong>Dealership:</strong> ${post.dealership_id}&nbsp;&nbsp;·&nbsp;&nbsp;<strong>Scheduled:</strong> ${post.scheduled_for}`,
+    ...(notes ? [`<strong>Manager notes:</strong> ${notes}`] : []),
+  ]
+  await sendTo({ recipient: uploader, subject, bodyLines: body, sender: admin, type: 'approved', postId: post.id,
+    ctaUrl: `${origin()}/`, ctaLabel: 'View in Hub' })
 }
 
 export async function notifyRevision({ post, uploader, admin, notes }) {
-  const subject = `Revision requested: your ${post.platform} post for ${post.dealership_id}`
+  const subject = `✏️ Revision requested: your ${post.platform} post for ${post.dealership_id}`
   const body = [
-    `Your content submission requires revisions before it can be approved.`,
-    `Feedback from ${admin?.name || 'manager'}:`,
-    notes,
-    `Log in to Asbury Social Hub to update and resubmit.`,
+    `Your content submission needs revisions before it can be approved.`,
+    `<strong>Feedback from ${admin?.name || 'manager'}:</strong><br>${notes}`,
+    `Log in to update and resubmit your content.`,
   ]
-
-  await sendTo({ recipient: uploader, subject, bodyLines: body, sender: admin, type: 'revision_requested', postId: post.id })
+  await sendTo({ recipient: uploader, subject, bodyLines: body, sender: admin, type: 'revision_requested', postId: post.id,
+    ctaUrl: `${origin()}/`, ctaLabel: 'Update Content' })
 }
 
 export async function notifyDeletion({ post, uploader, admin, notes }) {
   const subject = `Content removed: your ${post.platform} post for ${post.dealership_id}`
   const body = [
     `Your content submission has been removed from the staging queue.`,
-    notes ? `Reason: ${notes}` : '',
-    `Log in to Asbury Social Hub if you have questions.`,
-  ].filter(Boolean)
-
+    ...(notes ? [`<strong>Reason:</strong> ${notes}`] : []),
+    `Contact your manager if you have questions.`,
+  ]
   await sendTo({ recipient: uploader, subject, bodyLines: body, sender: admin, type: 'deleted', postId: post.id })
 }
 
 export async function notifyDueToday({ posts, socialTeam, admin }) {
   if (!posts.length) return
   const subject = `${posts.length} post${posts.length !== 1 ? 's' : ''} scheduled to publish today`
+  const postList = posts
+    .map(p => `&bull;&nbsp;<strong>${p.platform}</strong> · ${p.dealership_id}: "${p.caption?.slice(0, 60)}…"`)
+    .join('<br>')
   const body = [
-    `The following approved posts are scheduled for today's publication:`,
-    posts.map(p => `• ${p.platform} for ${p.dealership_id}: "${p.caption?.slice(0, 60)}…"`).join('\n'),
+    `The following approved posts are scheduled for <strong>today's</strong> publication:`,
+    postList,
     `Please coordinate with your social media team to publish on time.`,
   ]
-
   await Promise.all(
     [admin, ...socialTeam].map(r =>
-      sendTo({ recipient: r, subject, bodyLines: body, sender: admin, type: 'due_today', postId: null })
+      sendTo({ recipient: r, subject, bodyLines: body, sender: admin, type: 'due_today', postId: null,
+        ctaUrl: `${origin()}/calendar`, ctaLabel: 'View Calendar' })
     )
   )
 }
 
 export function getNotificationLog() {
-  try {
-    return JSON.parse(localStorage.getItem('asbury_notification_log') || '[]')
-  } catch { return [] }
+  try { return JSON.parse(localStorage.getItem('asbury_notification_log') || '[]') }
+  catch { return [] }
 }
 
 export function clearNotificationLog() {
   localStorage.removeItem('asbury_notification_log')
 }
 
-// ── Auth & User notifications ──────────────────────────────────────────────
+// ── Auth & user notifications ──────────────────────────────────────────────
 
 export async function sendOtpCode({ recipient, code }) {
   return sendTo({
     recipient,
     subject: 'Your Asbury Social Hub verification code',
     bodyLines: [
-      `Hi ${recipient.name || 'there'},`,
-      `Your verification code is: ${code}`,
-      `This code is valid for 10 minutes. Do not share it with anyone.`,
+      `We received a password reset request for your account.`,
+      `Use the verification code below to confirm your identity.`,
+      `If you didn't request this, you can safely ignore this email — your account is secure.`,
     ],
     sender: { name: 'Asbury Social Hub', email: 'noreply@asburyauto.com' },
     type: 'otp_code',
     postId: null,
+    otpCode: code,
   })
 }
 
@@ -178,52 +186,53 @@ export function isEmailServiceConfigured() {
 export async function notifyNewUserRequest({ user, admins }) {
   const subject = `New access request: ${user.name}`
   const bodyLines = [
-    `${user.name} has requested access to Asbury Social Hub.`,
-    `Email: ${user.email}${user.title ? `\nTitle: ${user.title}` : ''}`,
-    `Submitted: ${new Date().toLocaleString()}`,
-    `Log in to Asbury Social Hub and visit Users & Security → Pending Requests to approve or reject.`,
+    `<strong>${user.name}</strong> has requested access to Asbury Social Hub.`,
+    `<strong>Email:</strong> ${user.email}${user.title ? `<br><strong>Title:</strong> ${user.title}` : ''}`,
+    `<strong>Submitted:</strong> ${new Date().toLocaleString()}`,
+    `Visit Users &amp; Security to approve or reject this request.`,
   ]
   await Promise.all(
     (admins || []).map(admin =>
-      sendTo({ recipient: admin, subject, bodyLines, type: 'new_user_request', postId: null })
+      sendTo({ recipient: admin, subject, bodyLines, type: 'new_user_request', postId: null,
+        ctaUrl: `${origin()}/users`, ctaLabel: 'Review Request' })
     )
   )
 }
 
 export async function sendInvite({ invite, invitedBy }) {
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const link = `${origin}/signup?invite=${invite.token}`
+  const link = `${origin()}/signup?invite=${invite.token}`
   const roleName = invite.role === 'admin' ? 'Administrator'
     : invite.role === 'viewer' ? 'View Only'
-    : 'Social Media'
+    : 'Social Media Manager'
   await sendTo({
     recipient: { name: invite.name || invite.email, email: invite.email },
     subject: "You've been invited to Asbury Social Hub",
     bodyLines: [
-      `${invite.invited_by_name || 'An administrator'} has invited you to join Asbury Social Hub.`,
-      `Role: ${roleName}`,
-      `Use the link below to create your account (expires in 7 days):`,
-      link,
-      `Questions? Contact ${invitedBy?.name || invite.invited_by_name || 'your administrator'}.`,
+      `<strong>${invite.invited_by_name || 'An administrator'}</strong> has invited you to join the Asbury Social Hub platform.`,
+      `<strong>Your role:</strong> ${roleName}`,
+      `Click the button below to create your account. This invitation expires in <strong>7 days</strong>.`,
+      ...(invitedBy?.name ? [`Questions? Reply to this email or contact ${invitedBy.name} directly.`] : []),
     ],
     sender: invitedBy || { name: 'Asbury Social Hub', email: 'noreply@asburyauto.com' },
     type: 'invite',
     postId: null,
+    ctaUrl: link,
+    ctaLabel: 'Accept Invitation',
   })
 }
 
 export async function notifyUserApproved({ user }) {
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
   await sendTo({
     recipient: { name: user.name, email: user.email },
-    subject: 'Your Asbury Social Hub account is approved',
+    subject: '🎉 Your Asbury Social Hub account is approved',
     bodyLines: [
-      `Great news, ${user.name}! Your access request has been approved.`,
-      `You can now sign in using your email and password:`,
-      `${origin}/login`,
+      `Great news! Your access request has been <strong>approved</strong>.`,
+      `You can now sign in using your email address and the password you created during registration.`,
     ],
     type: 'user_approved',
     postId: null,
+    ctaUrl: `${origin()}/login`,
+    ctaLabel: 'Sign In to Asbury Social Hub',
   })
 }
 
@@ -232,9 +241,8 @@ export async function notifyUserRejected({ user }) {
     recipient: { name: user.name, email: user.email },
     subject: 'Update on your Asbury Social Hub access request',
     bodyLines: [
-      `Hi ${user.name},`,
       `After review, your access request to Asbury Social Hub was not approved at this time.`,
-      `If you believe this is an error or have questions, please contact your manager.`,
+      `If you believe this is an error or have questions, please contact your manager directly.`,
     ],
     type: 'user_rejected',
     postId: null,
