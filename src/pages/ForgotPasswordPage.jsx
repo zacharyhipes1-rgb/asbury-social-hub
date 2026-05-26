@@ -135,12 +135,19 @@ function StepEmail({ onNext }) {
     setLoading(true)
     const code = makeCode()
     saveOtp(trimmed, code)
-    try {
-      await sendOtpCode({ recipient: { name: user.name, email: trimmed }, code })
-    } catch {
-      // Email failure is non-fatal — code is in sessionStorage for demo
-    }
+    const result = await sendOtpCode({ recipient: { name: user.name, email: trimmed }, code })
     setLoading(false)
+
+    if (!result.configured) {
+      clearOtp(trimmed)
+      setError('Email delivery is not set up yet. Please contact your administrator.')
+      return
+    }
+    if (!result.sent) {
+      clearOtp(trimmed)
+      setError('Could not send the verification code. Please try again in a moment.')
+      return
+    }
     onNext(trimmed, user.name)
   }
 
@@ -182,6 +189,7 @@ function StepEmail({ onNext }) {
 function StepCode({ email, userName, onNext, onBack }) {
   const [digits, setDigits] = useState(['','','','','',''])
   const [error, setError]   = useState('')
+  const [info,  setInfo]    = useState('')
   const [resendCd, setResendCd] = useState(RESEND_CD)
   const inputRefs = useRef([])
 
@@ -257,9 +265,19 @@ function StepCode({ email, userName, onNext, onBack }) {
     saveOtp(email, code)
     setDigits(['','','','','',''])
     setError('')
+    setInfo('')
     setResendCd(RESEND_CD)
     inputRefs.current[0]?.focus()
-    try { await sendOtpCode({ recipient: { email }, code }) } catch {}
+    const result = await sendOtpCode({ recipient: { name: userName, email }, code })
+    if (!result.configured) {
+      clearOtp(email)
+      setError('Email delivery is not set up yet. Please contact your administrator.')
+    } else if (!result.sent) {
+      clearOtp(email)
+      setError('Could not resend the code. Please try again in a moment.')
+    } else {
+      setInfo('A new code was sent.')
+    }
   }
 
   return (
@@ -317,6 +335,13 @@ function StepCode({ email, userName, onNext, onBack }) {
             </button>
           </div>
         </div>
+        {info && (
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-emerald-300 text-sm"
+            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <CheckCircle size={14} className="flex-shrink-0 mt-0.5" />
+            <span>{info}</span>
+          </div>
+        )}
         <ErrorBanner msg={error} />
         <button
           onClick={handleVerify}

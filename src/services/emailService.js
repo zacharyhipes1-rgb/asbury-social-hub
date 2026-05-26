@@ -46,7 +46,10 @@ async function sendTo({ recipient, subject, bodyLines, sender, type, postId }) {
   }
 
   const config = getConfig()
-  if (config?.serviceId && config?.templateId && config?.publicKey) {
+  const configured = !!(config?.serviceId && config?.templateId && config?.publicKey)
+  let error = null
+
+  if (configured) {
     try {
       await sendViaEmailJS(config, {
         to_name: recipient.name,
@@ -59,10 +62,15 @@ async function sendTo({ recipient, subject, bodyLines, sender, type, postId }) {
       logEntry.sent_via_email = true
     } catch (err) {
       logEntry.error = err.message
+      error = err.message
     }
+  } else {
+    logEntry.error = 'EmailJS not configured'
+    error = 'not_configured'
   }
 
   logNotification(logEntry)
+  return { sent: logEntry.sent_via_email, configured, error }
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────
@@ -148,7 +156,7 @@ export function clearNotificationLog() {
 // ── Auth & User notifications ──────────────────────────────────────────────
 
 export async function sendOtpCode({ recipient, code }) {
-  await sendTo({
+  return sendTo({
     recipient,
     subject: 'Your Asbury Social Hub verification code',
     bodyLines: [
@@ -160,6 +168,11 @@ export async function sendOtpCode({ recipient, code }) {
     type: 'otp_code',
     postId: null,
   })
+}
+
+export function isEmailServiceConfigured() {
+  const config = getConfig()
+  return !!(config?.serviceId && config?.templateId && config?.publicKey)
 }
 
 export async function notifyNewUserRequest({ user, admins }) {

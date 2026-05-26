@@ -677,22 +677,26 @@ export default function UsersPage() {
 
   const handleSendInvite = async (form) => {
     const invite = createInvite({ ...form, currentUser })
-    try {
-      await emailSendInvite({ invite, invitedBy: currentUser })
+    const result = await emailSendInvite({ invite, invitedBy: currentUser })
+    if (result?.sent) {
       addToast(`Invite sent to ${invite.email}`, 'success')
-    } catch {
-      addToast('Invite created — email delivery failed', 'warning')
+    } else if (result?.configured === false) {
+      addToast('Invite created — set up email in Settings to send it', 'warning')
+    } else {
+      addToast('Invite created — email failed to send', 'warning')
     }
   }
 
   const handleResend = async (invite) => {
     const updated = resendInvite(invite.id)
     if (!updated) return
-    try {
-      await emailSendInvite({ invite: updated, invitedBy: currentUser })
+    const result = await emailSendInvite({ invite: updated, invitedBy: currentUser })
+    if (result?.sent) {
       addToast(`Invite resent to ${invite.email}`, 'success')
-    } catch {
-      addToast('Token refreshed — email delivery failed', 'warning')
+    } else if (result?.configured === false) {
+      addToast('Token refreshed — set up email in Settings to send it', 'warning')
+    } else {
+      addToast('Token refreshed — email failed to send', 'warning')
     }
   }
 
