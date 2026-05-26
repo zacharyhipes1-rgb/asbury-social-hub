@@ -493,9 +493,9 @@ async function testCloudinary(cfg) {
 }
 
 async function sendTestEmail(cfg, fromUser) {
-  // Use the OTP template for the test (it's the simplest)
   const templateId = cfg.templateOtp || cfg.templateInvite || cfg.templateApproval || cfg.templateUpload || cfg.templateId
   if (!templateId) throw new Error('No template ID configured')
+  const hub = typeof window !== 'undefined' ? window.location.origin : ''
   const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -504,30 +504,33 @@ async function sendTestEmail(cfg, fromUser) {
       template_id: templateId,
       user_id:     cfg.publicKey,
       template_params: {
-        to_email:  fromUser.email,
-        to_name:   fromUser.name,
-        subject:   'Asbury Social Hub — Email Test',
-        otp_code:  '——',
-        // Approval/upload template vars (ignored if wrong template)
-        status_icon:  '✅',
-        status_label: 'Email Test',
-        status_color: '#16a34a',
-        status_bg:    '#f0fdf4',
-        platform:     'Test',
-        dealership:   'Asbury Social Hub',
-        scheduled_for:'Now',
-        notes:        'Your EmailJS configuration is working correctly!',
-        cta_url:      typeof window !== 'undefined' ? window.location.origin : '',
-        cta_label:    'Open Asbury Social Hub',
-        // Invite template vars
+        // Universal
+        to_email: fromUser.email,
+        to_name:  fromUser.name,
+        subject:  'Asbury Social Hub — Email Test',
+        // OTP template
+        otp_code: '482910',
+        // Invite template
         invited_by:   'Asbury Social Hub',
-        role_name:    'Test',
-        invite_url:   typeof window !== 'undefined' ? window.location.origin : '',
-        expires_note: 'This is a test email.',
-        // Upload template vars
-        uploader_name:  'Asbury Social Hub',
-        caption_preview:'Your EmailJS configuration is working correctly!',
-        review_url:     typeof window !== 'undefined' ? window.location.origin : '',
+        role_name:    'Social Media Manager',
+        invite_url:   hub,
+        expires_note: 'This is a test — no real invitation was created.',
+        // Post status template
+        status_icon:  '✅',
+        status_label: 'Configuration Verified',
+        status_color: '#4f46e5',
+        status_bg:    '#eef2ff',
+        platform:     'Instagram',
+        dealership:   'Nalley Honda',
+        scheduled_for:'Today',
+        notes:        'Your EmailJS configuration is working correctly!',
+        cta_url:      hub,
+        cta_label:    'Open Asbury Social Hub',
+        // Upload review template
+        uploader_name:   fromUser.name,
+        caption_preview: 'Your EmailJS configuration is working correctly! This is a test notification.',
+        review_url:      hub,
+        scheduled_for_upload: 'Today',
       },
     }),
   })
