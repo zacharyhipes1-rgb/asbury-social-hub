@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Upload, CalendarDays, ShieldCheck, X,
-  Users, Settings, BarChart2, Library, Wrench, Sparkles
+  Users, Settings, BarChart2, Library, Wrench
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { usePosts } from '../../context/PostsContext'
@@ -103,33 +103,25 @@ export default function Sidebar({ onClose }) {
       </div>
 
       {/* Primary action — Upload Content. Social posting is the platform's core purpose,
-          so this lives at the top as a gradient CTA. */}
+          so this lives at the top as a high-contrast gradient CTA. */}
       {(isSocialMedia || isAdmin) && (
         <div className="relative z-10 px-3 pt-3 pb-1 flex-shrink-0">
           <NavLink
             to="/upload"
             onClick={onClose}
             className={({ isActive }) =>
-              `group relative flex items-center gap-3 px-3.5 py-3 rounded-xl text-white font-semibold transition-all overflow-hidden hover:opacity-95 hover:-translate-y-px ${
-                isActive ? 'ring-2 ring-white/40' : ''
+              `group relative flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-white tracking-tight transition-all overflow-hidden hover:-translate-y-px ${
+                isActive ? 'ring-2 ring-orange-200/50 ring-offset-2 ring-offset-[#0c1023]' : ''
               }`
             }
             style={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
+              background: 'linear-gradient(135deg, #fb923c 0%, #f97316 55%, #ea580c 100%)',
+              boxShadow: '0 6px 20px rgba(249,115,22,0.45), inset 0 1px 0 rgba(255,255,255,0.18)',
             }}
           >
             <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-white/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="relative z-10 w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
-              <Upload size={16} />
-            </span>
-            <span className="relative z-10 leading-tight flex-1 min-w-0">
-              <span className="flex items-center gap-1.5">
-                <span className="text-[13px]">Upload Content</span>
-                <Sparkles size={11} className="text-indigo-100/90" />
-              </span>
-              <span className="block text-[10px] font-medium text-indigo-100/80 mt-0.5">Post to socials</span>
-            </span>
+            <Upload size={14} strokeWidth={2.4} className="relative z-10 flex-shrink-0" />
+            <span className="relative z-10 leading-none">Upload Content</span>
           </NavLink>
         </div>
       )}
