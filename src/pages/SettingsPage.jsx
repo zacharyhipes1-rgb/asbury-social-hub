@@ -474,10 +474,12 @@ const LS_CL_KEY    = 'asbury_cloudinary_config'
 function loadEmailConfig() {
   try {
     const cfg = JSON.parse(localStorage.getItem(LS_EMAIL_KEY) || '{}')
-    // Migrate legacy single templateId → templateOtp
-    if (cfg.templateId && !cfg.templateOtp) {
-      cfg.templateOtp = cfg.templateId
-      delete cfg.templateId
+    // Migrate legacy keys
+    if (cfg.templateId && !cfg.templateOtp) { cfg.templateOtp = cfg.templateId; delete cfg.templateId }
+    if (cfg.templateInvite || cfg.templateApproval || cfg.templateUpload) {
+      // Consolidate old 4-template setup into templateNotification
+      cfg.templateNotification = cfg.templateNotification || cfg.templateInvite || cfg.templateApproval || cfg.templateUpload
+      delete cfg.templateInvite; delete cfg.templateApproval; delete cfg.templateUpload
     }
     return cfg
   } catch { return {} }
@@ -493,45 +495,43 @@ async function testCloudinary(cfg) {
 }
 
 async function sendTestEmail(cfg, fromUser) {
-  const templateId = cfg.templateOtp || cfg.templateInvite || cfg.templateApproval || cfg.templateUpload || cfg.templateId
-  if (!templateId) throw new Error('No template ID configured')
   const hub = typeof window !== 'undefined' ? window.location.origin : ''
+
+  // Try OTP template first, then notification template
+  const templates = [
+    { id: cfg.templateOtp, params: {
+      to_name: fromUser.name, to_email: fromUser.email,
+      subject: 'Asbury Social Hub — Email Test',
+      otp_code: '482910',
+    }},
+    { id: cfg.templateNotification || cfg.templateId, params: {
+      to_name: fromUser.name, to_email: fromUser.email,
+      subject: 'Asbury Social Hub — Email Test',
+      header_subtitle: 'Email Test',
+      status_label:    '✅ Configuration Verified',
+      status_color:    '#4f46e5',
+      status_bg:       '#eef2ff',
+      body_text:       'Your EmailJS configuration is working correctly! All email notifications are ready to deliver.',
+      detail_a: 'Sent To',  detail_a_value: fromUser.email,
+      detail_b: 'Template', detail_b_value: 'Notification',
+      detail_c: '',         detail_c_value: '',
+      notes:     '',
+      cta_url:   hub,
+      cta_label: 'Open Asbury Social Hub',
+    }},
+  ].filter(t => t.id)
+
+  if (!templates.length) throw new Error('No template ID configured')
+
+  const { id: templateId, params } = templates[0]
   const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      service_id:  cfg.serviceId,
-      template_id: templateId,
-      user_id:     cfg.publicKey,
-      template_params: {
-        // Universal
-        to_email: fromUser.email,
-        to_name:  fromUser.name,
-        subject:  'Asbury Social Hub — Email Test',
-        // OTP template
-        otp_code: '482910',
-        // Invite template
-        invited_by:   'Asbury Social Hub',
-        role_name:    'Social Media Manager',
-        invite_url:   hub,
-        expires_note: 'This is a test — no real invitation was created.',
-        // Post status template
-        status_icon:  '✅',
-        status_label: 'Configuration Verified',
-        status_color: '#4f46e5',
-        status_bg:    '#eef2ff',
-        platform:     'Instagram',
-        dealership:   'Nalley Honda',
-        scheduled_for:'Today',
-        notes:        'Your EmailJS configuration is working correctly!',
-        cta_url:      hub,
-        cta_label:    'Open Asbury Social Hub',
-        // Upload review template
-        uploader_name:   fromUser.name,
-        caption_preview: 'Your EmailJS configuration is working correctly! This is a test notification.',
-        review_url:      hub,
-        scheduled_for_upload: 'Today',
-      },
+      service_id:      cfg.serviceId,
+      template_id:     templateId,
+      user_id:         cfg.publicKey,
+      template_params: params,
     }),
   })
   if (!res.ok) throw new Error(await res.text())
@@ -548,7 +548,7 @@ export default function SettingsPage() {
   const [emailResult,setEmailResult]= useState(null)
   const emailConfigured = !!(
     emailCfg.serviceId && emailCfg.publicKey &&
-    (emailCfg.templateOtp || emailCfg.templateInvite || emailCfg.templateApproval || emailCfg.templateUpload || emailCfg.templateId)
+    (emailCfg.templateOtp || emailCfg.templateNotification || emailCfg.templateId)
   )
 
   // Cloudinary state
@@ -677,13 +677,12 @@ export default function SettingsPage() {
               </div>
             ))}
             <div className="pt-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Email Templates <span className="normal-case font-normal text-slate-400">— one per email type</span></p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email Templates</p>
+              <p className="text-xs text-slate-400 mb-3">Create 2 templates in EmailJS — one for OTP codes, one for everything else (invites, approvals, upload alerts).</p>
               <div className="space-y-3">
                 {[
-                  { key: 'templateOtp',      label: 'Password Reset / OTP',      placeholder: 'template_xxxxxxx' },
-                  { key: 'templateInvite',   label: 'New User Invitation',       placeholder: 'template_xxxxxxx' },
-                  { key: 'templateApproval', label: 'Post Status (Approved / Revision / Rejected)', placeholder: 'template_xxxxxxx' },
-                  { key: 'templateUpload',   label: 'New Upload (Needs Review)', placeholder: 'template_xxxxxxx' },
+                  { key: 'templateOtp',          label: 'Password Reset / OTP',         placeholder: 'template_xxxxxxx' },
+                  { key: 'templateNotification',  label: 'All Other Notifications',      placeholder: 'template_xxxxxxx' },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
                     <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>

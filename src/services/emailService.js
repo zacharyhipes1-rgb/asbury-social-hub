@@ -5,30 +5,14 @@ function getConfig() {
   } catch { return null }
 }
 
-// Route each notification type to its own EmailJS template ID.
-// Falls back through other configured templates so emails still deliver
-// even if only one template is set up.
+// Template routing:
+//   templateOtp          → password reset / OTP only
+//   templateNotification → invite, approval, revision, upload, user status, etc.
 function getTemplateId(config, type) {
-  const specific = {
-    otp_code:          config.templateOtp,
-    invite:            config.templateInvite,
-    approved:          config.templateApproval,
-    revision_requested:config.templateApproval,
-    deleted:           config.templateApproval,
-    user_approved:     config.templateApproval,
-    user_rejected:     config.templateApproval,
-    new_upload:        config.templateUpload,
-    new_user_request:  config.templateUpload,
-    due_today:         config.templateUpload,
+  if (type === 'otp_code') {
+    return config.templateOtp || config.templateNotification || config.templateId
   }
-  return (
-    specific[type] ||
-    config.templateOtp ||
-    config.templateInvite ||
-    config.templateApproval ||
-    config.templateUpload ||
-    config.templateId   // legacy single-template fallback
-  )
+  return config.templateNotification || config.templateOtp || config.templateId
 }
 
 function logNotification(entry) {
@@ -60,16 +44,12 @@ async function sendViaEmailJS(config, templateId, templateParams) {
   }
 }
 
-// Generic delivery — each email function builds its own templateParams
-// to match the variables in that template.
 async function sendEmail({ type, postId = null, to, templateParams, logPreview = '' }) {
   const logEntry = {
-    type,
-    post_id: postId,
-    to_name:  to.name,
-    to_email: to.email,
-    subject:  templateParams.subject || '',
-    body_preview: logPreview || templateParams.message?.slice(0, 80) || '',
+    type, post_id: postId,
+    to_name: to.name, to_email: to.email,
+    subject: templateParams.subject || '',
+    body_preview: logPreview,
     sent_via_email: false,
   }
 
@@ -97,13 +77,38 @@ async function sendEmail({ type, postId = null, to, templateParams, logPreview =
 
 const origin = () => (typeof window !== 'undefined' ? window.location.origin : '')
 
+// Builds params for the general Notification template
+function notifParams({ to, subject, headerSubtitle, statusLabel, statusColor, statusBg,
+  bodyText, detailA = '', detailAVal = '', detailB = '', detailBVal = '',
+  detailC = '', detailCVal = '', notes = '', ctaUrl = '', ctaLabel = '' }) {
+  return {
+    to_name:          to.name,
+    to_email:         to.email,
+    subject,
+    header_subtitle:  headerSubtitle,
+    status_label:     statusLabel,
+    status_color:     statusColor,
+    status_bg:        statusBg,
+    body_text:        bodyText,
+    detail_a:         detailA,
+    detail_a_value:   detailAVal,
+    detail_b:         detailB,
+    detail_b_value:   detailBVal,
+    detail_c:         detailC,
+    detail_c_value:   detailCVal,
+    notes,
+    cta_url:          ctaUrl || origin(),
+    cta_label:        ctaLabel,
+  }
+}
+
 // ── Public API ─────────────────────────────────────────────────────────────
 
 export async function sendOtpCode({ recipient, code }) {
   return sendEmail({
     type: 'otp_code',
     to: recipient,
-    logPreview: `OTP code for ${recipient.email}`,
+    logPreview: `OTP for ${recipient.email}`,
     templateParams: {
       to_name:  recipient.name,
       to_email: recipient.email,
@@ -118,224 +123,212 @@ export async function sendInvite({ invite, invitedBy }) {
   const roleName = invite.role === 'admin'  ? 'Administrator'
     : invite.role === 'viewer' ? 'View Only'
     : 'Social Media Manager'
-
+  const to = { name: invite.name || invite.email, email: invite.email }
   return sendEmail({
-    type: 'invite',
-    to:   { name: invite.name || invite.email, email: invite.email },
+    type: 'invite', to,
     logPreview: `Invite to ${invite.email} as ${roleName}`,
-    templateParams: {
-      to_name:     invite.name || invite.email,
-      to_email:    invite.email,
-      subject:     "You've been invited to Asbury Social Hub",
-      invited_by:  invite.invited_by_name || invitedBy?.name || 'An administrator',
-      role_name:   roleName,
-      invite_url:  link,
-      expires_note: 'This invitation expires in 7 days.',
-    },
+    templateParams: notifParams({
+      to,
+      subject:        "You've been invited to join Asbury Social Hub",
+      headerSubtitle: "You're Invited",
+      statusLabel:    'New Invitation',
+      statusColor:    '#4f46e5',
+      statusBg:       '#eef2ff',
+      bodyText:       `${invite.invited_by_name || invitedBy?.name || 'An administrator'} has invited you to join the Asbury Social Hub — the internal platform for social media content, approvals, and scheduling across all dealership locations.`,
+      detailA: 'Your Role',  detailAVal: roleName,
+      detailB: 'Invited By', detailBVal: invite.invited_by_name || invitedBy?.name || 'Administrator',
+      notes:   'This invitation expires in 7 days. No account will be created unless you click the button.',
+      ctaUrl:  link,
+      ctaLabel:'Accept Invitation',
+    }),
   })
 }
 
 export async function notifyNewUpload({ post, uploader, socialTeam, admin }) {
-  const caption = post.caption?.slice(0, 120) + (post.caption?.length > 120 ? '…' : '')
+  const caption  = `"${post.caption?.slice(0, 150)}${post.caption?.length > 150 ? '…' : ''}"`
   const recipients = [admin, ...socialTeam.filter(u => u.id !== uploader.id)]
-  await Promise.all(
-    recipients.map(r =>
-      sendEmail({
-        type: 'new_upload',
+  await Promise.all(recipients.map(r =>
+    sendEmail({
+      type: 'new_upload', to: r, postId: post.id,
+      logPreview: `New upload by ${uploader.name}`,
+      templateParams: notifParams({
         to: r,
-        postId: post.id,
-        logPreview: `New upload by ${uploader.name} for ${post.dealership_id}`,
-        templateParams: {
-          to_name:        r.name,
-          to_email:       r.email,
-          subject:        `New content submitted: ${post.platform} · ${post.dealership_id}`,
-          uploader_name:  uploader.name,
-          platform:       post.platform,
-          dealership:     post.dealership_id,
-          caption_preview:caption,
-          scheduled_for:  post.scheduled_for,
-          review_url:     `${origin()}/`,
-        },
-      })
-    )
-  )
+        subject:        `New content submitted: ${post.platform} · ${post.dealership_id}`,
+        headerSubtitle: 'Action Required — Content Review',
+        statusLabel:    'New Submission',
+        statusColor:    '#b45309',
+        statusBg:       '#fffbeb',
+        bodyText:       `${uploader.name} submitted new content that needs your review and approval before it enters the publishing queue.`,
+        detailA: 'Platform',      detailAVal: post.platform,
+        detailB: 'Dealership',    detailBVal: post.dealership_id,
+        detailC: 'Scheduled For', detailCVal: post.scheduled_for,
+        notes:   `Caption: ${caption}`,
+        ctaUrl:  `${origin()}/`,
+        ctaLabel:'Review Content',
+      }),
+    })
+  ))
 }
 
 export async function notifyApproval({ post, uploader, admin, notes }) {
   return sendEmail({
-    type: 'approved',
-    to: uploader,
-    postId: post.id,
-    logPreview: `Post approved: ${post.platform} · ${post.dealership_id}`,
-    templateParams: {
-      to_name:      uploader.name,
-      to_email:     uploader.email,
-      subject:      `✅ Approved: your ${post.platform} post for ${post.dealership_id}`,
-      status_icon:  '✅',
-      status_label: 'Approved',
-      status_color: '#16a34a',
-      status_bg:    '#f0fdf4',
-      platform:     post.platform,
-      dealership:   post.dealership_id,
-      scheduled_for:post.scheduled_for,
-      notes:        notes || '',
-      cta_url:      `${origin()}/`,
-      cta_label:    'View in Hub',
-    },
+    type: 'approved', to: uploader, postId: post.id,
+    logPreview: `Approved: ${post.platform} · ${post.dealership_id}`,
+    templateParams: notifParams({
+      to: uploader,
+      subject:        `✅ Approved: your ${post.platform} post for ${post.dealership_id}`,
+      headerSubtitle: 'Content Update',
+      statusLabel:    '✅ Approved',
+      statusColor:    '#16a34a',
+      statusBg:       '#f0fdf4',
+      bodyText:       'Great news! Your content submission has been approved and is ready for the publishing queue.',
+      detailA: 'Platform',   detailAVal: post.platform,
+      detailB: 'Dealership', detailBVal: post.dealership_id,
+      detailC: 'Scheduled',  detailCVal: post.scheduled_for,
+      notes:   notes || '',
+      ctaUrl:  `${origin()}/`,
+      ctaLabel:'View in Hub',
+    }),
   })
 }
 
 export async function notifyRevision({ post, uploader, admin, notes }) {
   return sendEmail({
-    type: 'revision_requested',
-    to: uploader,
-    postId: post.id,
-    logPreview: `Revision requested: ${post.platform} · ${post.dealership_id}`,
-    templateParams: {
-      to_name:      uploader.name,
-      to_email:     uploader.email,
-      subject:      `✏️ Revision requested: your ${post.platform} post for ${post.dealership_id}`,
-      status_icon:  '✏️',
-      status_label: 'Revision Requested',
-      status_color: '#b45309',
-      status_bg:    '#fffbeb',
-      platform:     post.platform,
-      dealership:   post.dealership_id,
-      scheduled_for:post.scheduled_for,
-      notes:        notes || '',
-      cta_url:      `${origin()}/`,
-      cta_label:    'Update Content',
-    },
+    type: 'revision_requested', to: uploader, postId: post.id,
+    logPreview: `Revision: ${post.platform} · ${post.dealership_id}`,
+    templateParams: notifParams({
+      to: uploader,
+      subject:        `✏️ Revision requested: your ${post.platform} post for ${post.dealership_id}`,
+      headerSubtitle: 'Content Update',
+      statusLabel:    '✏️ Revision Requested',
+      statusColor:    '#b45309',
+      statusBg:       '#fffbeb',
+      bodyText:       'Your content submission needs revisions before it can be approved. Please review the feedback below and resubmit.',
+      detailA: 'Platform',   detailAVal: post.platform,
+      detailB: 'Dealership', detailBVal: post.dealership_id,
+      detailC: 'Scheduled',  detailCVal: post.scheduled_for,
+      notes:   `Feedback from ${admin?.name || 'manager'}: ${notes}`,
+      ctaUrl:  `${origin()}/`,
+      ctaLabel:'Update Content',
+    }),
   })
 }
 
 export async function notifyDeletion({ post, uploader, admin, notes }) {
   return sendEmail({
-    type: 'deleted',
-    to: uploader,
-    postId: post.id,
-    logPreview: `Post removed: ${post.platform} · ${post.dealership_id}`,
-    templateParams: {
-      to_name:      uploader.name,
-      to_email:     uploader.email,
-      subject:      `Content removed: your ${post.platform} post for ${post.dealership_id}`,
-      status_icon:  '🗑️',
-      status_label: 'Removed',
-      status_color: '#dc2626',
-      status_bg:    '#fef2f2',
-      platform:     post.platform,
-      dealership:   post.dealership_id,
-      scheduled_for:post.scheduled_for,
-      notes:        notes || 'No reason provided.',
-      cta_url:      `${origin()}/`,
-      cta_label:    'Go to Hub',
-    },
+    type: 'deleted', to: uploader, postId: post.id,
+    logPreview: `Removed: ${post.platform} · ${post.dealership_id}`,
+    templateParams: notifParams({
+      to: uploader,
+      subject:        `Content removed: your ${post.platform} post for ${post.dealership_id}`,
+      headerSubtitle: 'Content Update',
+      statusLabel:    'Removed',
+      statusColor:    '#dc2626',
+      statusBg:       '#fef2f2',
+      bodyText:       'Your content submission has been removed from the staging queue.',
+      detailA: 'Platform',   detailAVal: post.platform,
+      detailB: 'Dealership', detailBVal: post.dealership_id,
+      detailC: 'Scheduled',  detailCVal: post.scheduled_for,
+      notes:   notes ? `Reason: ${notes}` : 'Contact your manager if you have questions.',
+      ctaUrl:  `${origin()}/`,
+      ctaLabel:'Go to Hub',
+    }),
   })
 }
 
 export async function notifyDueToday({ posts, socialTeam, admin }) {
   if (!posts.length) return
-  await Promise.all(
-    [admin, ...socialTeam].map(r =>
-      sendEmail({
-        type: 'due_today',
+  const summary = posts.map(p => `${p.platform} · ${p.dealership_id}`).join(', ')
+  await Promise.all([admin, ...socialTeam].map(r =>
+    sendEmail({
+      type: 'due_today', to: r,
+      logPreview: `${posts.length} posts due today`,
+      templateParams: notifParams({
         to: r,
-        logPreview: `${posts.length} posts due today`,
-        templateParams: {
-          to_name:       r.name,
-          to_email:      r.email,
-          subject:       `${posts.length} post${posts.length !== 1 ? 's' : ''} scheduled to publish today`,
-          uploader_name: 'Asbury Social Hub',
-          platform:      posts.map(p => p.platform).join(', '),
-          dealership:    posts.map(p => p.dealership_id).join(', '),
-          caption_preview: posts.map(p => `${p.platform} · ${p.dealership_id}: "${p.caption?.slice(0, 60)}…"`).join(' | '),
-          scheduled_for: 'Today',
-          review_url:    `${origin()}/calendar`,
-        },
-      })
-    )
-  )
+        subject:        `${posts.length} post${posts.length !== 1 ? 's' : ''} scheduled to publish today`,
+        headerSubtitle: 'Publishing Reminder',
+        statusLabel:    'Due Today',
+        statusColor:    '#0284c7',
+        statusBg:       '#f0f9ff',
+        bodyText:       `${posts.length} approved post${posts.length !== 1 ? 's are' : ' is'} scheduled to publish today. Please coordinate with your social media team to publish on time.`,
+        detailA: 'Posts',     detailAVal: `${posts.length}`,
+        detailB: 'Platforms', detailBVal: summary,
+        notes:   '',
+        ctaUrl:  `${origin()}/calendar`,
+        ctaLabel:'View Calendar',
+      }),
+    })
+  ))
 }
 
 export async function notifyNewUserRequest({ user, admins }) {
-  await Promise.all(
-    (admins || []).map(admin =>
-      sendEmail({
-        type: 'new_user_request',
+  await Promise.all((admins || []).map(admin =>
+    sendEmail({
+      type: 'new_user_request', to: admin,
+      logPreview: `Access request: ${user.name}`,
+      templateParams: notifParams({
         to: admin,
-        logPreview: `New access request: ${user.name}`,
-        templateParams: {
-          to_name:        admin.name,
-          to_email:       admin.email,
-          subject:        `New access request: ${user.name}`,
-          uploader_name:  user.name,
-          platform:       user.email,
-          dealership:     user.title || 'No title provided',
-          caption_preview:`${user.name} (${user.email}) has requested access to Asbury Social Hub.`,
-          scheduled_for:  new Date().toLocaleString(),
-          review_url:     `${origin()}/users`,
-        },
-      })
-    )
-  )
+        subject:        `New access request: ${user.name}`,
+        headerSubtitle: 'Account Request',
+        statusLabel:    'Pending Approval',
+        statusColor:    '#7c3aed',
+        statusBg:       '#f5f3ff',
+        bodyText:       `${user.name} has requested access to Asbury Social Hub. Visit Users & Security to approve or reject this request.`,
+        detailA: 'Name',      detailAVal: user.name,
+        detailB: 'Email',     detailBVal: user.email,
+        detailC: 'Title',     detailCVal: user.title || 'Not provided',
+        notes:   `Submitted: ${new Date().toLocaleString()}`,
+        ctaUrl:  `${origin()}/users`,
+        ctaLabel:'Review Request',
+      }),
+    })
+  ))
 }
 
 export async function notifyUserApproved({ user }) {
+  const to = { name: user.name, email: user.email }
   return sendEmail({
-    type: 'user_approved',
-    to: { name: user.name, email: user.email },
+    type: 'user_approved', to,
     logPreview: `Account approved: ${user.email}`,
-    templateParams: {
-      to_name:      user.name,
-      to_email:     user.email,
-      subject:      '🎉 Your Asbury Social Hub account is approved',
-      status_icon:  '🎉',
-      status_label: 'Account Approved',
-      status_color: '#16a34a',
-      status_bg:    '#f0fdf4',
-      platform:     '',
-      dealership:   '',
-      scheduled_for:'',
-      notes:        'You can now sign in with your email and the password you created.',
-      cta_url:      `${origin()}/login`,
-      cta_label:    'Sign In to Asbury Social Hub',
-    },
+    templateParams: notifParams({
+      to,
+      subject:        '🎉 Your Asbury Social Hub account is approved',
+      headerSubtitle: 'Account Update',
+      statusLabel:    '🎉 Account Approved',
+      statusColor:    '#16a34a',
+      statusBg:       '#f0fdf4',
+      bodyText:       'Great news! Your access request has been approved. You can now sign in using your email address and the password you created during registration.',
+      notes:   '',
+      ctaUrl:  `${origin()}/login`,
+      ctaLabel:'Sign In to Asbury Social Hub',
+    }),
   })
 }
 
 export async function notifyUserRejected({ user }) {
+  const to = { name: user.name, email: user.email }
   return sendEmail({
-    type: 'user_rejected',
-    to: { name: user.name, email: user.email },
+    type: 'user_rejected', to,
     logPreview: `Access rejected: ${user.email}`,
-    templateParams: {
-      to_name:      user.name,
-      to_email:     user.email,
-      subject:      'Update on your Asbury Social Hub access request',
-      status_icon:  '—',
-      status_label: 'Not Approved',
-      status_color: '#64748b',
-      status_bg:    '#f8fafc',
-      platform:     '',
-      dealership:   '',
-      scheduled_for:'',
-      notes:        'If you believe this is an error, please contact your manager directly.',
-      cta_url:      '',
-      cta_label:    '',
-    },
+    templateParams: notifParams({
+      to,
+      subject:        'Update on your Asbury Social Hub access request',
+      headerSubtitle: 'Account Update',
+      statusLabel:    'Not Approved',
+      statusColor:    '#64748b',
+      statusBg:       '#f8fafc',
+      bodyText:       'After review, your access request to Asbury Social Hub was not approved at this time.',
+      notes:   'If you believe this is an error or have questions, please contact your manager directly.',
+      ctaUrl:  '',
+      ctaLabel:'',
+    }),
   })
 }
 
 export function isEmailServiceConfigured() {
   const config = getConfig()
   if (!config?.serviceId || !config?.publicKey) return false
-  return !!(
-    config.templateOtp ||
-    config.templateInvite ||
-    config.templateApproval ||
-    config.templateUpload ||
-    config.templateId
-  )
+  return !!(config.templateOtp || config.templateNotification || config.templateId)
 }
 
 export function getNotificationLog() {
