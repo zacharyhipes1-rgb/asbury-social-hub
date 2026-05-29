@@ -223,3 +223,30 @@ ALTER TABLE public.assets ADD COLUMN IF NOT EXISTS title    TEXT DEFAULT '';
 ALTER TABLE public.assets ADD COLUMN IF NOT EXISTS alt_text TEXT DEFAULT '';
 
 NOTIFY pgrst, 'reload schema';
+
+-- ── Password Reset Requests ─────────────────────────────────────────────────
+-- Stores admin-approval-gated password reset requests.
+-- OTP code is stored here temporarily (max 15 min TTL) so the admin's
+-- browser can generate it and the user's browser can retrieve it.
+CREATE TABLE IF NOT EXISTS public.password_reset_requests (
+  id           TEXT PRIMARY KEY,
+  email        TEXT NOT NULL,
+  name         TEXT NOT NULL,
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status       TEXT NOT NULL DEFAULT 'pending',   -- 'pending' | 'approved' | 'denied' | 'used'
+  otp_code     TEXT,         -- set by admin on approval (cleared on use)
+  otp_expiry   BIGINT,       -- epoch ms — 15 min window after approval
+  resolved_at  TIMESTAMPTZ
+);
+
+ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon read resets"   ON public.password_reset_requests;
+DROP POLICY IF EXISTS "anon insert resets" ON public.password_reset_requests;
+DROP POLICY IF EXISTS "anon update resets" ON public.password_reset_requests;
+DROP POLICY IF EXISTS "anon delete resets" ON public.password_reset_requests;
+
+CREATE POLICY "anon read resets"   ON public.password_reset_requests FOR SELECT TO anon USING (true);
+CREATE POLICY "anon insert resets" ON public.password_reset_requests FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon update resets" ON public.password_reset_requests FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon delete resets" ON public.password_reset_requests FOR DELETE TO anon USING (true);

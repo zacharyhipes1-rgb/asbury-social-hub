@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Mail, Lock, Shield, AlertCircle, CheckCircle, ArrowLeft, Zap, Eye, EyeOff, RefreshCw } from 'lucide-react'
+import { Mail, Lock, Shield, AlertCircle, CheckCircle, ArrowLeft, Eye, EyeOff, RefreshCw, Clock } from 'lucide-react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useUsers } from '../context/UsersContext'
-import { sendOtpCode } from '../services/emailService'
+import { supabase } from '../lib/supabase'
+import { sendOtpCode, notifyPasswordResetRequest } from '../services/emailService'
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
-// ── OTP helpers ────────────────────────────────────────────────────────────
-const OTP_TTL    = 10 * 60 * 1000   // 10 minutes
-const MAX_TRIES  = 3
-const RESEND_CD  = 60               // seconds
+// ── OTP helpers (sessionStorage) ───────────────────────────────────────────
+const OTP_TTL   = 15 * 60 * 1000   // 15 minutes (extended for admin-approval flow)
+const MAX_TRIES = 3
+const RESEND_CD = 60               // seconds
 
 function makeCode() {
   return String(Math.floor(100000 + Math.random() * 900000))
@@ -18,10 +19,10 @@ function makeCode() {
 
 function otpKey(email) { return `asbury_otp_${email.toLowerCase()}` }
 
-function saveOtp(email, code) {
+function saveOtp(email, code, expiry) {
   sessionStorage.setItem(otpKey(email), JSON.stringify({
     code,
-    expiry:   Date.now() + OTP_TTL,
+    expiry:   expiry || Date.now() + OTP_TTL,
     attempts: 0,
   }))
 }
@@ -38,6 +39,43 @@ function bumpAttempts(email) {
   entry.attempts += 1
   sessionStorage.setItem(otpKey(email), JSON.stringify(entry))
   return entry.attempts
+}
+
+// ── Supabase reset-request helpers ─────────────────────────────────────────
+async function getResetRequest(email) {
+  try {
+    const { data } = await supabase
+      .from('password_reset_requests')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .in('status', ['pending', 'approved'])
+      .order('requested_at', { ascending: false })
+      .limit(1)
+    return data?.[0] || null
+  } catch { return null }
+}
+
+async function createResetRequest(email, name) {
+  const id = `reset-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  try {
+    await supabase.from('password_reset_requests').insert({
+      id,
+      email: email.toLowerCase(),
+      name,
+      requested_at: new Date().toISOString(),
+      status: 'pending',
+    })
+    return id
+  } catch { return null }
+}
+
+async function markResetUsed(id) {
+  try {
+    await supabase
+      .from('password_reset_requests')
+      .update({ status: 'used', resolved_at: new Date().toISOString() })
+      .eq('id', id)
+  } catch {}
 }
 
 // ── Password strength ──────────────────────────────────────────────────────
@@ -119,11 +157,11 @@ function DarkInput({ icon: Icon, ...props }) {
   )
 }
 
-// ── Step 1: Email ──────────────────────────────────────────────────────────
-function StepEmail({ onNext }) {
-  const { getUserByEmail } = useUsers()
-  const [email, setEmail]   = useState('')
-  const [error, setError]   = useState('')
+// ── Step 1: Email — submits for admin approval ─────────────────────────────
+function StepEmail({ onNext, onPending }) {
+  const { getUserByEmail, users } = useUsers()
+  const [email, setEmail]     = useState('')
+  const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
   const [captchaToken, setCaptchaToken] = useState('')
   const captchaRef = useRef(null)
@@ -134,11 +172,14 @@ function StepEmail({ onNext }) {
     const trimmed = email.trim().toLowerCase()
     if (!trimmed) { setError('Enter your work email.'); return }
     if (RECAPTCHA_SITE_KEY && !captchaToken) { setError('Please complete the reCAPTCHA check.'); return }
+
     const user = getUserByEmail(trimmed)
     if (!user)        { setError('No account found with that email address.'); return }
     if (!user.active) { setError('That account is deactivated. Contact your administrator.'); return }
 
     setLoading(true)
+
+    // reCAPTCHA check
     if (RECAPTCHA_SITE_KEY && captchaToken) {
       try {
         const r = await fetch('/api/verify-recaptcha', {
@@ -152,22 +193,37 @@ function StepEmail({ onNext }) {
         }
       } catch { /* network error — proceed */ }
     }
-    const code = makeCode()
-    saveOtp(trimmed, code)
-    const result = await sendOtpCode({ recipient: { name: user.name, email: trimmed }, code })
-    setLoading(false)
 
-    if (!result.configured) {
-      clearOtp(trimmed)
-      setError('Email delivery is not set up yet. Please contact your administrator.')
+    // Check Supabase for existing request for this email
+    const existing = await getResetRequest(trimmed)
+
+    if (existing?.status === 'approved' && existing.otp_code && existing.otp_expiry > Date.now()) {
+      // Admin already approved — load OTP into sessionStorage, skip to verification
+      saveOtp(trimmed, existing.otp_code, existing.otp_expiry)
+      await markResetUsed(existing.id)
+      setLoading(false)
+      onNext(trimmed, user.name)
       return
     }
-    if (!result.sent) {
-      clearOtp(trimmed)
-      setError('Could not send the verification code. Please try again in a moment.')
+
+    if (existing?.status === 'pending') {
+      // Already a pending request — show pending state
+      setLoading(false)
+      onPending(trimmed, user.name)
       return
     }
-    onNext(trimmed, user.name)
+
+    // No existing request — create one and notify admins
+    await createResetRequest(trimmed, user.name)
+
+    // Notify all admin users
+    const admins = users.filter(u => u.role === 'admin' && u.active && u.email)
+    try {
+      await notifyPasswordResetRequest({ user: { name: user.name, email: trimmed }, admins })
+    } catch {}
+
+    setLoading(false)
+    onPending(trimmed, user.name)
   }
 
   return (
@@ -178,7 +234,7 @@ function StepEmail({ onNext }) {
           <Mail size={20} className="text-white" />
         </div>
         <h1 className="text-2xl font-bold text-white tracking-tight">Reset your password</h1>
-        <p className="text-slate-400 mt-1 text-sm">Enter your work email to receive a verification code</p>
+        <p className="text-slate-400 mt-1 text-sm">Enter your work email to submit a reset request</p>
       </div>
       <div className="rounded-2xl border border-white/10 p-6 space-y-4" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)' }}>
         <StepDots step={0} />
@@ -202,7 +258,7 @@ function StepEmail({ onNext }) {
           <button type="submit" disabled={loading || (!!RECAPTCHA_SITE_KEY && !captchaToken)}
             className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}>
-            {loading ? 'Sending code…' : 'Send verification code →'}
+            {loading ? 'Checking…' : 'Submit reset request →'}
           </button>
         </form>
       </div>
@@ -210,6 +266,75 @@ function StepEmail({ onNext }) {
         <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors">
           <ArrowLeft size={12} /> Back to sign in
         </Link>
+      </div>
+    </>
+  )
+}
+
+// ── Pending approval state ─────────────────────────────────────────────────
+function StepPendingApproval({ email, userName, onBack, onCheckApproved }) {
+  const [checking, setChecking] = useState(false)
+  const [msg, setMsg]           = useState('')
+
+  const handleCheck = async () => {
+    setChecking(true)
+    setMsg('')
+    const record = await getResetRequest(email)
+    if (record?.status === 'approved' && record.otp_code && record.otp_expiry > Date.now()) {
+      saveOtp(email, record.otp_code, record.otp_expiry)
+      await markResetUsed(record.id)
+      setChecking(false)
+      onCheckApproved()
+    } else {
+      setMsg('Your request is still pending admin approval. You\'ll receive an email once approved.')
+      setChecking(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 shadow-lg"
+          style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 8px 32px rgba(245,158,11,0.4)' }}>
+          <Clock size={20} className="text-white" />
+        </div>
+        <h1 className="text-2xl font-bold text-white tracking-tight">Request submitted</h1>
+        <p className="text-slate-400 mt-1 text-sm">
+          Waiting for administrator approval
+        </p>
+      </div>
+      <div className="rounded-2xl border border-white/10 p-6 space-y-4" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)' }}>
+        <div className="flex items-start gap-3 px-3 py-3 rounded-xl"
+          style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
+          <Clock size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-300 leading-relaxed">
+            <p className="font-semibold mb-0.5">Pending admin approval</p>
+            <p className="text-amber-400/80 text-xs">
+              Your request has been sent to an administrator at{' '}
+              <span className="font-semibold text-amber-300">{email}</span>.
+              Once approved, you'll receive a verification code by email.
+              Then come back here and click "Check for approval."
+            </p>
+          </div>
+        </div>
+
+        {msg && (
+          <p className="text-xs text-slate-400 text-center">{msg}</p>
+        )}
+
+        <button
+          onClick={handleCheck}
+          disabled={checking}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}
+        >
+          {checking ? 'Checking…' : 'Check for approval →'}
+        </button>
+      </div>
+      <div className="mt-4 text-center">
+        <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors">
+          <ArrowLeft size={12} /> Start over
+        </button>
       </div>
     </>
   )
@@ -226,18 +351,15 @@ function StepCode({ email, userName, onNext, onBack }) {
   const otp = loadOtp(email)
   const { remaining, display } = useCountdown(otp?.expiry || Date.now())
 
-  // Resend cooldown tick
   useEffect(() => {
     if (resendCd <= 0) return
     const id = setInterval(() => setResendCd(p => Math.max(0, p - 1)), 1000)
     return () => clearInterval(id)
   }, [resendCd])
 
-  // Focus first empty
   useEffect(() => { inputRefs.current[0]?.focus() }, [])
 
   const handleDigit = (idx, val) => {
-    // Handle paste of full code
     if (val.length > 1) {
       const clean = val.replace(/\D/g, '').slice(0, 6)
       if (clean.length === 6) {
@@ -255,9 +377,7 @@ function StepCode({ email, userName, onNext, onBack }) {
   }
 
   const handleKeyDown = (idx, e) => {
-    if (e.key === 'Backspace' && !digits[idx] && idx > 0) {
-      inputRefs.current[idx - 1]?.focus()
-    }
+    if (e.key === 'Backspace' && !digits[idx] && idx > 0) inputRefs.current[idx - 1]?.focus()
     if (e.key === 'Enter') handleVerify()
   }
 
@@ -265,16 +385,14 @@ function StepCode({ email, userName, onNext, onBack }) {
     setError('')
     const code = digits.join('')
     if (code.length < 6) { setError('Enter all 6 digits.'); return }
-
     const entry = loadOtp(email)
-    if (!entry)              { setError('Code expired. Request a new one.'); return }
-    if (Date.now() > entry.expiry) { clearOtp(email); setError('Code expired. Request a new one.'); return }
-
+    if (!entry)                     { setError('Code expired. Please submit a new request.'); return }
+    if (Date.now() > entry.expiry)  { clearOtp(email); setError('Code expired. Please submit a new request.'); return }
     if (code !== entry.code) {
       const attempts = bumpAttempts(email)
       if (attempts >= MAX_TRIES) {
         clearOtp(email)
-        setError('Too many incorrect attempts. Please request a new code.')
+        setError('Too many incorrect attempts. Please submit a new request.')
         setDigits(['','','','','',''])
         inputRefs.current[0]?.focus()
       } else {
@@ -284,31 +402,9 @@ function StepCode({ email, userName, onNext, onBack }) {
       }
       return
     }
-
     clearOtp(email)
     onNext()
   }, [digits, email, onNext])
-
-  const handleResend = async () => {
-    if (resendCd > 0) return
-    const code = makeCode()
-    saveOtp(email, code)
-    setDigits(['','','','','',''])
-    setError('')
-    setInfo('')
-    setResendCd(RESEND_CD)
-    inputRefs.current[0]?.focus()
-    const result = await sendOtpCode({ recipient: { name: userName, email }, code })
-    if (!result.configured) {
-      clearOtp(email)
-      setError('Email delivery is not set up yet. Please contact your administrator.')
-    } else if (!result.sent) {
-      clearOtp(email)
-      setError('Could not resend the code. Please try again in a moment.')
-    } else {
-      setInfo('A new code was sent.')
-    }
-  }
 
   return (
     <>
@@ -337,9 +433,7 @@ function StepCode({ email, userName, onNext, onBack }) {
                 value={d}
                 onChange={e => handleDigit(i, e.target.value)}
                 onKeyDown={e => handleKeyDown(i, e)}
-                className={`w-11 h-13 text-center text-xl font-bold rounded-xl transition-all focus:outline-none
-                  ${d ? 'text-white' : 'text-transparent'}
-                `}
+                className={`w-11 text-center text-xl font-bold rounded-xl transition-all focus:outline-none ${d ? 'text-white' : 'text-transparent'}`}
                 style={{
                   height: '52px',
                   background: d ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.07)',
@@ -354,15 +448,6 @@ function StepCode({ email, userName, onNext, onBack }) {
               ? <span className="text-slate-500">Expires in <span className="text-amber-400 font-semibold tabular-nums">{display}</span></span>
               : <span className="text-red-400 font-semibold">Code expired</span>
             }
-            <span className="text-slate-600">·</span>
-            <button
-              onClick={handleResend}
-              disabled={resendCd > 0}
-              className="text-indigo-400 hover:text-indigo-300 disabled:text-slate-600 disabled:cursor-not-allowed font-semibold transition-colors flex items-center gap-1"
-            >
-              <RefreshCw size={11} />
-              {resendCd > 0 ? `Resend in ${resendCd}s` : 'Resend code'}
-            </button>
           </div>
         </div>
         {info && (
@@ -384,7 +469,7 @@ function StepCode({ email, userName, onNext, onBack }) {
       </div>
       <div className="mt-4 text-center">
         <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors">
-          <ArrowLeft size={12} /> Change email
+          <ArrowLeft size={12} /> Start over
         </button>
       </div>
     </>
@@ -488,7 +573,7 @@ function StepPassword({ email, onDone }) {
 // ── Success ────────────────────────────────────────────────────────────────
 function StepSuccess() {
   const navigate = useNavigate()
-  useEffect(() => { const id = setTimeout(() => navigate('/login', { replace: true }), 2000); return () => clearTimeout(id) }, [navigate])
+  useEffect(() => { const id = setTimeout(() => navigate('/login', { replace: true }), 2500); return () => clearTimeout(id) }, [navigate])
   return (
     <div className="rounded-2xl border border-white/10 p-8 text-center" style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)' }}>
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/20 mb-4">
@@ -502,14 +587,25 @@ function StepSuccess() {
 
 // ── Main export ────────────────────────────────────────────────────────────
 export default function ForgotPasswordPage() {
-  const [step,  setStep]  = useState('email')   // 'email' | 'code' | 'password' | 'success'
+  const [step,  setStep]  = useState('email')   // 'email' | 'pending' | 'code' | 'password' | 'success'
   const [email, setEmail] = useState('')
   const [name,  setName]  = useState('')
 
   return (
     <Shell>
       {step === 'email' && (
-        <StepEmail onNext={(e, n) => { setEmail(e); setName(n); setStep('code') }} />
+        <StepEmail
+          onNext={(e, n)    => { setEmail(e); setName(n); setStep('code') }}
+          onPending={(e, n) => { setEmail(e); setName(n); setStep('pending') }}
+        />
+      )}
+      {step === 'pending' && (
+        <StepPendingApproval
+          email={email}
+          userName={name}
+          onBack={() => setStep('email')}
+          onCheckApproved={() => setStep('code')}
+        />
       )}
       {step === 'code' && (
         <StepCode

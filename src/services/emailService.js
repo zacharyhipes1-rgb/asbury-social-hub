@@ -325,6 +325,49 @@ export async function notifyUserRejected({ user }) {
   })
 }
 
+export async function notifyPasswordResetRequest({ user, admins }) {
+  await Promise.all((admins || []).map(admin =>
+    sendEmail({
+      type: 'password_reset_request', to: admin,
+      logPreview: `Password reset request: ${user.name}`,
+      templateParams: notifParams({
+        to: admin,
+        subject:        `🔐 Password reset request: ${user.name}`,
+        headerSubtitle: 'Security Action Required',
+        statusLabel:    'Reset Requested',
+        statusColor:    '#b45309',
+        statusBg:       '#fffbeb',
+        bodyText:       `${user.name} (${user.email}) has submitted a password reset request. Visit Users & Security to approve or deny it. No reset link has been sent yet.`,
+        detailA: 'Name',  detailAVal: user.name,
+        detailB: 'Email', detailBVal: user.email,
+        notes:   `Requested: ${new Date().toLocaleString()}`,
+        ctaUrl:  `${origin()}/users`,
+        ctaLabel:'Review Request',
+      }),
+    })
+  ))
+}
+
+export async function notifyPasswordResetDenied({ user }) {
+  const to = { name: user.name, email: user.email }
+  return sendEmail({
+    type: 'password_reset_denied', to,
+    logPreview: `Reset denied: ${user.email}`,
+    templateParams: notifParams({
+      to,
+      subject:        'Update on your password reset request',
+      headerSubtitle: 'Account Update',
+      statusLabel:    'Request Not Approved',
+      statusColor:    '#64748b',
+      statusBg:       '#f8fafc',
+      bodyText:       'Your password reset request was not approved at this time. If you still need access, please contact your administrator directly.',
+      notes:   'If you believe this is an error, reach out to your system administrator.',
+      ctaUrl:  `${origin()}/login`,
+      ctaLabel:'Back to Sign In',
+    }),
+  })
+}
+
 export function isEmailServiceConfigured() {
   const config = getConfig()
   if (!config?.serviceId || !config?.publicKey) return false

@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useAuth } from '../context/AuthContext'
+import { EXPIRED_KEY } from '../context/AuthContext'
 import { useUsers } from '../context/UsersContext'
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Clock } from 'lucide-react'
 import { DEMO_USER_ID, DEMO_USER_PASSWORD } from '../data/mockData'
 import { Events } from '../lib/analytics'
 
@@ -30,6 +31,13 @@ export default function LoginPage() {
   const [emailFocus, setEmailFocus] = useState(false)
   const [passFocus, setPassFocus]   = useState(false)
   const captchaRef = useRef(null)
+
+  // Show banner if session expired due to inactivity
+  const [sessionExpired] = useState(() => {
+    const v = localStorage.getItem(EXPIRED_KEY) === 'true'
+    if (v) localStorage.removeItem(EXPIRED_KEY)
+    return v
+  })
 
   const demoUser = getUserById(DEMO_USER_ID)
 
@@ -205,6 +213,16 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {sessionExpired && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-amber-400 text-sm"
+                style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}
+              >
+                <Clock size={14} className="flex-shrink-0" />
+                Signed out due to inactivity. Please sign in again.
+              </div>
+            )}
 
             {loginError && (
               <div

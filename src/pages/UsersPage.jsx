@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Users, UserPlus, Shield, Eye, AtSign, Search, X, Check, Pencil,
   UserX, UserCheck, Trash2, AlertTriangle, FileText, Mail, Send,
-  Clock, RotateCcw,
+  Clock, RotateCcw, KeyRound,
 } from 'lucide-react'
 import { useUsers } from '../context/UsersContext'
 import { useAuth } from '../context/AuthContext'
@@ -10,10 +10,13 @@ import { usePosts } from '../context/PostsContext'
 import { useInvites } from '../context/InvitesContext'
 import { useToast } from '../context/ToastContext'
 import { RoleBadge } from '../components/common/Badge'
+import { supabase } from '../lib/supabase'
 import {
   notifyUserApproved,
   notifyUserRejected,
   sendInvite as emailSendInvite,
+  sendOtpCode,
+  notifyPasswordResetDenied,
 } from '../services/emailService'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -603,15 +606,31 @@ export default function UsersPage() {
   const { invites, createInvite, revokeInvite, resendInvite } = useInvites()
   const { addToast } = useToast()
 
-  const [activeTab,    setActiveTab]    = useState('team')
-  const [search,       setSearch]       = useState('')
-  const [roleFilter,   setRoleFilter]   = useState('all')
-  const [modal,        setModal]        = useState(null)         // { mode: 'add' } | { mode: 'edit', user }
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [inviteModal,  setInviteModal]  = useState(false)
-  const [rejectTarget, setRejectTarget] = useState(null)
+  const [activeTab,      setActiveTab]      = useState('team')
+  const [search,         setSearch]         = useState('')
+  const [roleFilter,     setRoleFilter]     = useState('all')
+  const [modal,          setModal]          = useState(null)
+  const [deleteTarget,   setDeleteTarget]   = useState(null)
+  const [inviteModal,    setInviteModal]    = useState(false)
+  const [rejectTarget,   setRejectTarget]   = useState(null)
+  const [resetRequests,  setResetRequests]  = useState([])
+  const [resetLoading,   setResetLoading]   = useState({})
 
   const pendingUsers = getPendingUsers()
+
+  // ── Load pending password reset requests ─────────────────────────────────
+  const loadResetRequests = async () => {
+    try {
+      const { data } = await supabase
+        .from('password_reset_requests')
+        .select('*')
+        .eq('status', 'pending')
+        .order('requested_at', { ascending: false })
+      setResetRequests(data || [])
+    } catch { setResetRequests([]) }
+  }
+
+  useEffect(() => { loadResetRequests() }, [])
 
   // Pending invites count (status=pending and not expired)
   const pendingInvitesCount = invites.filter(i =>
@@ -673,6 +692,47 @@ export default function UsersPage() {
     try { await notifyUserRejected({ user }) } catch {}
     deleteUser(user.id)
     addToast(`${user.name}'s request declined`, 'success')
+  }
+
+  const handleApproveReset = async (req) => {
+    setResetLoading(p => ({ ...p, [req.id]: 'approving' }))
+    // Generate 6-digit OTP
+    const code   = String(Math.floor(100000 + Math.random() * 900000))
+    const expiry = Date.now() + 15 * 60 * 1000   // 15 min
+    try {
+      // Store OTP in Supabase so user can retrieve it on their browser
+      await supabase
+        .from('password_reset_requests')
+        .update({ status: 'approved', otp_code: code, otp_expiry: expiry, resolved_at: new Date().toISOString() })
+        .eq('id', req.id)
+      // Send OTP to user via email
+      const result = await sendOtpCode({ recipient: { name: req.name, email: req.email }, code })
+      if (result?.sent) {
+        addToast(`Reset code sent to ${req.email}`, 'success')
+      } else {
+        addToast('Reset approved — email failed to send. Ask user to check the system.', 'warning')
+      }
+    } catch {
+      addToast('Could not approve reset. Check Supabase connection.', 'error')
+    }
+    setResetLoading(p => ({ ...p, [req.id]: null }))
+    loadResetRequests()
+  }
+
+  const handleDenyReset = async (req) => {
+    setResetLoading(p => ({ ...p, [req.id]: 'denying' }))
+    try {
+      await supabase
+        .from('password_reset_requests')
+        .update({ status: 'denied', resolved_at: new Date().toISOString() })
+        .eq('id', req.id)
+      try { await notifyPasswordResetDenied({ user: { name: req.name, email: req.email } }) } catch {}
+      addToast(`Reset request from ${req.name} denied`, 'success')
+    } catch {
+      addToast('Could not deny reset. Try again.', 'error')
+    }
+    setResetLoading(p => ({ ...p, [req.id]: null }))
+    loadResetRequests()
   }
 
   const handleSendInvite = async (form) => {
@@ -740,9 +800,10 @@ export default function UsersPage() {
       {/* Tab bar */}
       <div className="flex items-end gap-1 mb-6 border-b border-slate-200">
         {[
-          { id: 'team',        label: 'Team Members',    count: counts.total,        countColor: 'bg-slate-200 text-slate-600' },
-          { id: 'pending',     label: 'Pending Requests',count: pendingUsers.length, countColor: 'bg-amber-100 text-amber-700',  hidden: pendingUsers.length === 0 },
-          { id: 'invitations', label: 'Invitations',     count: pendingInvitesCount, countColor: 'bg-indigo-100 text-indigo-700', hidden: pendingInvitesCount === 0 },
+          { id: 'team',        label: 'Team Members',    count: counts.total,         countColor: 'bg-slate-200 text-slate-600' },
+          { id: 'pending',     label: 'Pending Requests',count: pendingUsers.length,  countColor: 'bg-amber-100 text-amber-700',  hidden: pendingUsers.length === 0 },
+          { id: 'invitations', label: 'Invitations',     count: pendingInvitesCount,  countColor: 'bg-indigo-100 text-indigo-700', hidden: pendingInvitesCount === 0 },
+          { id: 'resets',      label: 'Password Resets', count: resetRequests.length, countColor: 'bg-rose-100 text-rose-700',    hidden: resetRequests.length === 0 },
         ].map(tab => (
           <button
             key={tab.id}
@@ -919,6 +980,92 @@ export default function UsersPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* ── Password Reset Requests tab ───────────────────────────────── */}
+      {activeTab === 'resets' && (
+        resetRequests.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-14 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <KeyRound size={22} className="text-slate-400" />
+            </div>
+            <p className="text-sm font-semibold text-slate-700">No pending reset requests</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Password reset requests from team members will appear here for your approval
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {resetRequests.map(req => {
+              const approving = resetLoading[req.id] === 'approving'
+              const denying   = resetLoading[req.id] === 'denying'
+              const busy      = approving || denying
+              const age = (() => {
+                const diff = Date.now() - new Date(req.requested_at).getTime()
+                const m = Math.floor(diff / 60000)
+                if (m < 1) return 'just now'
+                if (m < 60) return `${m}m ago`
+                const h = Math.floor(m / 60)
+                if (h < 24) return `${h}h ago`
+                return `${Math.floor(h / 24)}d ago`
+              })()
+              return (
+                <div key={req.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                  {/* Icon */}
+                  <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
+                    <KeyRound size={18} className="text-rose-500" />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-slate-900">{req.name}</p>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100 font-medium">
+                        Reset Requested
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">{req.email}</p>
+                    <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                      <Clock size={10} />
+                      Requested {age}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleDenyReset(req)}
+                      disabled={busy}
+                      className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                    >
+                      {denying ? 'Denying…' : 'Deny'}
+                    </button>
+                    <button
+                      onClick={() => handleApproveReset(req)}
+                      disabled={busy}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white disabled:opacity-40 transition-opacity hover:opacity-90"
+                      style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
+                    >
+                      <Check size={12} />
+                      {approving ? 'Sending code…' : 'Approve & Send Code'}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Refresh */}
+            <div className="text-center pt-1">
+              <button
+                onClick={loadResetRequests}
+                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <RotateCcw size={11} />
+                Refresh list
+              </button>
             </div>
           </div>
         )
