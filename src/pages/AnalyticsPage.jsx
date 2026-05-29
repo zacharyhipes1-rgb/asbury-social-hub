@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef, Fragment } from 'react'
+import { useMemo, useState, useEffect, useRef, Fragment, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
@@ -13,7 +13,8 @@ import {
 import {
   TrendingUp, Clock, AlertTriangle, Zap, Info, BarChart2,
   ChevronDown, ChevronUp, AlertCircle, Calendar, ArrowUpDown, X,
-  QrCode, Wrench, RefreshCw, ExternalLink
+  QrCode, Wrench, RefreshCw, ExternalLink, Sparkles, Send, MessageSquare,
+  ChevronRight, Lightbulb
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { usePosts } from '../context/PostsContext'
@@ -63,6 +64,335 @@ function mockEng(id) {
 const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 
 // ─── Approval rate bar ────────────────────────────────────────────────────────
+// ── Metric guidance ───────────────────────────────────────────────────────────
+const METRIC_GUIDANCE = {
+  impressions: {
+    icon: '👁️',
+    plain: 'How many times your posts appeared in someone\'s feed — including repeat views by the same person.',
+    benchmark: 'Local dealerships typically see 1,500–8,000 impressions per published post depending on follower count and content type.',
+    evaluate: (v) => v > 5000
+      ? 'Your impressions are strong. Reels and carousels are likely driving above-average distribution.'
+      : v > 2000
+        ? 'Solid reach for a dealership your size. Consistency in posting frequency will grow this further.'
+        : 'Below average. Prioritize Reels (2–3× higher impressions than static images) and optimize posting times.',
+    tips: [
+      'Post Reels — they get 2–3× more impressions than static images on Instagram',
+      'Use 8–12 relevant hashtags per post (mix of broad, local, and niche)',
+      'Post between 9am–11am or 5pm–7pm in your dealership\'s local time zone',
+      'Respond to every comment within 1 hour — engagement signals boost algorithmic distribution',
+      'Repost or "boost" top-performing organic posts as paid ads for amplified reach',
+    ],
+  },
+  reach: {
+    icon: '📡',
+    plain: 'The number of unique people who saw your posts. Unlike impressions, seeing the same post twice doesn\'t count twice.',
+    benchmark: 'A healthy reach-to-follower ratio is 15–30% per post for organic content. Under 10% suggests distribution problems.',
+    evaluate: (v) => v > 3000
+      ? 'Strong unique reach — your content is being shown to new audiences beyond just your followers.'
+      : v > 1000
+        ? 'Moderate reach. Adding location tags and collaborating with local businesses can expand your audience.'
+        : 'Low reach relative to published post count. Focus on content formats the algorithm favors (Reels, carousels).',
+    tips: [
+      'Tag your dealership\'s location on every post — it makes posts discoverable in local searches',
+      'Collaborate with local businesses or community organizations for co-posted content',
+      'Share posts to Stories immediately after publishing — it drives a second wave of reach',
+      'Carousel posts keep people swiping longer, which signals quality to the algorithm',
+      'Run a low-budget "reach" campaign ($5–10/day) on your best-performing organic posts',
+    ],
+  },
+  engRate: {
+    icon: '💬',
+    plain: 'What percentage of people who saw your post actually interacted with it (likes, comments, shares, saves). This is the most important metric for organic growth.',
+    benchmark: 'Industry average engagement rate is 1–3%. For automotive, 2–4% is good. Anything above 5% is excellent.',
+    evaluate: (v) => {
+      const num = parseFloat(v)
+      if (num >= 5) return 'Excellent engagement. Your audience is highly active — this content style is working. Scale it.'
+      if (num >= 2) return 'Good engagement rate. Above industry average for automotive. Focus on maintaining content consistency.'
+      if (num >= 1) return 'Average engagement. Try more conversational captions with direct questions to drive comments.'
+      return 'Below average. Engagement rate is the top signal for algorithmic reach. Prioritize content that prompts reactions.'
+    },
+    tips: [
+      'End every caption with a direct question (e.g. "Which color would you choose? 👇")',
+      'Use polls and question stickers in Stories — they\'re the easiest way to drive interaction',
+      'Feature real customers and employees — human-face content consistently outperforms vehicle-only shots',
+      'Reply to every comment to double your engagement count and build community',
+      '"Save-worthy" content (tips, checklists, comparisons) drives the highest-quality engagement signals',
+    ],
+  },
+  clicks: {
+    icon: '🔗',
+    plain: 'Estimated number of times people clicked your profile, bio link, or any link in your posts. Clicks represent genuine purchase intent.',
+    benchmark: 'A 1–3% click-through rate on social content is typical. Car dealerships with clear CTAs see 2–5% CTR.',
+    evaluate: (v) => v > 100
+      ? 'Strong click volume — your CTAs are working. Make sure your bio link goes to a high-converting landing page.'
+      : v > 30
+        ? 'Moderate clicks. Adding a clear CTA in every caption ("Link in bio to schedule a test drive") will boost this.'
+        : 'Low clicks relative to impressions. Every post needs a specific CTA directing followers to take action.',
+    tips: [
+      'Every caption should end with a clear CTA: "Schedule your test drive — link in bio"',
+      'Use a link-in-bio tool (Linktree, etc.) to route traffic to inventory, service scheduling, or specials',
+      'Facebook and LinkedIn allow clickable links in posts — use them with every promotional post',
+      'Stories with "Swipe Up" or link stickers convert at 3–5× the rate of bio link clicks',
+      'Run retargeting ads to people who clicked but didn\'t convert — high-intent audience',
+    ],
+  },
+  approvalRate: {
+    icon: '✅',
+    plain: 'The percentage of submitted posts that were approved vs. flagged for revision. A high approval rate means content is aligned with brand guidelines and is submission-ready.',
+    benchmark: 'Target: 80%+ approval rate. Under 70% indicates a content quality or brand alignment issue that needs training.',
+    evaluate: (v) => v >= 85
+      ? 'Excellent approval rate. Your team understands the content standards. Focus on volume and consistency.'
+      : v >= 70
+        ? 'Good approval rate. Some revision patterns may indicate gaps in brand guideline clarity.'
+        : 'Below target. Hold a brief content standards review with the team. Most revisions are preventable with clearer upfront guidelines.',
+    tips: [
+      'Create a 1-page "Content Standards" cheat sheet with do/don\'t examples for your team',
+      'Review the most common revision reasons — if the same issues repeat, they\'re training opportunities',
+      'Use the AI caption generator — it\'s pre-trained on brand and platform best practices',
+      'Have the content creator self-review against a checklist before submitting',
+      'Approved content templates in the Asset Library give the team a starting point that already passes review',
+    ],
+  },
+  reviewTime: {
+    icon: '⏱️',
+    plain: 'How long it takes from when content is submitted to when a manager approves or flags it. Fast review keeps social media timely and your team motivated.',
+    benchmark: 'Target: under 12 hours. Social media is time-sensitive — a 24h+ review cycle means you miss trending moments.',
+    evaluate: (v) => {
+      if (!v) return 'No review time data yet.'
+      const hrs = typeof v === 'number' ? v : 0
+      if (hrs <= 12) return 'Excellent review speed — under 12 hours keeps your content timely and your team unblocked.'
+      if (hrs <= 24) return 'Acceptable, but slower than ideal. Consider setting a daily review window to batch approvals.'
+      return 'Review time is too slow. Delayed approvals kill post timing and demotivate creators. Set a daily review SLA.'
+    },
+    tips: [
+      'Set a daily review window (e.g. 9am and 5pm) so submitters know when to expect feedback',
+      'Enable email notifications so approval requests don\'t get buried',
+      'Pre-approve content templates for recurring post types (monthly specials, service reminders)',
+      'Delegate review authority to a social media lead for non-critical content',
+      'Use the "Flagged" status with specific notes rather than leaving posts in limbo',
+    ],
+  },
+}
+
+function MetricCard({ metricKey, label, value, note }) {
+  const [open, setOpen] = useState(false)
+  const g = METRIC_GUIDANCE[metricKey]
+  if (!g) return (
+    <div className="bg-white rounded-xl border border-slate-100 px-4 py-3">
+      <p className="text-lg font-bold text-slate-900">{value}</p>
+      <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+      {note && <p className="text-[10px] text-slate-400 mt-0.5">{note}</p>}
+    </div>
+  )
+  const evalText = value && value !== '—'
+    ? typeof g.evaluate === 'function' ? g.evaluate(value) : g.evaluate
+    : null
+
+  return (
+    <div className={`rounded-xl border transition-all cursor-pointer ${open ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-sm'}`}
+      onClick={() => setOpen(o => !o)}>
+      <div className="px-4 py-3 flex items-start justify-between gap-2">
+        <div>
+          <p className="text-lg font-bold text-slate-900">{value}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+          {note && <p className="text-[10px] text-slate-400 mt-0.5">{note}</p>}
+        </div>
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${open ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+          {open ? <ChevronDown size={12} /> : <Info size={11} />}
+        </div>
+      </div>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-indigo-100 pt-3" onClick={e => e.stopPropagation()}>
+          {/* What it means */}
+          <div>
+            <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">What this means</p>
+            <p className="text-xs text-slate-600 leading-relaxed">{g.plain}</p>
+          </div>
+          {/* Benchmark */}
+          <div className="bg-slate-50 rounded-lg px-3 py-2">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Industry benchmark</p>
+            <p className="text-xs text-slate-600">{g.benchmark}</p>
+          </div>
+          {/* Your performance */}
+          {evalText && (
+            <div className="bg-indigo-50 rounded-lg px-3 py-2">
+              <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-0.5">Your performance</p>
+              <p className="text-xs text-indigo-800">{evalText}</p>
+            </div>
+          )}
+          {/* Tips */}
+          <div>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">How to improve</p>
+            <ul className="space-y-1.5">
+              {g.tips.map((tip, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-slate-600">
+                  <span className="text-indigo-400 font-bold flex-shrink-0 mt-0.5">{i + 1}.</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Analytics Chat Panel ──────────────────────────────────────────────────────
+function AnalyticsChatPanel({ dealer, scoreData, drillEng, platformMix, range }) {
+  const [open, setOpen]       = useState(false)
+  const [input, setInput]     = useState('')
+  const [messages, setMessages] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+  const bottomRef = useRef(null)
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
+  const context = {
+    dealershipName: dealer?.name,
+    location:       dealer?.location,
+    brand:          dealer?.brand,
+    total:          scoreData?.total,
+    published:      scoreData?.published,
+    pending:        scoreData?.pending,
+    flagged:        scoreData?.flagged,
+    approvalRate:   scoreData?.approvalRate,
+    avgReviewHrs:   scoreData?.avgReviewHrs,
+    thisWeek:       scoreData?.thisWeek,
+    platformMix:    platformMix?.map(p => `${p.name}: ${p.value}`),
+    impressions:    drillEng ? fmt(drillEng.impressions) : null,
+    reach:          drillEng ? fmt(drillEng.reach) : null,
+    engRate:        drillEng?.engRate ? `${drillEng.engRate}%` : null,
+    clicks:         drillEng ? fmt(drillEng.clicks) : null,
+    range,
+  }
+
+  const STARTERS = [
+    'Why is our approval rate what it is?',
+    'What content should we post more of?',
+    'How do we improve engagement?',
+    'What are the best times to post for this dealership?',
+  ]
+
+  const send = useCallback(async (text) => {
+    const msg = (text || input).trim()
+    if (!msg || loading) return
+    setInput('')
+    setError('')
+    const updated = [...messages, { role: 'user', content: msg }]
+    setMessages(updated)
+    setLoading(true)
+    try {
+      const res = await fetch('/api/analytics-chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messages: updated, context }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Request failed')
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+    } catch (err) {
+      setError(err.message || 'Something went wrong.')
+    } finally {
+      setLoading(false)
+    }
+  }, [input, messages, loading, context])
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left"
+      >
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg,#6366f1,#7c3aed)' }}>
+          <Sparkles size={13} className="text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-slate-800">Chat with your data</p>
+          <p className="text-xs text-slate-400">Ask AI for insights, recommendations, or content ideas</p>
+        </div>
+        <ChevronRight size={14} className={`text-slate-300 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-100">
+          {/* Starter prompts */}
+          {messages.length === 0 && (
+            <div className="px-4 pt-3 pb-2">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Try asking</p>
+              <div className="flex flex-wrap gap-2">
+                {STARTERS.map(s => (
+                  <button key={s} onClick={() => send(s)}
+                    className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Messages */}
+          {messages.length > 0 && (
+            <div className="px-4 py-3 space-y-3 max-h-80 overflow-y-auto">
+              {messages.map((m, i) => (
+                <div key={i} className={`flex gap-2.5 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                    m.role === 'user' ? 'bg-slate-900 text-white' : 'bg-indigo-100 text-indigo-600'
+                  }`}>
+                    {m.role === 'user' ? 'U' : <Sparkles size={11} />}
+                  </div>
+                  <div className={`rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed max-w-[85%] ${
+                    m.role === 'user'
+                      ? 'bg-slate-900 text-white rounded-tr-sm'
+                      : 'bg-slate-50 text-slate-700 rounded-tl-sm'
+                  }`}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex gap-2.5">
+                  <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <Sparkles size={11} />
+                  </div>
+                  <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-3.5 py-3 flex items-center gap-1">
+                    {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
+                  </div>
+                </div>
+              )}
+              {error && <p className="text-xs text-rose-600 pl-8">{error}</p>}
+              <div ref={bottomRef} />
+            </div>
+          )}
+
+          {/* Input */}
+          <div className="px-4 pb-3 pt-2 border-t border-slate-100 flex gap-2">
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+              placeholder="Ask about this dealership's performance…"
+              disabled={loading}
+              className="flex-1 text-xs px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 disabled:opacity-50"
+            />
+            <button onClick={() => send()} disabled={!input.trim() || loading}
+              className="px-3 py-2.5 rounded-lg text-white disabled:opacity-40 transition-colors flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#7c3aed)' }}>
+              <Send size={13} />
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-400 px-4 pb-3 -mt-1">
+            Responses are based on your platform's analytics data + AI training. Not live web data — always verify recommendations.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ApprovalBar({ rate }) {
   const color     = rate >= 80 ? 'bg-emerald-500' : rate >= 60 ? 'bg-amber-400' : 'bg-rose-500'
   const textColor = rate >= 80 ? 'text-emerald-700' : rate >= 60 ? 'text-amber-700' : 'text-rose-700'
@@ -624,19 +954,13 @@ export default function AnalyticsPage() {
                                   <Info size={9} />Sample data · {drillEng?.count ?? 0} published posts
                                 </span>
                               </div>
+                              <p className="text-[10px] text-slate-400 mb-2 flex items-center gap-1"><Info size={9} />Click any card for plain-language explanation + recommendations</p>
                               {drillEng ? (
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                  {[
-                                    { label: 'Est. Impressions', value: fmt(drillEng.impressions) },
-                                    { label: 'Est. Reach',       value: fmt(drillEng.reach)       },
-                                    { label: 'Avg. Eng. Rate',   value: drillEng.engRate ? `${drillEng.engRate}%` : '—' },
-                                    { label: 'Est. Clicks',      value: fmt(drillEng.clicks)      },
-                                  ].map(c => (
-                                    <div key={c.label} className="bg-white rounded-xl border border-slate-100 px-4 py-3 opacity-90">
-                                      <p className="text-lg font-bold text-slate-900">{c.value}</p>
-                                      <p className="text-xs text-slate-500 mt-0.5">{c.label}</p>
-                                    </div>
-                                  ))}
+                                  <MetricCard metricKey="impressions" label="Est. Impressions" value={fmt(drillEng.impressions)} note="Sample data" />
+                                  <MetricCard metricKey="reach"       label="Est. Reach"       value={fmt(drillEng.reach)}       note="Sample data" />
+                                  <MetricCard metricKey="engRate"     label="Avg. Eng. Rate"   value={drillEng.engRate ? `${drillEng.engRate}%` : '—'} note="Sample data" />
+                                  <MetricCard metricKey="clicks"      label="Est. Clicks"      value={fmt(drillEng.clicks)}      note="Sample data" />
                                 </div>
                               ) : (
                                 <div className="bg-white rounded-xl border border-slate-100 px-4 py-3 text-xs text-slate-400">
@@ -719,6 +1043,37 @@ export default function AnalyticsPage() {
                                   )}
                                 </div>
                               </div>
+                            </div>
+
+                            {/* Workflow metric cards */}
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                              <MetricCard
+                                metricKey="approvalRate"
+                                label="Approval Rate"
+                                value={drillDealer && scorecard.find(s => s.id === selectedDealer)?.approvalRate != null
+                                  ? `${scorecard.find(s => s.id === selectedDealer).approvalRate}%`
+                                  : '—'}
+                              />
+                              <MetricCard
+                                metricKey="reviewTime"
+                                label="Avg. Review Time"
+                                value={(() => {
+                                  const s = scorecard.find(s => s.id === selectedDealer)
+                                  if (!s?.avgReviewHrs) return '—'
+                                  return s.avgReviewHrs < 24 ? `${s.avgReviewHrs}h` : `${Math.round(s.avgReviewHrs / 24)}d`
+                                })()}
+                              />
+                            </div>
+
+                            {/* AI Chat */}
+                            <div className="mt-4">
+                              <AnalyticsChatPanel
+                                dealer={drillDealer}
+                                scoreData={scorecard.find(s => s.id === selectedDealer)}
+                                drillEng={drillEng}
+                                platformMix={drillPlatforms}
+                                range={range}
+                              />
                             </div>
                           </div>
                         </td>

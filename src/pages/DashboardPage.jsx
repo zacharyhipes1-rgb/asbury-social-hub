@@ -394,7 +394,7 @@ export default function DashboardPage() {
           bgGradient="bg-gradient-to-br from-slate-600 to-slate-800"
           icon={TrendingUp}
           subtitle="From submit to decision · Target: < 12h"
-          to="/analytics"
+          to="/admin"
           benchmarkLabel={reviewBenchmark?.label}
           benchmarkColor={reviewBenchmark?.color}
         />
