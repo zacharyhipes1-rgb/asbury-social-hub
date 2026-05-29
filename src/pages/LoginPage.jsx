@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import ReCAPTCHA from 'react-google-recaptcha'
 import { useAuth } from '../context/AuthContext'
 import { useUsers } from '../context/UsersContext'
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react'
 import { DEMO_USER_ID, DEMO_USER_PASSWORD } from '../data/mockData'
+import { Events } from '../lib/analytics'
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
 const inputBaseStyle = {
   background: 'rgba(255,255,255,0.05)',
@@ -21,9 +25,11 @@ export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading]      = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
   const [emailFocus, setEmailFocus] = useState(false)
-  const [passFocus, setPassFocus] = useState(false)
+  const [passFocus, setPassFocus]   = useState(false)
+  const captchaRef = useRef(null)
 
   const demoUser = getUserById(DEMO_USER_ID)
 
@@ -33,10 +39,23 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    // If reCAPTCHA is configured, verify token before proceeding
+    if (RECAPTCHA_SITE_KEY && !captchaToken) return
     setLoading(true)
+    if (RECAPTCHA_SITE_KEY && captchaToken) {
+      try {
+        const r = await fetch('/api/verify-recaptcha', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        })
+        const d = await r.json()
+        if (!d.success) { setLoading(false); captchaRef.current?.reset(); setCaptchaToken(''); return }
+      } catch { /* network error — proceed anyway */ }
+    }
     const ok = await login(email.trim(), password)
     setLoading(false)
-    if (ok) navigate('/', { replace: true })
+    if (ok) { Events.LOGIN(); navigate('/', { replace: true }) }
+    else { captchaRef.current?.reset(); setCaptchaToken('') }
   }
 
   const fillDemo = async () => {
@@ -197,9 +216,22 @@ export default function LoginPage() {
               </div>
             )}
 
+            {RECAPTCHA_SITE_KEY && (
+              <div className="flex justify-center pt-1">
+                <ReCAPTCHA
+                  ref={captchaRef}
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={setCaptchaToken}
+                  onExpired={() => setCaptchaToken('')}
+                  theme="dark"
+                  size="normal"
+                />
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={loading || !authLoaded}
+              disabled={loading || !authLoaded || (!!RECAPTCHA_SITE_KEY && !captchaToken)}
               className="group btn-press relative overflow-hidden w-full py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',

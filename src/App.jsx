@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { trackPageView } from './lib/analytics'
 import { UsersProvider } from './context/UsersContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { PostsProvider } from './context/PostsContext'
@@ -28,8 +30,16 @@ function ProtectedRoute({ children, adminOnly = false }) {
   return children
 }
 
+function RouteTracker() {
+  const location = useLocation()
+  useEffect(() => { trackPageView(location.pathname) }, [location.pathname])
+  return null
+}
+
 function AppRoutes() {
   return (
+    <>
+    <RouteTracker />
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -108,6 +118,7 @@ function AppRoutes() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
 

@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Mail, Lock, User, Briefcase, AlertCircle, CheckCircle, ArrowLeft, Zap, Eye, EyeOff } from 'lucide-react'
+import ReCAPTCHA from 'react-google-recaptcha'
 import { useUsers } from '../context/UsersContext'
 import { useInvites } from '../context/InvitesContext'
 import { notifyNewUserRequest } from '../services/emailService'
+import { Events } from '../lib/analytics'
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
 export default function SignUpPage() {
   const { getUserByEmail, addUser, getAdmins } = useUsers()
@@ -16,10 +20,12 @@ export default function SignUpPage() {
   const [inviteError, setInviteError] = useState('') // set when token is present but invalid
 
   const [form, setForm] = useState({ name: '', email: '', title: '', password: '', confirmPw: '' })
-  const [showPw, setShowPw]   = useState(false)
-  const [error, setError]     = useState('')
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [showPw, setShowPw]         = useState(false)
+  const [error, setError]           = useState('')
+  const [success, setSuccess]       = useState(false)
+  const [loading, setLoading]       = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const captchaRef = useRef(null)
 
   // Check invite token on mount
   useEffect(() => {
@@ -55,8 +61,22 @@ export default function SignUpPage() {
     if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return }
     if (form.password !== form.confirmPw) { setError('Passwords do not match.'); return }
     if (getUserByEmail(email)) { setError('An account with this email already exists. Try signing in instead.'); return }
+    if (RECAPTCHA_SITE_KEY && !captchaToken) { setError('Please complete the reCAPTCHA check.'); return }
 
     setLoading(true)
+    if (RECAPTCHA_SITE_KEY && captchaToken) {
+      try {
+        const r = await fetch('/api/verify-recaptcha', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        })
+        const d = await r.json()
+        if (!d.success) {
+          setLoading(false); setError('reCAPTCHA failed. Please try again.')
+          captchaRef.current?.reset(); setCaptchaToken(''); return
+        }
+      } catch { /* network error — proceed */ }
+    }
     try {
       if (invite) {
         // Invited path — immediately active
@@ -283,9 +303,21 @@ export default function SignUpPage() {
                 </div>
               )}
 
+              {RECAPTCHA_SITE_KEY && (
+                <div className="flex justify-center">
+                  <ReCAPTCHA
+                    ref={captchaRef}
+                    sitekey={RECAPTCHA_SITE_KEY}
+                    onChange={setCaptchaToken}
+                    onExpired={() => setCaptchaToken('')}
+                    theme="dark"
+                  />
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={loading || (!!inviteError && !invite)}
+                disabled={loading || (!!inviteError && !invite) || (!!RECAPTCHA_SITE_KEY && !captchaToken)}
                 className="w-full py-2.5 rounded-xl text-sm font-semibold text-white
                   disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}

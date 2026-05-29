@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, Shield, AlertCircle, CheckCircle, ArrowLeft, Zap, Eye, EyeOff, RefreshCw } from 'lucide-react'
+import ReCAPTCHA from 'react-google-recaptcha'
 import { useUsers } from '../context/UsersContext'
 import { sendOtpCode } from '../services/emailService'
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
 // ── OTP helpers ────────────────────────────────────────────────────────────
 const OTP_TTL    = 10 * 60 * 1000   // 10 minutes
@@ -122,17 +125,33 @@ function StepEmail({ onNext }) {
   const [email, setEmail]   = useState('')
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const captchaRef = useRef(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     const trimmed = email.trim().toLowerCase()
     if (!trimmed) { setError('Enter your work email.'); return }
+    if (RECAPTCHA_SITE_KEY && !captchaToken) { setError('Please complete the reCAPTCHA check.'); return }
     const user = getUserByEmail(trimmed)
     if (!user)        { setError('No account found with that email address.'); return }
     if (!user.active) { setError('That account is deactivated. Contact your administrator.'); return }
 
     setLoading(true)
+    if (RECAPTCHA_SITE_KEY && captchaToken) {
+      try {
+        const r = await fetch('/api/verify-recaptcha', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        })
+        const d = await r.json()
+        if (!d.success) {
+          setLoading(false); setError('reCAPTCHA failed. Please try again.')
+          captchaRef.current?.reset(); setCaptchaToken(''); return
+        }
+      } catch { /* network error — proceed */ }
+    }
     const code = makeCode()
     saveOtp(trimmed, code)
     const result = await sendOtpCode({ recipient: { name: user.name, email: trimmed }, code })
@@ -169,7 +188,18 @@ function StepEmail({ onNext }) {
             <DarkInput icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@asburyauto.com" required autoComplete="email" autoFocus />
           </div>
           <ErrorBanner msg={error} />
-          <button type="submit" disabled={loading}
+          {RECAPTCHA_SITE_KEY && (
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                ref={captchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={setCaptchaToken}
+                onExpired={() => setCaptchaToken('')}
+                theme="dark"
+              />
+            </div>
+          )}
+          <button type="submit" disabled={loading || (!!RECAPTCHA_SITE_KEY && !captchaToken)}
             className="w-full py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}>
             {loading ? 'Sending code…' : 'Send verification code →'}

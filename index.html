@@ -12,13 +12,16 @@
     <meta name="description" content="The internal social media management platform for Asbury Automotive — submit content, track approvals, and manage the publishing calendar across all dealership locations." />
     <meta name="theme-color" content="#4f46e5" />
 
+    <!-- Google Search Console verification — set VITE_GSC_VERIFICATION in Vercel env vars -->
+    <meta name="google-site-verification" content="%VITE_GSC_VERIFICATION%" />
+
     <!-- Open Graph -->
     <meta property="og:site_name" content="Asbury Social Hub" />
     <meta property="og:title" content="Asbury Social Hub" />
     <meta property="og:description" content="Social media content submission, approval, and scheduling for the Asbury Automotive team." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://asbury-social.vercel.app/" />
-    <meta property="og:image" content="https://asbury-social.vercel.app/og-image.png" />
+    <meta property="og:url" content="https://asbury-social-staging.vercel.app/" />
+    <meta property="og:image" content="https://asbury-social-staging.vercel.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Asbury Social Hub — social media management for the Asbury Automotive team" />
@@ -27,8 +30,26 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Asbury Social Hub" />
     <meta name="twitter:description" content="Social media content submission, approval, and scheduling for the Asbury Automotive team." />
-    <meta name="twitter:image" content="https://asbury-social.vercel.app/og-image.png" />
+    <meta name="twitter:image" content="https://asbury-social-staging.vercel.app/og-image.png" />
     <meta name="twitter:image:alt" content="Asbury Social Hub" />
+
+    <!-- Google Analytics 4 — set VITE_GA4_ID in Vercel env vars (e.g. G-XXXXXXXXXX) -->
+    <script>
+      (function() {
+        var id = '%VITE_GA4_ID%';
+        if (!id || id === '%VITE_GA4_ID%' || id.indexOf('G-') !== 0) return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', id, { send_page_view: false }); // page views fired manually per route
+      })();
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
