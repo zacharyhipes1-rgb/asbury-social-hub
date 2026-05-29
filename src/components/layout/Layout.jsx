@@ -3,6 +3,7 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 import PageTransition from './PageTransition'
 import ToastContainer from '../common/Toast'
+import FloatingChat from '../chat/FloatingChat'
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -39,6 +40,7 @@ export default function Layout({ children }) {
       </div>
 
       <ToastContainer />
+      <FloatingChat />
     </div>
   )
 }

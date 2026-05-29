@@ -1065,16 +1065,7 @@ export default function AnalyticsPage() {
                               />
                             </div>
 
-                            {/* AI Chat */}
-                            <div className="mt-4">
-                              <AnalyticsChatPanel
-                                dealer={drillDealer}
-                                scoreData={scorecard.find(s => s.id === selectedDealer)}
-                                drillEng={drillEng}
-                                platformMix={drillPlatforms}
-                                range={range}
-                              />
-                            </div>
+                            {/* AI chat is the global floating button — bottom right of screen */}
                           </div>
                         </td>
                       </tr>
