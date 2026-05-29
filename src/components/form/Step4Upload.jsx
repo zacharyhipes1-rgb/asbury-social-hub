@@ -294,19 +294,24 @@ const PLATFORM_CAPTION = {
 export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
   const isTextOnly = ['text_post', 'text_caption', 'text_update'].includes(data.content_type)
   const needsAltText = ['single_image', 'carousel', 'stories'].includes(data.content_type)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiCaptions, setAiCaptions] = useState([])
-  const [aiError, setAiError] = useState('')
-  const [aiContext, setAiContext] = useState('')
+  const [aiLoading, setAiLoading]       = useState(false)
+  const [aiCaptions, setAiCaptions]     = useState([])
+  const [aiError, setAiError]           = useState('')
+  const [aiContext, setAiContext]        = useState('')
+  const [aiVisionUsed, setAiVisionUsed] = useState(false)
 
   const handleGenerateCaptions = async () => {
     setAiLoading(true)
     setAiError('')
     setAiCaptions([])
     try {
-      // Send full dealership + platform context for much better captions
       const dealershipId = data.dealership_ids?.[0] || data.dealership_id || ''
       const dealership   = DEALERSHIPS.find(d => d.id === dealershipId) || {}
+
+      // Warn if file is local-only (not yet uploaded to Cloudinary — AI can't see it)
+      const fileUrl  = data.file_url  || ''  // Cloudinary URL — empty if not uploaded
+      const fileType = data.file_type || ''
+
       const res = await fetch('/api/generate-caption', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -316,15 +321,18 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
           dealershipBrand:    dealership.brand    || '',
           platform:           data.platforms?.[0] || data.platform || 'instagram',
           contentType:        data.content_type   || '',
-          altText:            data.alt_text        || '',
-          contentPillar:      data.content_pillar  || '',
-          postingReason:      data.posting_reason  || '',
+          fileUrl,
+          fileType,
+          altText:            data.alt_text       || '',
+          contentPillar:      data.content_pillar || '',
+          postingReason:      data.posting_reason || '',
           context:            aiContext.trim(),
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Generation failed')
       setAiCaptions(json.captions || [])
+      setAiVisionUsed(!!json.visionUsed)
     } catch (err) {
       setAiError(err.message || 'Something went wrong. Check that ANTHROPIC_API_KEY is set in Vercel.')
     } finally {
@@ -408,13 +416,20 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
               <span className="ml-auto text-xs text-indigo-400">Powered by Claude</span>
             </div>
             <div className="p-3.5 bg-white space-y-2.5">
+              {/* Warn if file not yet on Cloudinary */}
+              {data.file_name && !data.file_url && (
+                <div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertCircle size={13} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">Your file isn't uploaded to Cloudinary yet — AI will generate captions without seeing it. Configure Cloudinary in Settings for vision-based captions.</p>
+                </div>
+              )}
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={aiContext}
                   onChange={e => setAiContext(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !aiLoading && handleGenerateCaptions()}
-                  placeholder="Add context — e.g. 'weekend tent sale, Honda Pilot, family audience'"
+                  placeholder="Optional extra context — e.g. 'weekend sale, families, trade-in promo'"
                   className="flex-1 text-sm px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 bg-white"
                 />
                 <button
@@ -425,11 +440,18 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
                   style={{ background: 'linear-gradient(135deg,#6366f1,#7c3aed)', boxShadow: aiLoading ? 'none' : '0 2px 10px rgba(99,102,241,0.3)' }}
                 >
                   {aiLoading
-                    ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Generating…</>
+                    ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Analyzing…</>
                     : <><Sparkles size={13} />Generate</>}
                 </button>
               </div>
-              <p className="text-xs text-slate-400">AI uses the selected dealership, platform, content type, and alt text for context. Press Enter or click Generate.</p>
+              <p className="text-xs text-slate-400">
+                {data.file_url
+                  ? data.file_type?.startsWith('video/')
+                    ? 'AI will analyze a frame from your video to write captions specific to what\'s in it.'
+                    : 'AI will analyze your uploaded image to write captions specific to what\'s in it.'
+                  : 'AI uses dealership, platform, and alt text for context. Upload to Cloudinary for image-aware captions.'
+                }
+              </p>
               {aiError && (
                 <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-100 rounded-lg">
                   <AlertCircle size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
@@ -438,7 +460,14 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
               )}
               {aiCaptions.length > 0 && (
                 <div className="space-y-2 pt-1">
-                  <p className="text-xs font-medium text-slate-500">Click any option to use it:</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-slate-500">Click any option to use it:</p>
+                    {aiVisionUsed && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-full text-xs font-medium">
+                        <CheckCircle size={10} />Analyzed your {data.file_type?.startsWith('video/') ? 'video' : 'image'}
+                      </span>
+                    )}
+                  </div>
                   {aiCaptions.map((cap, i) => (
                     <button
                       key={i}
