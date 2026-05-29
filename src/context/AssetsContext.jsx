@@ -17,7 +17,9 @@ function fromRow(r) {
     file_type:         r.file_type,
     file_url:          r.file_url,
     thumbnail_url:     r.thumbnail_url,
-    description:       r.description || '',
+    title:             r.title        || '',
+    alt_text:          r.alt_text     || '',
+    description:       r.description  || '',
     tags:              Array.isArray(r.tags) ? r.tags : [],
     folder_id:         r.folder_id || null,
     uploaded_by:       r.uploaded_by,
@@ -71,7 +73,7 @@ export function AssetsProvider({ children }) {
     return () => { supabase.removeChannel(channel); clearInterval(poll) }
   }, [fetchAll, tableMissing])
 
-  const addAsset = useCallback(async ({ file, description, tags, folderId, currentUser }) => {
+  const addAsset = useCallback(async ({ file, title, altText, description, tags, folderId, currentUser }) => {
     const validationError = validateFile(file)
     if (validationError) throw new Error(validationError)
 
@@ -84,6 +86,8 @@ export function AssetsProvider({ children }) {
       file_type:        file.type,
       file_url:         secure_url,
       thumbnail_url,
+      title:            (title       || '').trim().slice(0, 200),
+      alt_text:         (altText     || '').trim().slice(0, 500),
       description:      (description || '').trim().slice(0, 500),
       tags:             normalizeTags(tags),
       folder_id:        folderId || null,
@@ -107,6 +111,27 @@ export function AssetsProvider({ children }) {
       .select()
       .single()
     if (error) throw new Error(error.message || 'Failed to update tags.')
+    const fresh = fromRow(data)
+    setAssets(prev => prev.map(a => a.id === id ? fresh : a))
+    return fresh
+  }, [])
+
+  // Update any combination of title, alt_text, description, tags on an asset
+  const updateAsset = useCallback(async (id, updates) => {
+    const patch = {}
+    if (updates.title       !== undefined) patch.title       = (updates.title       || '').trim().slice(0, 200)
+    if (updates.alt_text    !== undefined) patch.alt_text    = (updates.alt_text    || '').trim().slice(0, 500)
+    if (updates.description !== undefined) patch.description = (updates.description || '').trim().slice(0, 500)
+    if (updates.tags        !== undefined) patch.tags        = normalizeTags(updates.tags)
+    if (!Object.keys(patch).length) return
+
+    const { data, error } = await supabase
+      .from('assets')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(error.message || 'Failed to update asset.')
     const fresh = fromRow(data)
     setAssets(prev => prev.map(a => a.id === id ? fresh : a))
     return fresh
@@ -150,6 +175,8 @@ export function AssetsProvider({ children }) {
     if (!q) return assets
     return assets.filter(a =>
       a.file_name?.toLowerCase().includes(q) ||
+      a.title?.toLowerCase().includes(q) ||
+      a.alt_text?.toLowerCase().includes(q) ||
       a.description?.toLowerCase().includes(q) ||
       (a.tags || []).some(t => t.includes(q))
     )
@@ -162,6 +189,7 @@ export function AssetsProvider({ children }) {
         loaded,
         tableMissing,
         addAsset,
+        updateAsset,
         updateAssetTags,
         moveAsset,
         softDeleteAsset,

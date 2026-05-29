@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react'
-import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader, Bookmark, BookmarkCheck, Library } from 'lucide-react'
+import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader, Bookmark, BookmarkCheck, Library, Sparkles } from 'lucide-react'
 import {
   validateFile,
   uploadToCloudinary,
   isCloudinaryConfigured,
 } from '../../lib/cloudinary'
+import { DEALERSHIPS } from '../../data/dealerships'
 import AssetPickerModal from '../assets/AssetPickerModal'
 
 function getPresets() {
@@ -303,21 +304,29 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
     setAiError('')
     setAiCaptions([])
     try {
+      // Send full dealership + platform context for much better captions
+      const dealershipId = data.dealership_ids?.[0] || data.dealership_id || ''
+      const dealership   = DEALERSHIPS.find(d => d.id === dealershipId) || {}
       const res = await fetch('/api/generate-caption', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          dealership: data.dealership_ids?.[0] || data.dealership_id || '',
-          platform: data.platforms?.[0] || data.platform || '',
-          contentType: data.content_type || '',
-          context: aiContext.trim(),
+          dealershipName:     dealership.name     || dealershipId,
+          dealershipLocation: dealership.location || '',
+          dealershipBrand:    dealership.brand    || '',
+          platform:           data.platforms?.[0] || data.platform || 'instagram',
+          contentType:        data.content_type   || '',
+          altText:            data.alt_text        || '',
+          contentPillar:      data.content_pillar  || '',
+          postingReason:      data.posting_reason  || '',
+          context:            aiContext.trim(),
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Generation failed')
       setAiCaptions(json.captions || [])
     } catch (err) {
-      setAiError(err.message || 'Something went wrong')
+      setAiError(err.message || 'Something went wrong. Check that ANTHROPIC_API_KEY is set in Vercel.')
     } finally {
       setAiLoading(false)
     }
@@ -392,46 +401,58 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
           </div>
 
           {/* AI Caption Generator */}
-          <div className="mt-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Generate with AI</p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={aiContext}
-                onChange={e => setAiContext(e.target.value)}
-                placeholder="Optional context (e.g. 'weekend sale, family SUVs')…"
-                className="flex-1 text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400 bg-white"
-              />
-              <button
-                type="button"
-                onClick={handleGenerateCaptions}
-                disabled={aiLoading}
-                className="btn-press px-3 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap transition-colors"
-              >
-                {aiLoading ? 'Generating…' : 'Generate'}
-              </button>
+          <div className="mt-3 rounded-xl border border-indigo-100 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-50 to-violet-50 border-b border-indigo-100">
+              <Sparkles size={14} className="text-indigo-500 flex-shrink-0" />
+              <p className="text-xs font-semibold text-indigo-700">Generate Caption with AI</p>
+              <span className="ml-auto text-xs text-indigo-400">Powered by Claude</span>
             </div>
-            {aiError && (
-              <p className="text-xs text-red-500 mt-2">{aiError}</p>
-            )}
-            {aiCaptions.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {aiCaptions.map((caption, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => {
-                      onUpdate({ caption })
-                      setAiCaptions([])
-                    }}
-                    className="w-full text-left text-sm p-3 bg-white border border-indigo-100 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 transition-all leading-relaxed"
-                  >
-                    {caption}
-                  </button>
-                ))}
-                <p className="text-xs text-slate-400">Click any option to use it as your caption.</p>
+            <div className="p-3.5 bg-white space-y-2.5">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={aiContext}
+                  onChange={e => setAiContext(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !aiLoading && handleGenerateCaptions()}
+                  placeholder="Add context — e.g. 'weekend tent sale, Honda Pilot, family audience'"
+                  className="flex-1 text-sm px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={handleGenerateCaptions}
+                  disabled={aiLoading}
+                  className="btn-press inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-white rounded-lg disabled:opacity-50 whitespace-nowrap transition-all"
+                  style={{ background: 'linear-gradient(135deg,#6366f1,#7c3aed)', boxShadow: aiLoading ? 'none' : '0 2px 10px rgba(99,102,241,0.3)' }}
+                >
+                  {aiLoading
+                    ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />Generating…</>
+                    : <><Sparkles size={13} />Generate</>}
+                </button>
               </div>
-            )}
+              <p className="text-xs text-slate-400">AI uses the selected dealership, platform, content type, and alt text for context. Press Enter or click Generate.</p>
+              {aiError && (
+                <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-100 rounded-lg">
+                  <AlertCircle size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-600">{aiError}</p>
+                </div>
+              )}
+              {aiCaptions.length > 0 && (
+                <div className="space-y-2 pt-1">
+                  <p className="text-xs font-medium text-slate-500">Click any option to use it:</p>
+                  {aiCaptions.map((cap, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => { onUpdate({ caption: cap }); setAiCaptions([]) }}
+                      className="w-full text-left text-sm p-3 bg-slate-50 border border-slate-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 transition-all leading-relaxed whitespace-pre-wrap"
+                    >
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 mb-1.5">Option {i + 1}</span>
+                      <br />{cap}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

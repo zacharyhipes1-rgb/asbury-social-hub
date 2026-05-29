@@ -110,7 +110,6 @@ export default function FormWizard() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    await new Promise((r) => setTimeout(r, 600))
 
     // Strip the multi-select arrays before persisting; each row carries singular fields.
     const { dealership_ids, platforms, ...sharedFields } = formData
@@ -148,7 +147,7 @@ export default function FormWizard() {
         for (const pId of platformList) {
           // Stagger ids so Date.now() collisions don't produce duplicate keys
           // when the loop runs faster than 1ms per iteration.
-          await new Promise((r) => setTimeout(r, 1))
+          if (created.length > 0) await new Promise((r) => setTimeout(r, 1))
           const post = await addPost({
             ...sharedFields,
             dealership_id:    dId,

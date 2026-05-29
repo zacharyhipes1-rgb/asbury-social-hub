@@ -217,3 +217,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.asset_folders;
 ALTER TABLE public.assets
   ADD COLUMN IF NOT EXISTS folder_id UUID
   REFERENCES public.asset_folders(id) ON DELETE SET NULL;
+
+-- Add SEO/LLM metadata columns to assets (safe, no-op if already exist)
+ALTER TABLE public.assets ADD COLUMN IF NOT EXISTS title    TEXT DEFAULT '';
+ALTER TABLE public.assets ADD COLUMN IF NOT EXISTS alt_text TEXT DEFAULT '';
+
+NOTIFY pgrst, 'reload schema';

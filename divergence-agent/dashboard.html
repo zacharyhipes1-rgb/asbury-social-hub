@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Divergence Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#fff;min-height:100vh;padding:20px}
+.header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:24px 32px;background:#1a1d2e;border-radius:16px;margin-bottom:24px;border:1px solid #2a2d3e}
+.header h1{font-size:24px;font-weight:900;letter-spacing:2px;color:#00d4ff}
+.header-stats{display:flex;gap:32px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-value{font-size:28px;font-weight:700;color:#fff}
+.stat-label{font-size:11px;color:#8b8fa8;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.meta{color:#8b8fa8;font-size:12px;text-align:right}
+.meta span{display:block}
+#countdown{color:#00d4ff;font-weight:600}
+.cards{display:flex;flex-direction:column;gap:16px;margin-bottom:32px}
+.card{background:#1a1d2e;border-radius:12px;padding:24px 28px;border:1px solid #2a2d3e;position:relative;transition:box-shadow .2s}
+.card.glow-high{border-color:#00d4ff;box-shadow:0 0 20px rgba(0,212,255,.15)}
+.card.glow-high.negative{border-color:#ff6b35;box-shadow:0 0 20px rgba(255,107,53,.15)}
+.card.glow-mid{border-left:4px solid #00d4ff}
+.card.glow-mid.negative{border-left-color:#ff6b35}
+.badge{position:absolute;top:16px;right:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 10px;border-radius:4px;background:rgba(0,212,255,.15);color:#00d4ff}
+.badge.negative{background:rgba(255,107,53,.15);color:#ff6b35}
+.card-headline{font-size:18px;font-weight:700;margin-bottom:8px;padding-right:140px}
+.card-summary{font-size:14px;color:#ccc;margin-bottom:16px;line-height:1.5}
+.numbers{display:grid;grid-template-columns:1fr 1fr auto;gap:24px;align-items:center;margin-bottom:16px}
+.num-block label{font-size:11px;color:#8b8fa8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
+.num-block .value{font-size:20px;font-weight:700}
+.divergence-value{font-size:32px;font-weight:900}
+.divergence-value.pos{color:#00d4ff}
+.divergence-value.neg{color:#ff6b35}
+.interpretation{font-size:13px;color:#ccc;margin-bottom:12px;line-height:1.5;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:8px}
+.details{font-size:12px;color:#8b8fa8;line-height:1.7}
+.details strong{color:#ccc}
+.empty{text-align:center;padding:80px 20px;color:#8b8fa8;font-size:16px}
+.section-title{font-size:16px;font-weight:700;margin-bottom:12px;color:#8b8fa8;text-transform:uppercase;letter-spacing:1px}
+table{width:100%;border-collapse:collapse;font-size:12px;background:#1a1d2e;border-radius:8px;overflow:hidden}
+th{background:#22263a;color:#8b8fa8;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;cursor:pointer;user-select:none}
+th:hover{color:#fff}
+td{padding:8px 12px;border-top:1px solid #2a2d3e;color:#ccc}
+tr:hover td{background:rgba(255,255,255,.02)}
+.health{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px}
+.health-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#8b8fa8}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.green{background:#22c55e}
+.dot.red{background:#ef4444}
+.dot.gray{background:#6b7280}
+.quota{margin-top:8px;font-size:12px;color:#8b8fa8}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>DIVERGENCE DETECTOR</h1>
+  <div class="header-stats">
+    <div class="stat"><div class="stat-value">142</div><div class="stat-label">Events Scanned</div></div>
+    <div class="stat"><div class="stat-value">6</div><div class="stat-label">Opportunities</div></div>
+    <div class="stat"><div class="stat-value">19.9%</div><div class="stat-label">Max Divergence</div></div>
+  </div>
+  <div class="meta">
+    <span>Updated: <strong id="updated">2026-05-26 15:44:55 UTC</strong></span>
+    <span>Next refresh: <strong id="countdown">--:--</strong></span>
+  </div>
+</div>
+
+<div class="cards">
+
+
+
+
+<div class="card glow-high ">
+  <div class="badge ">PREDICTION MARKET FAVORS</div>
+  <div class="card-headline">CROSS MARKET &mdash; Will the Oklahoma City Thunder win the 2026 NBA Finals?</div>
+  <div class="card-summary">
+    The betting sites think Yes has a 46% chance.
+    The prediction market gives them 26%.
+    That's a 19.9-point gap.
+  </div>
+  <div class="numbers">
+    <div class="num-block">
+      <label>Sportsbooks say</label>
+      <div class="value">45.5%</div>
+      <div style="font-size:11px;color:#8b8fa8">avg across 0 books</div>
+    </div>
+    <div class="num-block">
+      <label>Polymarket vs polymarket says</label>
+      <div class="value">25.6%</div>
+      
+    </div>
+    <div class="num-block" style="text-align:center">
+      <label>Divergence</label>
+      <div class="divergence-value pos">19.9pp</div>
+    </div>
+  </div>
+  <div class="interpretation">
+    
+    The prediction market is pricing Yes HIGHER than the sportsbooks. If the prediction market is right, Yes may be underpriced at sportsbooks.
+    
+  </div>
+  <div class="details">
+    <strong>Game time:</strong> <span class="local-time">TBD</span><br>
+    <strong>Source:</strong> Polymarket vs polymarket<br>
+    <strong>Match confidence:</strong> 100%<br>
+    
+  </div>
+</div>
+
+
+
+<div class="card glow-high ">
+  <div class="badge ">PREDICTION MARKET FAVORS</div>
+  <div class="card-headline">CROSS MARKET &mdash; Will the Oklahoma City Thunder win the 2026 NBA Finals?</div>
+  <div class="card-summary">
+    The betting sites think No has a 55% chance.
+    The prediction market gives them 74%.
+    That's a 19.9-point gap.
+  </div>
+  <div class="numbers">
+    <div class="num-block">
+      <label>Sportsbooks say</label>
+      <div class="value">54.5%</div>
+      <div style="font-size:11px;color:#8b8fa8">avg across 0 books</div>
+    </div>
+    <div class="num-block">
+      <label>Polymarket vs polymarket says</label>
+      <div class="value">74.4%</div>
+      
+    </div>
+    <div class="num-block" style="text-align:center">
+      <label>Divergence</label>
+      <div class="divergence-value pos">19.9pp</div>
+    </div>
+  </div>
+  <div class="interpretation">
+    
+    The prediction market is pricing No HIGHER than the sportsbooks. If the prediction market is right, No may be underpriced at sportsbooks.
+    
+  </div>
+  <div class="details">
+    <strong>Game time:</strong> <span class="local-time">TBD</span><br>
+    <strong>Source:</strong> Polymarket vs polymarket<br>
+    <strong>Match confidence:</strong> 100%<br>
+    
+  </div>
+</div>
+
+
+
+<div class="card glow-high ">
+  <div class="badge ">PREDICTION MARKET FAVORS</div>
+  <div class="card-headline">CROSS MARKET &mdash; Will the Oklahoma City Thunder win the 2026 NBA Finals?</div>
+  <div class="card-summary">
+    The betting sites think Yes has a 46% chance.
+    The prediction market gives them 30%.
+    That's a 15.8-point gap.
+  </div>
+  <div class="numbers">
+    <div class="num-block">
+      <label>Sportsbooks say</label>
+      <div class="value">45.5%</div>
+      <div style="font-size:11px;color:#8b8fa8">avg across 0 books</div>
+    </div>
+    <div class="num-block">
+      <label>Polymarket vs polymarket says</label>
+      <div class="value">29.8%</div>
+      
+    </div>
+    <div class="num-block" style="text-align:center">
+      <label>Divergence</label>
+      <div class="divergence-value pos">15.8pp</div>
+    </div>
+  </div>
+  <div class="interpretation">
+    
+    The prediction market is pricing Yes HIGHER than the sportsbooks. If the prediction market is right, Yes may be underpriced at sportsbooks.
+    
+  </div>
+  <div class="details">
+    <strong>Game time:</strong> <span class="local-time">TBD</span><br>
+    <strong>Source:</strong> Polymarket vs polymarket<br>
+    <strong>Match confidence:</strong> 100%<br>
+    
+  </div>
+</div>
+
+
+
+<div class="card glow-high ">
+  <div class="badge ">PREDICTION MARKET FAVORS</div>
+  <div class="card-headline">CROSS MARKET &mdash; Will the Oklahoma City Thunder win the 2026 NBA Finals?</div>
+  <div class="card-summary">
+    The betting sites think No has a 55% chance.
+    The prediction market gives them 70%.
+    That's a 15.7-point gap.
+  </div>
+  <div class="numbers">
+    <div class="num-block">
+      <label>Sportsbooks say</label>
+      <div class="value">54.5%</div>
+      <div style="font-size:11px;color:#8b8fa8">avg across 0 books</div>
+    </div>
+    <div class="num-block">
+      <label>Polymarket vs polymarket says</label>
+      <div class="value">70.2%</div>
+      
+    </div>
+    <div class="num-block" style="text-align:center">
+      <label>Divergence</label>
+      <div class="divergence-value pos">15.7pp</div>
+    </div>
+  </div>
+  <div class="interpretation">
+    
+    The prediction market is pricing No HIGHER than the sportsbooks. If the prediction market is right, No may be underpriced at sportsbooks.
+    
+  </div>
+  <div class="details">
+    <strong>Game time:</strong> <span class="local-time">TBD</span><br>
+    <strong>Source:</strong> Polymarket vs polymarket<br>
+    <strong>Match confidence:</strong> 100%<br>
+    
+  </div>
+</div>
+
+
+
+<div class="card  ">
+  <div class="badge ">PREDICTION MARKET FAVORS</div>
+  <div class="card-headline">CROSS MARKET &mdash; Will the New York Knicks win the 2026 NBA Finals?</div>
+  <div class="card-summary">
+    The betting sites think Yes has a 30% chance.
+    The prediction market gives them 26%.
+    That's a 4.1-point gap.
+  </div>
+  <div class="numbers">
+    <div class="num-block">
+      <label>Sportsbooks say</label>
+      <div class="value">29.8%</div>
+      <div style="font-size:11px;color:#8b8fa8">avg across 0 books</div>
+    </div>
+    <div class="num-block">
+      <label>Polymarket vs polymarket says</label>
+      <div class="value">25.6%</div>
+      
+    </div>
+    <div class="num-block" style="text-align:center">
+      <label>Divergence</label>
+      <div class="divergence-value pos">4.1pp</div>
+    </div>
+  </div>
+  <div class="interpretation">
+    
+    The prediction market is pricing Yes HIGHER than the sportsbooks. If the prediction market is right, Yes may be underpriced at sportsbooks.
+    
+  </div>
+  <div class="details">
+    <strong>Game time:</strong> <span class="local-time">TBD</span><br>
+    <strong>Source:</strong> Polymarket vs polymarket<br>
+    <strong>Match confidence:</strong> 100%<br>
+    
+  </div>
+</div>
+
+
+
+<div class="card  ">
+  <div class="badge ">PREDICTION MARKET FAVORS</div>
+  <div class="card-headline">CROSS MARKET &mdash; Will the New York Knicks win the 2026 NBA Finals?</div>
+  <div class="card-summary">
+    The betting sites think No has a 70% chance.
+    The prediction market gives them 74%.
+    That's a 4.1-point gap.
+  </div>
+  <div class="numbers">
+    <div class="num-block">
+      <label>Sportsbooks say</label>
+      <div class="value">70.2%</div>
+      <div style="font-size:11px;color:#8b8fa8">avg across 0 books</div>
+    </div>
+    <div class="num-block">
+      <label>Polymarket vs polymarket says</label>
+      <div class="value">74.4%</div>
+      
+    </div>
+    <div class="num-block" style="text-align:center">
+      <label>Divergence</label>
+      <div class="divergence-value pos">4.1pp</div>
+    </div>
+  </div>
+  <div class="interpretation">
+    
+    The prediction market is pricing No HIGHER than the sportsbooks. If the prediction market is right, No may be underpriced at sportsbooks.
+    
+  </div>
+  <div class="details">
+    <strong>Game time:</strong> <span class="local-time">TBD</span><br>
+    <strong>Source:</strong> Polymarket vs polymarket<br>
+    <strong>Match confidence:</strong> 100%<br>
+    
+  </div>
+</div>
+
+
+</div>
+
+<div class="section-title">Recent Log (Last 50)</div>
+<div style="overflow-x:auto;margin-bottom:24px">
+<table id="log-table">
+<thead><tr>
+<th data-col="0">Time</th><th data-col="1">Sport</th><th data-col="2">Event</th><th data-col="3">Outcome</th><th data-col="4">Sportsbook</th><th data-col="5">Pred Mkt</th><th data-col="6">Div%</th><th data-col="7">Source</th>
+</tr></thead>
+<tbody>
+
+<tr>
+<td class="local-time">2026-05-26 15:44:55</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>Yes</td>
+<td>45.5%</td>
+<td>29.8%</td>
+<td style="color:#00d4ff">15.8</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 15:44:55</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>Yes</td>
+<td>45.5%</td>
+<td>25.6%</td>
+<td style="color:#00d4ff">19.9</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 15:44:55</td>
+<td>cross_market</td>
+<td>Will the New York Knicks win the 2026 NBA Finals?</td>
+<td>Yes</td>
+<td>29.8%</td>
+<td>25.6%</td>
+<td style="color:#00d4ff">4.1</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 15:44:55</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>No</td>
+<td>54.5%</td>
+<td>70.2%</td>
+<td style="color:#00d4ff">15.7</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 15:44:55</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>No</td>
+<td>54.5%</td>
+<td>74.4%</td>
+<td style="color:#00d4ff">19.9</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 15:44:55</td>
+<td>cross_market</td>
+<td>Will the New York Knicks win the 2026 NBA Finals?</td>
+<td>No</td>
+<td>70.2%</td>
+<td>74.4%</td>
+<td style="color:#00d4ff">4.1</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 02:55:31</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>Yes</td>
+<td>47.5%</td>
+<td>0.1%</td>
+<td style="color:#00d4ff">47.4</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 02:55:31</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>Yes</td>
+<td>47.5%</td>
+<td>27.9%</td>
+<td style="color:#00d4ff">19.6</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 02:55:31</td>
+<td>cross_market</td>
+<td>Will the Cleveland Cavaliers win the 2026 NBA Finals?</td>
+<td>Yes</td>
+<td>0.1%</td>
+<td>27.9%</td>
+<td style="color:#00d4ff">27.9</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 02:55:31</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>No</td>
+<td>52.5%</td>
+<td>100.0%</td>
+<td style="color:#00d4ff">47.5</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 02:55:31</td>
+<td>cross_market</td>
+<td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+<td>No</td>
+<td>52.5%</td>
+<td>72.1%</td>
+<td style="color:#00d4ff">19.6</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+<tr>
+<td class="local-time">2026-05-26 02:55:31</td>
+<td>cross_market</td>
+<td>Will the Cleveland Cavaliers win the 2026 NBA Finals?</td>
+<td>No</td>
+<td>100.0%</td>
+<td>72.1%</td>
+<td style="color:#00d4ff">27.9</td>
+<td>polymarket vs polymarket</td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<div class="section-title">API Health</div>
+<div class="health">
+
+<div class="health-item">
+  <div class="dot green"></div>
+  polymarket (94ms)
+</div>
+
+<div class="health-item">
+  <div class="dot green"></div>
+  predictit (271ms)
+</div>
+
+<div class="health-item">
+  <div class="dot green"></div>
+  espn (0ms)
+</div>
+
+<div class="health-item">
+  <div class="dot green"></div>
+  odds_api (0ms)
+</div>
+
+</div>
+
+<div class="quota">Odds API quota remaining: 482</div>
+
+
+<script>
+// Countdown timer
+(function(){
+  var interval = 60 * 60;
+  var el = document.getElementById('countdown');
+  var start = new Date('2026-05-26T15:44:55.984194Z').getTime();
+  function tick(){
+    var elapsed = Math.floor((Date.now() - start) / 1000);
+    var remain = Math.max(0, interval - elapsed);
+    var m = Math.floor(remain / 60);
+    var s = remain % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    if(remain > 0) requestAnimationFrame(tick);
+    else el.textContent = 'Refreshing...';
+  }
+  tick();
+})();
+
+// Convert UTC times to local
+document.querySelectorAll('.local-time').forEach(function(el){
+  var t = el.textContent.trim();
+  if(t && t !== 'TBD'){
+    try{ el.textContent = new Date(t).toLocaleString(); }catch(e){}
+  }
+});
+
+// Table sort
+document.querySelectorAll('#log-table th').forEach(function(th){
+  th.addEventListener('click', function(){
+    var col = parseInt(this.dataset.col);
+    var tbody = document.querySelector('#log-table tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    var asc = this.dataset.asc !== 'true';
+    this.dataset.asc = asc;
+    rows.sort(function(a,b){
+      var av = a.children[col].textContent.trim();
+      var bv = b.children[col].textContent.trim();
+      var an = parseFloat(av), bn = parseFloat(bv);
+      if(!isNaN(an) && !isNaN(bn)) return asc ? an-bn : bn-an;
+      return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    rows.forEach(function(r){ tbody.appendChild(r); });
+  });
+});
+</script>
+</body>
+</html>
