@@ -2,7 +2,8 @@
 // Measurement ID set via VITE_GA4_ID env var (e.g. G-XXXXXXXXXX)
 // No-ops silently if GA4 is not configured.
 
-const GA_ID = import.meta.env.VITE_GA4_ID
+// Env var takes priority; hardcoded ID is the reliable fallback (GA4 IDs are public)
+const GA_ID = import.meta.env.VITE_GA4_ID || 'G-0TJ9Z37WZW'
 
 // Inject gtag script from JS so import.meta.env substitution is guaranteed
 function initGA() {
