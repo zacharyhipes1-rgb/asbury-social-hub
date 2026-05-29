@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader, Bookmark, BookmarkCheck, Library, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, UploadCloud, File, X, Hash, Image, CheckCircle, AlertCircle, Loader, Bookmark, BookmarkCheck, Library, Sparkles, Wand2, Download } from 'lucide-react'
 import {
   validateFile,
   uploadToCloudinary,
@@ -291,9 +291,164 @@ const PLATFORM_CAPTION = {
   linkedin:  { limit: 3000, soft: 700, tip: 'LinkedIn readers engage with longer copy — 700+ chars can perform well here.' },
 }
 
+const ASPECT_RATIOS = [
+  { value: '1:1',  label: '1:1',  desc: 'Square — Instagram feed, Facebook' },
+  { value: '9:16', label: '9:16', desc: 'Vertical — Reels, Stories, TikTok' },
+  { value: '16:9', label: '16:9', desc: 'Landscape — LinkedIn, Facebook cover' },
+  { value: '4:5',  label: '4:5',  desc: 'Portrait — Instagram feed optimal' },
+]
+
+const STYLE_PRESETS = [
+  { value: 'photographic',  label: 'Photographic' },
+  { value: 'cinematic',     label: 'Cinematic' },
+  { value: 'digital-art',   label: 'Digital Art' },
+  { value: 'enhance',       label: 'Enhanced' },
+  { value: 'comic-book',    label: 'Illustrated' },
+]
+
+function GenerateImagePanel({ onImageReady, platform, dealership }) {
+  const [prompt, setPrompt]         = useState('')
+  const [aspectRatio, setAspect]    = useState('1:1')
+  const [style, setStyle]           = useState('photographic')
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState('')
+  const [preview, setPreview]       = useState(null)
+  const [uploading, setUploading]   = useState(false)
+
+  // Auto-set aspect ratio based on platform
+  const defaultAspect = platform === 'instagram' || platform === 'tiktok' ? '9:16'
+    : platform === 'linkedin' ? '16:9' : '1:1'
+
+  const generate = async () => {
+    if (!prompt.trim()) return
+    setLoading(true); setError(''); setPreview(null)
+    try {
+      const dealerContext = dealership?.name ? ` at ${dealership.name} in ${dealership.location}` : ''
+      const enriched = `${prompt}${dealerContext}`
+      const res = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ prompt: enriched, aspectRatio: aspectRatio || defaultAspect, style }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Generation failed')
+      setPreview(json.dataUrl)
+    } catch (err) {
+      setError(err.message || 'Image generation failed. Try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const useImage = async () => {
+    if (!preview) return
+    setUploading(true)
+    try {
+      // Convert data URL → File → upload to Cloudinary
+      const res   = await fetch(preview)
+      const blob  = await res.blob()
+      const file  = new File([blob], `ai-generated-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      const { uploadToCloudinary, isCloudinaryConfigured } = await import('../../lib/cloudinary')
+      if (isCloudinaryConfigured()) {
+        const { secure_url } = await uploadToCloudinary(file)
+        onImageReady({ file_name: file.name, file_size: file.size, file_type: 'image/jpeg', file_preview: secure_url, file_url: secure_url })
+      } else {
+        // No Cloudinary — use local preview
+        onImageReady({ file_name: file.name, file_size: file.size, file_type: 'image/jpeg', file_preview: preview, file_url: null })
+      }
+      setPreview(null)
+    } catch (err) {
+      setError('Failed to use image: ' + err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Prompt */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Describe the image you want</label>
+        <textarea
+          value={prompt}
+          onChange={e => setPrompt(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && e.metaKey && generate()}
+          rows={3}
+          placeholder={`e.g. "Red Honda CR-V parked in front of a dealership on a sunny day, modern exterior, clear blue sky"`}
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 resize-none"
+        />
+        <p className="text-xs text-slate-400 mt-1">Be specific — vehicle model, color, setting, lighting, mood. ⌘+Enter to generate.</p>
+      </div>
+
+      {/* Options row */}
+      <div className="flex flex-wrap gap-3">
+        <div className="flex-1 min-w-[140px]">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Aspect Ratio</label>
+          <select value={aspectRatio} onChange={e => setAspect(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-400 bg-white">
+            {ASPECT_RATIOS.map(r => <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>)}
+          </select>
+        </div>
+        <div className="flex-1 min-w-[140px]">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Style</label>
+          <select value={style} onChange={e => setStyle(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-400 bg-white">
+            {STYLE_PRESETS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Generate button */}
+      <button type="button" onClick={generate} disabled={!prompt.trim() || loading}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all"
+        style={{ background: 'linear-gradient(135deg,#6366f1,#7c3aed)', boxShadow: loading ? 'none' : '0 4px 14px rgba(99,102,241,0.3)' }}>
+        {loading
+          ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating… (~5 seconds)</>
+          : <><Wand2 size={15} />Generate Image</>}
+      </button>
+
+      {error && (
+        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
+          <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* Preview */}
+      {preview && (
+        <div className="space-y-3">
+          <div className="relative rounded-xl overflow-hidden border border-slate-200">
+            <img src={preview} alt="AI generated" className="w-full object-cover max-h-72" />
+            <div className="absolute top-2 right-2">
+              <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-black/60 text-white">AI Generated</span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={useImage} disabled={uploading}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>
+              {uploading
+                ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Uploading…</>
+                : <><CheckCircle size={14} />Use This Image</>}
+            </button>
+            <button type="button" onClick={generate} disabled={loading}
+              className="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-40">
+              Regenerate
+            </button>
+          </div>
+          <p className="text-xs text-slate-400 text-center">Review AI-generated content carefully before submitting. Verify accuracy for brand/vehicle details.</p>
+        </div>
+      )}
+
+      <p className="text-xs text-slate-400">Powered by Stability AI · ~$0.03/image · <span className="font-medium">STABILITY_API_KEY</span> required in Vercel settings</p>
+    </div>
+  )
+}
+
 export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
   const isTextOnly = ['text_post', 'text_caption', 'text_update'].includes(data.content_type)
   const needsAltText = ['single_image', 'carousel', 'stories'].includes(data.content_type)
+  const [mediaTab, setMediaTab]         = useState('upload') // 'upload' | 'generate'
   const [aiLoading, setAiLoading]       = useState(false)
   const [aiCaptions, setAiCaptions]     = useState([])
   const [aiError, setAiError]           = useState('')
@@ -369,11 +524,57 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
       </div>
 
       <div className="space-y-5">
-        <FileDropZone
-          contentType={data.content_type}
-          currentFile={data}
-          onFile={(fileData) => onUpdate(fileData)}
-        />
+        {/* Media tab switcher */}
+        {!isTextOnly && (
+          <div>
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit mb-4">
+              {[
+                { key: 'upload',   label: 'Upload File',     icon: UploadCloud },
+                { key: 'generate', label: 'Generate with AI', icon: Wand2 },
+              ].map(({ key, label, icon: Icon }) => (
+                <button key={key} type="button" onClick={() => setMediaTab(key)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    mediaTab === key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}>
+                  <Icon size={14} />{label}
+                </button>
+              ))}
+            </div>
+
+            {mediaTab === 'upload' && (
+              <FileDropZone
+                contentType={data.content_type}
+                currentFile={data}
+                onFile={(fileData) => onUpdate(fileData)}
+              />
+            )}
+            {mediaTab === 'generate' && (
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100"
+                  style={{ background: 'linear-gradient(135deg,#eef2ff,#f5f3ff)' }}>
+                  <Wand2 size={14} className="text-indigo-600 flex-shrink-0" />
+                  <p className="text-sm font-semibold text-indigo-800">AI Image Generator</p>
+                  <span className="ml-auto text-xs text-indigo-400">Powered by Stability AI</span>
+                </div>
+                <div className="p-4">
+                  <GenerateImagePanel
+                    onImageReady={(fileData) => { onUpdate(fileData); setMediaTab('upload') }}
+                    platform={data.platforms?.[0] || data.platform || 'instagram'}
+                    dealership={DEALERSHIPS.find(d => d.id === (data.dealership_ids?.[0] || data.dealership_id))}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {isTextOnly && (
+          <FileDropZone
+            contentType={data.content_type}
+            currentFile={data}
+            onFile={(fileData) => onUpdate(fileData)}
+          />
+        )}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
