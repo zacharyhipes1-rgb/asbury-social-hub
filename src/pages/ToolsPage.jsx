@@ -759,6 +759,21 @@ function getFixGuidance(msg, schemaType) {
   }
 }
 
+// Validate a single schema node (no @context required — used for @graph items)
+function validateSchemaNode(node) {
+  const errors = [], warnings = []
+  const type = Array.isArray(node['@type']) ? node['@type'][0] : node['@type']
+  if (!type) { errors.push('Missing @type'); return { errors, warnings, type: null } }
+  if (!KNOWN_TYPES.has(type)) warnings.push(`"${type}" is not a recognized schema.org type — verify spelling`)
+  const rules = SCHEMA_RULES[type]
+  if (rules) {
+    rules.required?.forEach(p => { if (node[p] == null) errors.push(`Missing required property: ${p}`) })
+    rules.recommended?.forEach(p => { if (node[p] == null) warnings.push(`Missing recommended property: ${p}`) })
+    rules.custom?.(node, errors, warnings)
+  }
+  return { errors, warnings, type }
+}
+
 function validateOneSchema(schema) {
   const errors = [], warnings = []
   const ctx = schema['@context']
@@ -767,6 +782,14 @@ function validateOneSchema(schema) {
   } else if (!['https://schema.org', 'http://schema.org', 'https://schema.org/', 'http://schema.org/'].includes(ctx)) {
     warnings.push(`Unexpected @context: "${ctx}" — use "https://schema.org"`)
   }
+
+  // @graph support — the container does NOT need @type; validate each item individually
+  if (Array.isArray(schema['@graph'])) {
+    const graphItems = schema['@graph'].map((item, i) => ({ index: i, ...validateSchemaNode(item) }))
+    return { errors, warnings, type: '@graph', graphItems }
+  }
+
+  // Plain single schema
   const type = Array.isArray(schema['@type']) ? schema['@type'][0] : schema['@type']
   if (!type) { errors.push('Missing @type'); return { errors, warnings, type: null } }
   if (!KNOWN_TYPES.has(type)) warnings.push(`"${type}" is not a recognized schema.org type — verify spelling`)
@@ -908,8 +931,13 @@ function SchemaValidator() {
     setResults(null); setParseErr('')
   }
 
-  const totalErrors   = results?.reduce((n, r) => n + r.errors.length, 0) ?? 0
-  const totalWarnings = results?.reduce((n, r) => n + r.warnings.length, 0) ?? 0
+  const countIssues = (results, key) => results?.reduce((n, r) => {
+    const direct = r[key].length
+    const nested = r.graphItems?.reduce((g, gi) => g + gi[key].length, 0) ?? 0
+    return n + direct + nested
+  }, 0) ?? 0
+  const totalErrors   = countIssues(results, 'errors')
+  const totalWarnings = countIssues(results, 'warnings')
   const isValid = results && totalErrors === 0
 
   return (
@@ -1006,27 +1034,64 @@ function SchemaValidator() {
 
           {results.map((r, i) => (
             <div key={i} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              {/* Container header */}
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {r.type || 'Unknown type'}
-                    {results.length > 1 && <span className="text-slate-400 font-normal ml-2">#{i + 1}</span>}
+                  <p className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                    {r.type === '@graph'
+                      ? <><span className="font-mono text-indigo-600 text-xs bg-indigo-50 px-1.5 py-0.5 rounded">@graph</span><span className="text-slate-700">{r.graphItems?.length} schema nodes</span></>
+                      : r.type || 'Unknown type'
+                    }
+                    {results.length > 1 && <span className="text-slate-400 font-normal ml-1">#{i + 1}</span>}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {r.errors.length === 0 && r.warnings.length === 0 ? '✓ No issues' : `${r.errors.length} error${r.errors.length !== 1 ? 's' : ''} · ${r.warnings.length} warning${r.warnings.length !== 1 ? 's' : ''}`}
+                    {r.type === '@graph'
+                      ? `@graph container · ${r.errors.length > 0 ? `${r.errors.length} container error${r.errors.length !== 1 ? 's' : ''}` : '✓ valid structure'}`
+                      : r.errors.length === 0 && r.warnings.length === 0 ? '✓ No issues'
+                      : `${r.errors.length} error${r.errors.length !== 1 ? 's' : ''} · ${r.warnings.length} warning${r.warnings.length !== 1 ? 's' : ''}`
+                    }
                   </p>
                 </div>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.errors.length === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                  {r.errors.length === 0 ? 'Pass' : 'Fail'}
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${r.errors.length === 0 && (!r.graphItems || r.graphItems.every(g => g.errors.length === 0)) ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                  {r.errors.length === 0 && (!r.graphItems || r.graphItems.every(g => g.errors.length === 0)) ? 'Pass' : 'Fail'}
                 </span>
               </div>
+
+              {/* Container-level errors (e.g. bad @context) */}
               {(r.errors.length > 0 || r.warnings.length > 0) && (
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-slate-50 border-b border-slate-100">
                   {r.errors.map((msg, j) => (
                     <SchemaIssueRow key={`e${j}`} msg={msg} isError schemaType={r.type} />
                   ))}
                   {r.warnings.map((msg, j) => (
                     <SchemaIssueRow key={`w${j}`} msg={msg} isError={false} schemaType={r.type} />
+                  ))}
+                </div>
+              )}
+
+              {/* @graph items — each validated individually */}
+              {r.graphItems && (
+                <div className="divide-y divide-slate-100">
+                  {r.graphItems.map((gi, j) => (
+                    <div key={j} className="bg-slate-50/50">
+                      <div className="px-4 py-2.5 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700">{gi.type || 'Unknown type'} <span className="font-normal text-slate-400 ml-1">#{j + 1}</span></p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {gi.errors.length === 0 && gi.warnings.length === 0 ? '✓ No issues' : `${gi.errors.length} error${gi.errors.length !== 1 ? 's' : ''} · ${gi.warnings.length} warning${gi.warnings.length !== 1 ? 's' : ''}`}
+                          </p>
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${gi.errors.length === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                          {gi.errors.length === 0 ? 'Pass' : 'Fail'}
+                        </span>
+                      </div>
+                      {(gi.errors.length > 0 || gi.warnings.length > 0) && (
+                        <div className="divide-y divide-slate-100 border-t border-slate-100">
+                          {gi.errors.map((msg, k) => <SchemaIssueRow key={`ge${k}`} msg={msg} isError schemaType={gi.type} />)}
+                          {gi.warnings.map((msg, k) => <SchemaIssueRow key={`gw${k}`} msg={msg} isError={false} schemaType={gi.type} />)}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
