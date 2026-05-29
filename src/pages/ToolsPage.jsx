@@ -565,6 +565,200 @@ const KNOWN_TYPES = new Set([
   'PropertyValue', 'MonetaryAmount', 'QuantitativeValue', 'Distance',
 ])
 
+// ── Fix guidance ──────────────────────────────────────────────────────────────
+// Returns { why, steps[], example? } for any error/warning message.
+const PROPERTY_FIXES = {
+  name: {
+    why: 'The name property is how Google identifies and displays your entity in search results and knowledge panels.',
+    steps: ['Add a "name" property with the official business or page name', 'Use the exact legal or brand name — no keyword stuffing'],
+    example: '"name": "Toyota of Roswell"',
+  },
+  url: {
+    why: 'The url property ties the schema to a specific page, strengthening entity association for Google.',
+    steps: ['Add a "url" property pointing to the canonical URL of this page', 'Use the full https:// URL'],
+    example: '"url": "https://www.yoursite.com/page"',
+  },
+  address: {
+    why: 'Address enables Local SEO, Google Maps integration, and rich results for "near me" searches.',
+    steps: [
+      'Add an "address" property as a nested object',
+      'Set "@type" to "PostalAddress" inside the nested object',
+      'Include streetAddress, addressLocality (city), addressRegion (state), postalCode, and addressCountry',
+    ],
+    example: '"address": {\n  "@type": "PostalAddress",\n  "streetAddress": "123 Main St",\n  "addressLocality": "Roswell",\n  "addressRegion": "GA",\n  "postalCode": "30076",\n  "addressCountry": "US"\n}',
+  },
+  telephone: {
+    why: 'A phone number enables Google to show a call button in local search results.',
+    steps: ['Add a "telephone" property in E.164 format', 'Include country code and area code'],
+    example: '"telephone": "+1-770-555-1234"',
+  },
+  description: {
+    why: 'Descriptions help Google and AI engines understand what the page or entity is about — critical for AEO/GEO visibility.',
+    steps: ['Write a 1–3 sentence description covering what you offer, where you are, and who you serve', 'Avoid keyword stuffing — write for humans and LLMs', 'Keep under 500 characters for best display in rich results'],
+    example: '"description": "Toyota of Roswell is an authorized Toyota dealership in Roswell, GA offering new and used vehicles, certified service, and genuine Toyota parts."',
+  },
+  image: {
+    why: 'An image is required for most rich result types and significantly increases click-through rate.',
+    steps: ['Add an "image" property with the URL of a high-quality photo', 'Minimum 1200×630px recommended for rich results', 'Use your Google Business Profile photo or a professional exterior shot'],
+    example: '"image": "https://www.yoursite.com/images/dealership-exterior.jpg"',
+  },
+  priceRange: {
+    why: 'Price range helps Google categorize your business and can appear in local search results.',
+    steps: ['Add a "priceRange" property using dollar signs ($, $$, $$$)', 'Most dealerships use "$$$"'],
+    example: '"priceRange": "$$$"',
+  },
+  openingHours: {
+    why: 'Opening hours enable Google to show your hours in local search and mark you as open/closed in real time.',
+    steps: [
+      'Add an "openingHours" array with entries in the format "Day HH:MM-HH:MM"',
+      'Use two-letter day abbreviations: Mo, Tu, We, Th, Fr, Sa, Su',
+      'Separate day ranges with a hyphen (Mo-Fr)',
+    ],
+    example: '"openingHours": ["Mo-Fr 09:00-20:00", "Sa 09:00-18:00", "Su 11:00-17:00"]',
+  },
+  geo: {
+    why: 'GPS coordinates give Google a precise location signal, improving Maps accuracy and local ranking.',
+    steps: ['Add a "geo" object with "@type": "GeoCoordinates"', 'Find your exact latitude/longitude on Google Maps (right-click → "What\'s here?")'],
+    example: '"geo": {\n  "@type": "GeoCoordinates",\n  "latitude": 34.0232,\n  "longitude": -84.3616\n}',
+  },
+  sameAs: {
+    why: 'sameAs links your entity to authoritative profiles (Google Business, Facebook, etc.) and builds entity trust for AI and search engines.',
+    steps: ['Add a "sameAs" array listing all official profiles', 'Include: Google Business Profile URL, Facebook page, LinkedIn, Yelp, and manufacturer profile'],
+    example: '"sameAs": [\n  "https://www.facebook.com/YourPage",\n  "https://maps.google.com/?cid=YOUR_CID",\n  "https://www.yelp.com/biz/your-listing"\n]',
+  },
+  review: {
+    why: 'Review schema can unlock star ratings in search results, dramatically increasing click-through rate.',
+    steps: ['Add a "review" or "aggregateRating" property', 'For aggregate ratings use "@type": "AggregateRating" with ratingValue and reviewCount', 'Ratings must reflect real reviews — do not fabricate values'],
+    example: '"aggregateRating": {\n  "@type": "AggregateRating",\n  "ratingValue": "4.7",\n  "reviewCount": "312"\n}',
+  },
+  provider: {
+    why: 'The provider property attributes a service to the business offering it, required for Service schema.',
+    steps: ['Add a "provider" object referencing your organization', 'Include "@type" (typically "AutoDealer" or "Organization") and "@id"'],
+    example: '"provider": {\n  "@type": "AutoDealer",\n  "@id": "https://www.yoursite.com/#dealer",\n  "name": "Your Dealership"\n}',
+  },
+  serviceType: {
+    why: 'serviceType tells Google specifically what kind of service is being offered, enabling better categorization.',
+    steps: ['Add a "serviceType" string describing the specific service', 'Be specific: "Oil Change", "Tire Rotation", "Brake Inspection"'],
+    example: '"serviceType": "Oil Change and Filter Service"',
+  },
+  brand: {
+    why: 'Brand schema connects your product to its manufacturer, improving accuracy in product search and shopping results.',
+    steps: ['Add a "brand" object with "@type": "Brand"', 'Include the manufacturer name'],
+    example: '"brand": {\n  "@type": "Brand",\n  "name": "Toyota"\n}',
+  },
+  offers: {
+    why: 'Offers schema unlocks price and availability information in rich results and Google Shopping.',
+    steps: ['Add an "offers" object with "@type": "Offer"', 'Include price, priceCurrency, and availability'],
+    example: '"offers": {\n  "@type": "Offer",\n  "price": "29.99",\n  "priceCurrency": "USD",\n  "availability": "https://schema.org/InStock"\n}',
+  },
+  author: {
+    why: 'Author establishes E-E-A-T (Experience, Expertise, Authority, Trust) — a key Google quality signal.',
+    steps: ['Add an "author" object with "@type": "Person" or "Organization"', 'Include name and optionally url or sameAs links'],
+    example: '"author": {\n  "@type": "Person",\n  "name": "John Smith"\n}',
+  },
+  datePublished: {
+    why: 'Publication date helps Google understand content freshness and can appear in search snippets.',
+    steps: ['Add "datePublished" in ISO 8601 format (YYYY-MM-DD or full datetime)', 'Also add "dateModified" if the content is updated regularly'],
+    example: '"datePublished": "2026-05-28"',
+  },
+  headline: {
+    why: 'Headline is the article title shown in Google News and Discover results.',
+    steps: ['Add a "headline" property with the exact article title', 'Keep under 110 characters for full display in rich results'],
+    example: '"headline": "Nalley Honda Introduces New 2026 Honda CR-V Hybrid Models"',
+  },
+  mainEntity: {
+    why: 'mainEntity clarifies what the FAQ or QA page is primarily about, strengthening rich result eligibility.',
+    steps: ['Add a "mainEntity" array containing your Question objects', 'Each Question needs acceptedAnswer with "@type": "Answer"'],
+    example: '"mainEntity": [{\n  "@type": "Question",\n  "name": "What are your service hours?",\n  "acceptedAnswer": {\n    "@type": "Answer",\n    "text": "We are open Mon–Fri 7am–6pm."\n  }\n}]',
+  },
+}
+
+function getFixGuidance(msg, schemaType) {
+  // Missing @type
+  if (msg === 'Missing @type') return {
+    why: '@type is the most critical property — without it Google cannot interpret the schema at all and will ignore it entirely.',
+    steps: [
+      'Add "@type" as the second property (after "@context") in your JSON-LD',
+      'For dealership pages use "AutoDealer" or "CarDealer"',
+      'For service pages use "Service"',
+      'For blog/news articles use "Article" or "NewsArticle"',
+      'For FAQs use "FAQPage"',
+      'Full type list: schema.org/docs/full.html',
+    ],
+    example: '{\n  "@context": "https://schema.org",\n  "@type": "AutoDealer",\n  "name": "Your Dealership",\n  ...\n}',
+  }
+
+  // Missing @context
+  if (msg.includes('Missing @context')) return {
+    why: '@context declares the vocabulary being used. Without it Google cannot parse any of the other properties.',
+    steps: [
+      'Add "@context": "https://schema.org" as the very first property in your JSON-LD object',
+      'Always use https:// — the http:// version still works but https is preferred',
+      'Do not abbreviate — use the full URL',
+    ],
+    example: '{\n  "@context": "https://schema.org",\n  "@type": "...",\n  ...\n}',
+  }
+
+  // Unexpected @context
+  if (msg.includes('Unexpected @context')) return {
+    why: 'A non-standard @context may cause Google to reject the schema or misinterpret the vocabulary.',
+    steps: ['Replace the existing @context value with "https://schema.org"'],
+    example: '"@context": "https://schema.org"',
+  }
+
+  // Unrecognized type
+  if (msg.includes('is not a recognized schema.org type')) return {
+    why: 'An unrecognized @type means Google cannot map this to any rich result type — the schema will be ignored.',
+    steps: [
+      'Check the spelling exactly — schema.org types are CamelCase (e.g. AutoDealer, not autodealer)',
+      'Visit schema.org to find the correct type name',
+      'Common automotive types: AutoDealer, CarDealer, Service, Product, Article, FAQPage, LocalBusiness',
+    ],
+  }
+
+  // address should be a nested object
+  if (msg.includes("'address' should be a nested object")) return {
+    why: 'Google requires address as a structured PostalAddress object — a plain string will not qualify for rich results.',
+    steps: [
+      'Replace any string value for "address" with a nested object',
+      'Add "@type": "PostalAddress" inside the nested object',
+      'Include streetAddress, addressLocality, addressRegion, postalCode, addressCountry',
+    ],
+    example: PROPERTY_FIXES.address.example,
+  }
+
+  // Missing required property
+  if (msg.startsWith('Missing required property:')) {
+    const prop = msg.replace('Missing required property: ', '')
+    const fix = PROPERTY_FIXES[prop]
+    if (fix) return fix
+    return {
+      why: `"${prop}" is required for this schema type to qualify for rich results in Google Search.`,
+      steps: [`Add "${prop}" to your schema`, `Visit schema.org/${schemaType || ''} for the correct format and accepted values`],
+    }
+  }
+
+  // Missing recommended property
+  if (msg.startsWith('Missing recommended property:')) {
+    const prop = msg.replace('Missing recommended property: ', '')
+    const fix = PROPERTY_FIXES[prop]
+    if (fix) return {
+      ...fix,
+      why: fix.why + ' (Recommended — not required, but improves rich result eligibility and AI visibility.)',
+    }
+    return {
+      why: `"${prop}" is not required but Google recommends it for better rich result coverage and AI citation accuracy.`,
+      steps: [`Add "${prop}" to your schema`, `Visit schema.org/${schemaType || ''} for accepted values`],
+    }
+  }
+
+  // Fallback
+  return {
+    why: 'This issue may prevent Google from displaying rich results for this page.',
+    steps: ['Review the schema.org documentation for this type', 'Use Google\'s Rich Results Test at search.google.com/test/rich-results to verify after fixing'],
+  }
+}
+
 function validateOneSchema(schema) {
   const errors = [], warnings = []
   const ctx = schema['@context']
@@ -583,6 +777,68 @@ function validateOneSchema(schema) {
     rules.custom?.(schema, errors, warnings)
   }
   return { errors, warnings, type }
+}
+
+function SchemaIssueRow({ msg, isError, schemaType }) {
+  const [open, setOpen] = useState(false)
+  const guidance = getFixGuidance(msg, schemaType)
+
+  return (
+    <div className={`px-4 py-3 ${open ? (isError ? 'bg-rose-50/40' : 'bg-amber-50/40') : ''} transition-colors`}>
+      {/* Issue header */}
+      <div className="flex items-start gap-2.5">
+        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${isError ? 'bg-rose-500' : 'bg-amber-400'}`} />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-slate-700 font-medium">{msg}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors ${
+            open
+              ? 'bg-slate-200 text-slate-700'
+              : isError
+                ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+          }`}
+        >
+          {open ? 'Hide' : 'How to fix →'}
+        </button>
+      </div>
+
+      {/* Expandable fix guidance */}
+      {open && (
+        <div className="mt-3 ml-4 space-y-3">
+          {/* Why it matters */}
+          <div className="flex items-start gap-2">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide w-12 flex-shrink-0 pt-0.5">Why</span>
+            <p className="text-xs text-slate-600 leading-relaxed">{guidance.why}</p>
+          </div>
+
+          {/* Steps */}
+          <div className="flex items-start gap-2">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide w-12 flex-shrink-0 pt-0.5">Fix</span>
+            <ol className="space-y-1 flex-1">
+              {guidance.steps.map((step, k) => (
+                <li key={k} className="flex items-start gap-1.5 text-xs text-slate-700">
+                  <span className={`flex-shrink-0 font-bold mt-0.5 ${isError ? 'text-rose-500' : 'text-amber-500'}`}>{k + 1}.</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Code example */}
+          {guidance.example && (
+            <div className="flex items-start gap-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wide w-12 flex-shrink-0 pt-0.5">Code</span>
+              <pre className="flex-1 text-xs bg-slate-900 text-emerald-400 rounded-lg px-3 py-2.5 overflow-x-auto whitespace-pre font-mono leading-relaxed">{guidance.example}</pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function SchemaValidator() {
@@ -767,16 +1023,10 @@ function SchemaValidator() {
               {(r.errors.length > 0 || r.warnings.length > 0) && (
                 <div className="divide-y divide-slate-50">
                   {r.errors.map((msg, j) => (
-                    <div key={`e${j}`} className="flex items-start gap-2.5 px-4 py-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0 mt-1.5" />
-                      <p className="text-xs text-slate-700">{msg}</p>
-                    </div>
+                    <SchemaIssueRow key={`e${j}`} msg={msg} isError schemaType={r.type} />
                   ))}
                   {r.warnings.map((msg, j) => (
-                    <div key={`w${j}`} className="flex items-start gap-2.5 px-4 py-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 mt-1.5" />
-                      <p className="text-xs text-slate-600">{msg}</p>
-                    </div>
+                    <SchemaIssueRow key={`w${j}`} msg={msg} isError={false} schemaType={r.type} />
                   ))}
                 </div>
               )}
