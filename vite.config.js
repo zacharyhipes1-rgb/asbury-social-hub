@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://asbury-social-hub.vercel.app',
+        target: 'https://pulse-social.vercel.app',
         changeOrigin: true,
         secure: true,
       },
