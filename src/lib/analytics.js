@@ -1,11 +1,31 @@
 // GA4 analytics helper
 // Measurement ID set via VITE_GA4_ID env var (e.g. G-XXXXXXXXXX)
-// No-ops silently if GA4 is not configured or consent not given.
+// No-ops silently if GA4 is not configured.
 
 const GA_ID = import.meta.env.VITE_GA4_ID
 
+// Inject gtag script from JS so import.meta.env substitution is guaranteed
+function initGA() {
+  if (!GA_ID || !GA_ID.startsWith('G-') || typeof window === 'undefined') return
+  if (window.__ga_initialized) return
+  window.__ga_initialized = true
+
+  const script = document.createElement('script')
+  script.async = true
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`
+  document.head.appendChild(script)
+
+  window.dataLayer = window.dataLayer || []
+  function gtag() { window.dataLayer.push(arguments) }
+  window.gtag = gtag
+  gtag('js', new Date())
+  gtag('config', GA_ID, { send_page_view: false })
+}
+
+initGA()
+
 export function isAnalyticsEnabled() {
-  return !!(GA_ID && typeof window !== 'undefined' && window.gtag)
+  return !!(GA_ID && GA_ID.startsWith('G-') && typeof window !== 'undefined' && window.gtag)
 }
 
 // Track a page view — call this on every route change

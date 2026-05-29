@@ -33,24 +33,9 @@
     <meta name="twitter:image" content="https://asbury-social-staging.vercel.app/og-image.png" />
     <meta name="twitter:image:alt" content="Asbury Social Hub" />
 
-    <!-- Google Analytics 4 — set VITE_GA4_ID in Vercel env vars (e.g. G-XXXXXXXXXX) -->
-    <script>
-      (function() {
-        var id = '%VITE_GA4_ID%';
-        if (!id || id === '%VITE_GA4_ID%' || id.indexOf('G-') !== 0) return;
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
-        document.head.appendChild(s);
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){ dataLayer.push(arguments); }
-        window.gtag = gtag;
-        gtag('js', new Date());
-        gtag('config', id, { send_page_view: false }); // page views fired manually per route
-      })();
-    </script>
+    <!-- GA4 initialized via src/lib/analytics.js using import.meta.env.VITE_GA4_ID -->
 
-    <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
