@@ -501,12 +501,12 @@ async function sendTestEmail(cfg, fromUser) {
   const templates = [
     { id: cfg.templateOtp, params: {
       to_name: fromUser.name, to_email: fromUser.email,
-      subject: 'Asbury Social Hub — Email Test',
+      subject: 'Pulse Social — Email Test',
       otp_code: '482910',
     }},
     { id: cfg.templateNotification || cfg.templateId, params: {
       to_name: fromUser.name, to_email: fromUser.email,
-      subject: 'Asbury Social Hub — Email Test',
+      subject: 'Pulse Social — Email Test',
       header_subtitle: 'Email Test',
       status_label:    '✅ Configuration Verified',
       status_color:    '#4f46e5',
@@ -517,7 +517,7 @@ async function sendTestEmail(cfg, fromUser) {
       detail_c: '',         detail_c_value: '',
       notes:     '',
       cta_url:   hub,
-      cta_label: 'Open Asbury Social Hub',
+      cta_label: 'Open Pulse Social',
     }},
   ].filter(t => t.id)
 

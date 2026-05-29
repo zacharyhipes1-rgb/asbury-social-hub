@@ -140,7 +140,7 @@ export default function SignUpPage() {
           {invite ? (
             <>
               <h1 className="text-2xl font-bold text-white tracking-tight">Create your account</h1>
-              <p className="text-slate-400 mt-1 text-sm">You've been invited to Asbury Social Hub</p>
+              <p className="text-slate-400 mt-1 text-sm">You've been invited to Pulse Social</p>
             </>
           ) : (
             <>
@@ -223,7 +223,7 @@ export default function SignUpPage() {
                     value={form.email}
                     onChange={(e) => !invite && set('email', e.target.value)}
                     readOnly={!!invite}
-                    placeholder="you@asburyauto.com"
+                    placeholder="you@yourcompany.com"
                     required
                     autoComplete="email"
                     className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white placeholder:text-slate-600

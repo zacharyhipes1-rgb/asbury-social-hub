@@ -70,7 +70,7 @@ export default async function handler(req, res) {
   }
 
   const body = req.body || {}
-  const dealershipName     = String(body.dealershipName     || 'Asbury Automotive dealership').slice(0, 100)
+  const dealershipName     = String(body.dealershipName     || 'automotive dealership').slice(0, 100)
   const dealershipLocation = String(body.dealershipLocation || '').slice(0, 100)
   const dealershipBrand    = String(body.dealershipBrand    || 'automotive').slice(0, 50)
   const platformId         = String(body.platform           || 'instagram').slice(0, 30)

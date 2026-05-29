@@ -155,10 +155,10 @@ export default function NotificationModal({ post, action, isOpen, onClose, onCon
                   <p className="text-slate-800">{notes}</p>
                 </div>
               )}
-              <p className="text-slate-500 text-xs">Log in to Asbury Social Hub to view full details and take action.</p>
+              <p className="text-slate-500 text-xs">Log in to Pulse Social to view full details and take action.</p>
               <div className="pt-2 border-t border-slate-100 text-xs text-slate-400">
                 <p className="font-semibold text-slate-500">{currentUser?.name}</p>
-                <p>{currentUser?.title} · Asbury Automotive Group</p>
+                <p>{currentUser?.title} · Pulse Social</p>
               </div>
             </div>
           </div>

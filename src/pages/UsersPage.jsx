@@ -451,7 +451,7 @@ function InviteModal({ onClose, onSend }) {
               type="email"
               value={form.email}
               onChange={e => set('email', e.target.value)}
-              placeholder="colleague@asburyauto.com"
+              placeholder="colleague@yourcompany.com"
               autoFocus
               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             />

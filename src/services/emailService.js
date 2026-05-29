@@ -112,7 +112,7 @@ export async function sendOtpCode({ recipient, code }) {
     templateParams: {
       to_name:  recipient.name,
       to_email: recipient.email,
-      subject:  'Your Asbury Social Hub verification code',
+      subject:  'Your Pulse Social verification code',
       otp_code: code,
     },
   })
@@ -129,12 +129,12 @@ export async function sendInvite({ invite, invitedBy }) {
     logPreview: `Invite to ${invite.email} as ${roleName}`,
     templateParams: notifParams({
       to,
-      subject:        "You've been invited to join Asbury Social Hub",
+      subject:        "You've been invited to join Pulse Social",
       headerSubtitle: "You're Invited",
       statusLabel:    'New Invitation',
       statusColor:    '#4f46e5',
       statusBg:       '#eef2ff',
-      bodyText:       `${invite.invited_by_name || invitedBy?.name || 'An administrator'} has invited you to join the Asbury Social Hub — the internal platform for social media content, approvals, and scheduling across all dealership locations.`,
+      bodyText:       `${invite.invited_by_name || invitedBy?.name || 'An administrator'} has invited you to join the Pulse Social — the social media content management platform for approvals, scheduling, and publishing across all locations.`,
       detailA: 'Your Role',  detailAVal: roleName,
       detailB: 'Invited By', detailBVal: invite.invited_by_name || invitedBy?.name || 'Administrator',
       notes:   'This invitation expires in 7 days. No account will be created unless you click the button.',
@@ -273,7 +273,7 @@ export async function notifyNewUserRequest({ user, admins }) {
         statusLabel:    'Pending Approval',
         statusColor:    '#7c3aed',
         statusBg:       '#f5f3ff',
-        bodyText:       `${user.name} has requested access to Asbury Social Hub. Visit Users & Security to approve or reject this request.`,
+        bodyText:       `${user.name} has requested access to Pulse Social. Visit Users & Security to approve or reject this request.`,
         detailA: 'Name',      detailAVal: user.name,
         detailB: 'Email',     detailBVal: user.email,
         detailC: 'Title',     detailCVal: user.title || 'Not provided',
@@ -292,7 +292,7 @@ export async function notifyUserApproved({ user }) {
     logPreview: `Account approved: ${user.email}`,
     templateParams: notifParams({
       to,
-      subject:        '🎉 Your Asbury Social Hub account is approved',
+      subject:        '🎉 Your Pulse Social account is approved',
       headerSubtitle: 'Account Update',
       statusLabel:    '🎉 Account Approved',
       statusColor:    '#16a34a',
@@ -300,7 +300,7 @@ export async function notifyUserApproved({ user }) {
       bodyText:       'Great news! Your access request has been approved. You can now sign in using your email address and the password you created during registration.',
       notes:   '',
       ctaUrl:  `${origin()}/login`,
-      ctaLabel:'Sign In to Asbury Social Hub',
+      ctaLabel:'Sign In to Pulse Social',
     }),
   })
 }
@@ -312,12 +312,12 @@ export async function notifyUserRejected({ user }) {
     logPreview: `Access rejected: ${user.email}`,
     templateParams: notifParams({
       to,
-      subject:        'Update on your Asbury Social Hub access request',
+      subject:        'Update on your Pulse Social access request',
       headerSubtitle: 'Account Update',
       statusLabel:    'Not Approved',
       statusColor:    '#64748b',
       statusBg:       '#f8fafc',
-      bodyText:       'After review, your access request to Asbury Social Hub was not approved at this time.',
+      bodyText:       'After review, your access request to Pulse Social was not approved at this time.',
       notes:   'If you believe this is an error or have questions, please contact your manager directly.',
       ctaUrl:  '',
       ctaLabel:'',

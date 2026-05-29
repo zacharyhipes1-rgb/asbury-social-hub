@@ -88,9 +88,9 @@ export default function Sidebar({ onClose }) {
       {/* Brand */}
       <div className="relative z-10 h-14 flex items-center justify-between px-4 border-b border-white/[0.06] flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <img src="/apple-touch-icon.png" alt="Asbury" className="w-7 h-7 rounded-lg flex-shrink-0 object-cover" />
+          <img src="/apple-touch-icon.png" alt="Pulse Social" className="w-7 h-7 rounded-lg flex-shrink-0 object-cover" />
           <div className="leading-none">
-            <p className="text-white text-sm font-semibold">Asbury Social</p>
+            <p className="text-white text-sm font-semibold">Pulse Social</p>
             <p className="text-slate-500 text-[10px] mt-0.5 font-medium tracking-wide">CONTENT HUB</p>
           </div>
         </div>

@@ -241,7 +241,7 @@ function StepEmail({ onNext, onPending }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Work Email</label>
-            <DarkInput icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@asburyauto.com" required autoComplete="email" autoFocus />
+            <DarkInput icon={Mail} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@yourcompany.com" required autoComplete="email" autoFocus />
           </div>
           <ErrorBanner msg={error} />
           {RECAPTCHA_SITE_KEY && (

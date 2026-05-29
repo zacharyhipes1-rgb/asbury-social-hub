@@ -8,9 +8,9 @@ export default async function handler(req, res) {
   const { messages, context } = req.body || {}
   if (!messages?.length) return res.status(400).json({ error: 'No messages provided' })
 
-  const systemPrompt = `You are a friendly, sharp social media advisor for Asbury Automotive's dealership group. You speak like a knowledgeable colleague — warm, direct, and practical. No corporate fluff.
+  const systemPrompt = `You are a friendly, sharp social media advisor built into Pulse Social — a content management platform for multi-location businesses. You speak like a knowledgeable colleague — warm, direct, and practical. No corporate fluff.
 
-CURRENT PAGE: ${context?.currentPage || 'Asbury Social Hub'}
+CURRENT PAGE: ${context?.currentPage || 'Pulse Social'}
 ${context?.currentDealer ? `CURRENTLY VIEWING: ${context.currentDealer}` : ''}
 
 PLATFORM DATA:

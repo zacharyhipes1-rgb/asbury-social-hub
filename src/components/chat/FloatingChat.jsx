@@ -38,7 +38,7 @@ export default function FloatingChat({ currentDealerId = null }) {
   const bottomRef  = useRef(null)
   const inputRef   = useRef(null)
 
-  const currentPage = PAGE_CONTEXT[location.pathname] || 'Asbury Social Hub'
+  const currentPage = PAGE_CONTEXT[location.pathname] || 'Pulse Social'
 
   // Build analytics summary for all dealerships
   const analyticsContext = useMemo(() => {

@@ -146,9 +146,9 @@ export default function LoginPage() {
             transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
             className="flex items-center gap-3 mb-8"
           >
-            <img src="/apple-touch-icon.png" alt="Asbury" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+            <img src="/apple-touch-icon.png" alt="Pulse Social" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
             <div className="leading-tight">
-              <p className="text-white font-bold text-xl">Asbury Social</p>
+              <p className="text-white font-bold text-xl">Pulse Social</p>
               <p className="text-indigo-400 text-xs tracking-widest font-semibold mt-0.5">CONTENT HUB</p>
             </div>
           </motion.div>
@@ -164,7 +164,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setEmailFocus(true)}
                   onBlur={() => setEmailFocus(false)}
-                  placeholder="you@asburyauto.com"
+                  placeholder="you@yourcompany.com"
                   required
                   autoComplete="email"
                   className="w-full pl-10 pr-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none"
@@ -277,7 +277,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-slate-700 mt-6">
-          Asbury Automotive Group · Internal Use Only
+          Pulse Social · Powered by Found First
         </p>
       </motion.div>
     </div>

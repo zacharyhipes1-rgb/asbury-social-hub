@@ -472,7 +472,7 @@ function HashtagPlanner() {
   return (
     <div className="space-y-4">
       <p className="text-xs text-slate-400">
-        Pre-built hashtag sets for common Asbury content types. Copy a full set or cherry-pick individual tags.
+        Pre-built hashtag sets for common content types. Copy a full set or cherry-pick individual tags.
       </p>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {sets.map(s => (
@@ -1387,7 +1387,7 @@ function OgPreview() {
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Site Name</label>
-          <input value={site} onChange={e => setSite(e.target.value)} placeholder="Asbury Automotive"
+          <input value={site} onChange={e => setSite(e.target.value)} placeholder="Your Business Name"
             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors" />
         </div>
         <div className="sm:col-span-2">
@@ -1584,7 +1584,7 @@ const SPAM_WORDS = [
 function EmailSubjectTester() {
   const [subject, setSubject] = useState('')
   const [preview, setPreview] = useState('')
-  const [sender,  setSender]  = useState('Asbury Automotive')
+  const [sender,  setSender]  = useState('Your Business')
   const [dark,    setDark]    = useState(false)
 
   const subjLen = subject.length
@@ -1762,7 +1762,7 @@ function SmsCounter() {
 
   const checklist = [
     { ok: hasStop,            warn: !hasStop, label: 'Contains opt-out language (STOP, unsubscribe, etc.)' },
-    { ok: hasBrand,           neutral: !hasBrand, label: 'Contains business name ("Asbury")' },
+    { ok: hasBrand,           neutral: !hasBrand, label: 'Contains your business name' },
     { ok: !allCapsWords.length, warn: allCapsWords.length > 0, label: 'No ALL CAPS words longer than 3 chars', extra: allCapsWords.length ? `Flagged: ${allCapsWords.join(', ')}` : null },
     { ok: linkCount <= 1,     warn: linkCount > 1, label: 'No more than 1 link', extra: linkCount > 1 ? `${linkCount} links found` : null },
     { ok: segments <= 1,      warn: segments === 2, error: segments >= 3, label: 'Under 160 chars (1 segment)' },
@@ -2186,7 +2186,7 @@ function SchemaBuilder() {
 
       {type === 'Organization' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {renderField('name', 'Name *',   'Asbury Automotive')}
+          {renderField('name', 'Name *',   'Your Business Name')}
           {renderField('url',  'URL',      'https://...')}
           {renderField('logo', 'Logo URL', 'https://...')}
           <div className="sm:col-span-2">
@@ -2729,7 +2729,7 @@ const TOOLS = [
   { id: 'meta',        label: 'Meta Inspector',  icon: FileSearch,  desc: 'Inspect meta tags, OG data, and structured data on any URL',         component: MetaInspector      },
   { id: 'pagespeed',   label: 'PageSpeed',       icon: Gauge,       desc: 'Check Core Web Vitals and performance scores for any URL',           component: PageSpeedScore     },
   { id: 'caption',     label: 'Caption Counter', icon: Tag,         desc: 'Check character and hashtag limits per platform',                    component: CaptionCounter     },
-  { id: 'hashtags',    label: 'Hashtag Sets',    icon: Hash,        desc: 'Pre-built hashtag collections for Asbury content',                  component: HashtagPlanner     },
+  { id: 'hashtags',    label: 'Hashtag Sets',    icon: Hash,        desc: 'Pre-built hashtag collections for your content library',            component: HashtagPlanner     },
   { id: 'sms',         label: 'SMS Counter',     icon: Smartphone,  desc: 'Count segments, flag compliance gaps, and preview the message',     component: SmsCounter         },
   { id: 'email',       label: 'Email Subject',   icon: Tag,         desc: 'Preview inbox rendering and check for spam triggers',                component: EmailSubjectTester },
   { id: 'gads',        label: 'Ads Copy',        icon: FileSearch,  desc: 'Build and preview Google Search and Meta ads',                      component: AdsBuilder         },
@@ -2778,7 +2778,7 @@ const RESOURCE_SECTIONS = [
       { name: 'Meta Business Suite',       url: 'https://business.facebook.com',            desc: 'Manage Facebook and Instagram posts, ads, and insights from one dashboard.' },
       { name: 'TikTok Business Center',    url: 'https://business.tiktok.com',              desc: 'Post scheduling, analytics, and ad management for TikTok content.' },
       { name: 'LinkedIn Campaign Manager', url: 'https://www.linkedin.com/campaignmanager', desc: 'LinkedIn analytics, ad creation, and audience targeting.' },
-      { name: 'Canva',                     url: 'https://www.canva.com',                    desc: 'Quick design for social graphics. Use the brand kit for consistent Asbury visuals.' },
+      { name: 'Canva',                     url: 'https://www.canva.com',                    desc: 'Quick design for social graphics. Use your brand kit for consistent visuals.' },
     ],
   },
   {
