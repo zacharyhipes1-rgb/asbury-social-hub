@@ -4,9 +4,7 @@ import { motion } from 'framer-motion'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useAuth } from '../context/AuthContext'
 import { EXPIRED_KEY } from '../context/AuthContext'
-import { useUsers } from '../context/UsersContext'
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Clock } from 'lucide-react'
-import { DEMO_USER_ID, DEMO_USER_PASSWORD } from '../data/mockData'
 import { Events } from '../lib/analytics'
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
@@ -21,7 +19,6 @@ const inputBaseStyle = {
 
 export default function LoginPage() {
   const { login, currentUser, loginError, authLoaded } = useAuth()
-  const { getUserById } = useUsers()
   const navigate = useNavigate()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -38,8 +35,6 @@ export default function LoginPage() {
     if (v) localStorage.removeItem(EXPIRED_KEY)
     return v
   })
-
-  const demoUser = getUserById(DEMO_USER_ID)
 
   useEffect(() => {
     if (currentUser) navigate('/', { replace: true })
@@ -64,16 +59,6 @@ export default function LoginPage() {
     setLoading(false)
     if (ok) { Events.LOGIN(); navigate('/', { replace: true }) }
     else { captchaRef.current?.reset(); setCaptchaToken('') }
-  }
-
-  const fillDemo = async () => {
-    if (!demoUser) return
-    setEmail(demoUser.email)
-    setPassword(DEMO_USER_PASSWORD)
-    setLoading(true)
-    const ok = await login(demoUser.email, DEMO_USER_PASSWORD)
-    setLoading(false)
-    if (ok) navigate('/', { replace: true })
   }
 
   const focusedInputStyle = (focused) => ({
@@ -290,38 +275,6 @@ export default function LoginPage() {
             </div>
           </form>
         </div>
-
-        {/* Single demo account — delete the "Demo Admin" user from Team Members to remove this shortcut */}
-        {demoUser && (
-          <div
-            className="mt-4 p-4"
-            style={{
-              background: 'rgba(15, 23, 42, 0.55)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: '16px',
-            }}
-          >
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Demo account — click to sign in</p>
-            <button
-              type="button"
-              onClick={fillDemo}
-              disabled={loading}
-              className="btn-press w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all text-left disabled:opacity-50 min-h-[44px]"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-slate-200 truncate">{demoUser.name}</p>
-                <p className="text-xs text-slate-500 truncate">Full admin access · delete to disable</p>
-              </div>
-              <code className="text-xs text-slate-500 font-mono flex-shrink-0">{DEMO_USER_PASSWORD}</code>
-            </button>
-          </div>
-        )}
 
         <p className="text-center text-xs text-slate-700 mt-6">
           Asbury Automotive Group · Internal Use Only
