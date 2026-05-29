@@ -4,10 +4,15 @@ import { verifyPassword } from '../utils/auth'
 import IdleWarningModal from '../components/common/IdleWarningModal'
 
 // ── Session / idle constants ───────────────────────────────────────────────
-const IDLE_TIMEOUT_MS = 2 * 60 * 1000   // 2 minutes
-const IDLE_WARN_MS    = 30 * 1000        // warn 30 s before auto-logout
-const ACTIVITY_KEY    = 'asbury_last_activity'
+const IDLE_TIMEOUT_MS  = 2 * 60 * 1000   // 2 minutes
+const IDLE_WARN_MS     = 30 * 1000        // warn 30 s before auto-logout
+const ACTIVITY_KEY     = 'asbury_last_activity'
 export const EXPIRED_KEY = 'asbury_session_expired'
+
+// sessionStorage key — cleared on every new tab, window, or browser restart.
+// Only set when the user explicitly logs in during THIS tab's lifecycle.
+// This is what forces a fresh login whenever the site is opened from anywhere.
+const TAB_SESSION_KEY  = 'asbury_tab_session_active'
 
 const AuthContext = createContext(null)
 
@@ -19,21 +24,30 @@ export function AuthProvider({ children }) {
   const [showIdleWarning, setShowIdleWarning] = useState(false)
   const [idleCountdown,   setIdleCountdown]   = useState(IDLE_WARN_MS / 1000)
 
-  // ── Restore session on mount ──────────────────────────────────────────
+  // ── Restore session on mount ──────────────────────────────────────────────
+  // Only restore if the user logged in during THIS tab's lifecycle.
+  // sessionStorage is wiped on new tab / new window / browser restart,
+  // so opening the site fresh always requires a login — regardless of
+  // what's in localStorage.
   useEffect(() => {
     if (!initialized) return
-    try {
-      const saved = localStorage.getItem('asbury_current_user')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        const fresh  = getUserById(parsed.id)
-        if (fresh?.active) setCurrentUser(fresh)
-      }
-    } catch {}
+
+    const tabActive = sessionStorage.getItem(TAB_SESSION_KEY) === 'true'
+    if (tabActive) {
+      try {
+        const saved = localStorage.getItem('asbury_current_user')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          const fresh  = getUserById(parsed.id)
+          if (fresh?.active) setCurrentUser(fresh)
+        }
+      } catch {}
+    }
+
     setAuthLoaded(true)
   }, [initialized]) // eslint-disable-line
 
-  // ── Persist session (strip password_hash) ─────────────────────────────
+  // ── Persist session (strip password_hash) ─────────────────────────────────
   useEffect(() => {
     if (!authLoaded) return
     if (currentUser) {
@@ -42,10 +56,11 @@ export function AuthProvider({ children }) {
     } else {
       localStorage.removeItem('asbury_current_user')
       localStorage.removeItem(ACTIVITY_KEY)
+      sessionStorage.removeItem(TAB_SESSION_KEY)
     }
   }, [currentUser, authLoaded])
 
-  // ── Idle activity tracker ─────────────────────────────────────────────
+  // ── Idle activity tracker ─────────────────────────────────────────────────
   const stayActive = useCallback(() => {
     localStorage.setItem(ACTIVITY_KEY, Date.now().toString())
     setShowIdleWarning(false)
@@ -58,7 +73,6 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // Stamp activity on login / page focus
     stayActive()
 
     const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
@@ -70,8 +84,8 @@ export function AuthProvider({ children }) {
       const remaining = IDLE_TIMEOUT_MS - elapsed
 
       if (remaining <= 0) {
-        // Auto-logout — mark session expired so login page shows a banner
         localStorage.setItem(EXPIRED_KEY, 'true')
+        sessionStorage.removeItem(TAB_SESSION_KEY)
         setCurrentUser(null)
         setShowIdleWarning(false)
       } else if (remaining <= IDLE_WARN_MS) {
@@ -88,7 +102,7 @@ export function AuthProvider({ children }) {
     }
   }, [currentUser, stayActive])
 
-  // ── Auth actions ──────────────────────────────────────────────────────
+  // ── Auth actions ──────────────────────────────────────────────────────────
   const login = async (email, password) => {
     setLoginError('')
     const user = getUserByEmail(email)
@@ -105,12 +119,15 @@ export function AuthProvider({ children }) {
       setLoginError('Incorrect password. Please try again.')
       return false
     }
+    // Mark this tab as having an active session so page refresh keeps you in
+    sessionStorage.setItem(TAB_SESSION_KEY, 'true')
     setCurrentUser(user)
     return true
   }
 
   const logout = () => {
     // Normal logout — do NOT set EXPIRED_KEY
+    sessionStorage.removeItem(TAB_SESSION_KEY)
     setCurrentUser(null)
   }
 
@@ -120,9 +137,9 @@ export function AuthProvider({ children }) {
     if (fresh?.active) setCurrentUser(fresh)
   }
 
-  const isAdmin      = currentUser?.role === 'admin'
+  const isAdmin       = currentUser?.role === 'admin'
   const isSocialMedia = currentUser?.role === 'social_media' || isAdmin
-  const isViewer     = currentUser?.role === 'viewer'
+  const isViewer      = currentUser?.role === 'viewer'
 
   return (
     <AuthContext.Provider
@@ -140,7 +157,6 @@ export function AuthProvider({ children }) {
     >
       {children}
 
-      {/* Idle warning modal — rendered inside Provider so it can call stayActive */}
       {showIdleWarning && currentUser && (
         <IdleWarningModal countdown={idleCountdown} onStay={stayActive} />
       )}
