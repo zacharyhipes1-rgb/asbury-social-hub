@@ -2091,7 +2091,7 @@ function SchemaBuilder() {
                       <label className={labelCls}>Brand</label>
                       <select value={data.brand || ''} onChange={e => upd('brand', e.target.value)} className={`${inputCls} bg-white`}>
                         <option value="">— select —</option>
-                        {['BMW', 'Honda', 'Toyota', 'Lexus', 'Acura', 'Mercedes-Benz', 'Volkswagen', 'Hyundai', 'Other'].map(b => <option key={b}>{b}</option>)}
+                        {['Fitness', 'Wellness', 'Yoga', 'CrossFit', 'Pilates', 'HIIT', 'Cycling', 'Boxing', 'Personal Training', 'Other'].map(b => <option key={b}>{b}</option>)}
                       </select>
                     </div>
                     {renderField('priceRange', 'Price Range', '$$')}
@@ -2113,7 +2113,7 @@ function SchemaBuilder() {
       {type === 'Vehicle' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {renderField('name',  'Name *',     '2024 BMW 3 Series')}
-          {renderField('brand', 'Brand',      'BMW')}
+          {renderField('brand', 'Brand',      'APEX Fitness')}
           {renderField('model', 'Model',      '3 Series')}
           {renderField('year',  'Vehicle Year','2024')}
           {renderField('color', 'Color',      'Black')}

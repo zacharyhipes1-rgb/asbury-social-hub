@@ -29,12 +29,11 @@ const PLATFORM_COLORS = {
 }
 
 const BRAND_COLORS = {
-  BMW:       'bg-slate-900 text-white',
-  Honda:     'bg-red-600 text-white',
-  Toyota:    'bg-red-700 text-white',
-  Lexus:     'bg-slate-700 text-white',
-  Acura:     'bg-slate-800 text-white',
-  Corporate: 'bg-indigo-600 text-white',
+  Flagship:  'bg-indigo-600 text-white',
+  Studio:    'bg-violet-600 text-white',
+  Standard:  'bg-slate-700 text-white',
+  Boutique:  'bg-pink-600 text-white',
+  Corporate: 'bg-slate-900 text-white',
 }
 
 const STATUS_STYLES = {
@@ -44,7 +43,7 @@ const STATUS_STYLES = {
   flagged:   'bg-orange-50 text-orange-700',
 }
 
-const BRANDS = ['All', 'BMW', 'Honda', 'Toyota', 'Lexus', 'Acura', 'Corporate']
+const BRANDS = ['All', 'Flagship', 'Studio', 'Standard', 'Boutique', 'Corporate']
 
 // ─── Seeded mock engagement (deterministic, no flicker) ───────────────────────
 function mockEng(id) {

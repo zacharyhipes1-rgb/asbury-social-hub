@@ -126,7 +126,7 @@ const PLATFORMS = [
 ]
 
 const PLATFORM_MAP = Object.fromEntries(PLATFORMS.map(p => [p.id, p]))
-const BRANDS = ['All', 'BMW', 'Honda', 'Toyota', 'Lexus', 'Acura', 'Corporate']
+const BRANDS = ['All', 'Flagship', 'Studio', 'Standard', 'Boutique', 'Corporate']
 
 const BRAND_BADGE = {
   Flagship:  'bg-indigo-600 text-white',
