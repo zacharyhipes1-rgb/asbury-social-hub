@@ -6,7 +6,7 @@ const UsersContext = createContext(null)
 
 const STORAGE_KEY = 'asbury_users'
 const SCHEMA_VERSION_KEY = 'asbury_users_schema'
-const SCHEMA_VERSION = 'v2-single-demo'
+const SCHEMA_VERSION = 'v3-apex-fitness'
 
 function initials(name) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -65,12 +65,7 @@ export function UsersProvider({ children }) {
       const mockIds = new Set(MOCK_USERS.map(u => u.id))
       const cleaned = parsed.filter(u => mockIds.has(u.id) || u.registration_type === 'self' || u.registration_type === 'invite')
 
-      // Patch stale titles
-      const TITLE_PATCHES = { 'zhipes@asburyauto.com': 'Platform Admin · Found First' }
-      const patched = cleaned.map(u => {
-        const fix = TITLE_PATCHES[u.email.toLowerCase()]
-        return fix && u.title !== fix ? { ...u, title: fix } : u
-      })
+      const patched = cleaned
 
       // Add any MOCK_USERS not yet in localStorage (match by ID since email may have changed)
       const existingIds = new Set(patched.map(u => u.id))

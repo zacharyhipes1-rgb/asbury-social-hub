@@ -21,12 +21,13 @@ export const MOCK_USERS = [
     initials: 'JM',
   },
   {
-    id:       'zach-hipes',
-    email:    'zhipes@asburyauto.com',   // kept intact — do not change (breaks existing login)
-    name:     'Zach Hipes',
-    role:     'admin',
-    title:    'Platform Admin · Found First',
-    initials: 'ZH',
+    id:              'zach-hipes',
+    email:           'zachhipes1@gmail.com',
+    name:            'Zach Hipes',
+    role:            'admin',
+    title:           'Platform Admin · Found First',
+    initials:        'ZH',
+    defaultPassword: 'Demo2026!',
   },
   {
     id:       'maya-torres',
