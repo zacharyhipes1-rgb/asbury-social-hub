@@ -466,22 +466,35 @@ export default function DashboardPage() {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Location Activity — This Week</p>
             <p className="text-xs text-slate-400">{dealershipHealth.filter(d => d.status === 'inactive').length} inactive</p>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {dealershipHealth.map(d => (
               <div
                 key={d.id}
-                className="flex-shrink-0 w-28 bg-white border border-slate-100 rounded-xl p-3 text-center shadow-sm"
+                className={`bg-white border rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-all ${
+                  d.status === 'active'  ? 'border-emerald-100' :
+                  d.status === 'pending' ? 'border-amber-100'   :
+                  d.status === 'flagged' ? 'border-red-100'     :
+                  'border-slate-100'
+                }`}
               >
-                <div className={`w-2.5 h-2.5 rounded-full mx-auto mb-2 ${
-                  d.status === 'active'   ? 'bg-emerald-500' :
+                {/* Status bar at top of card */}
+                <div className={`w-8 h-1.5 rounded-full mx-auto mb-3 ${
+                  d.status === 'active'   ? 'bg-emerald-400' :
                   d.status === 'pending'  ? 'bg-amber-400'   :
-                  d.status === 'flagged'  ? 'bg-red-500'     :
+                  d.status === 'flagged'  ? 'bg-red-400'     :
                   'bg-slate-200'
                 }`} />
-                <p className="text-xs font-semibold text-slate-700 leading-tight truncate" title={d.name}>
+                <p className="text-xs font-bold text-slate-800 leading-tight" title={d.name}>
                   {d.name.replace(/^APEX\s+/i, '')}
                 </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">{d.recentCount} post{d.recentCount !== 1 ? 's' : ''}</p>
+                <p className="text-[11px] font-medium mt-1.5 ${
+                  d.status === 'active'   ? 'text-emerald-600' :
+                  d.status === 'pending'  ? 'text-amber-600'   :
+                  d.status === 'flagged'  ? 'text-red-600'     :
+                  'text-slate-400'
+                }">
+                  {d.recentCount > 0 ? `${d.recentCount} post${d.recentCount !== 1 ? 's' : ''}` : 'No posts'}
+                </p>
               </div>
             ))}
           </div>

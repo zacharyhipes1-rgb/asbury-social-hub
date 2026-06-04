@@ -730,8 +730,20 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* ── Brand filter ── */}
-      <div className="flex flex-wrap gap-2">
+      {/* ── Location type filter — dropdown on mobile, chips on desktop ── */}
+      {/* Mobile: clean select dropdown */}
+      <div className="md:hidden">
+        <select
+          value={brandFilter}
+          onChange={e => { setBrandFilter(e.target.value); setSelectedDealer(null) }}
+          className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 bg-white focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 appearance-none"
+          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2394a3b8\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
+        >
+          {BRANDS.map(b => <option key={b} value={b}>{b === 'All' ? 'All Location Types' : b}</option>)}
+        </select>
+      </div>
+      {/* Desktop: pill chips */}
+      <div className="hidden md:flex flex-wrap gap-2">
         {BRANDS.map(b => (
           <button
             key={b}

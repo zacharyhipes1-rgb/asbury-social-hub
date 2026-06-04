@@ -159,14 +159,22 @@ export default function Header({ onMenuToggle, menuOpen }) {
   }
 
   return (
-    <header className="h-14 bg-white border-b border-slate-100 flex items-center justify-between px-4 lg:px-5 flex-shrink-0 z-30">
-      <div className="flex items-center gap-3">
+    <header className="h-14 bg-white border-b border-slate-100 flex items-center justify-between px-3 lg:px-5 flex-shrink-0 z-30">
+      {/* Left: hamburger (mobile) */}
+      <div className="flex items-center gap-2 min-w-[44px]">
         <button
           onClick={onMenuToggle}
-          className="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+          className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-slate-200 transition-colors flex-shrink-0"
+          aria-label="Open menu"
         >
           {menuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
+      </div>
+
+      {/* Center: brand name on mobile */}
+      <div className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
+        <img src="/apple-touch-icon.png" alt="Pulse Social" className="w-6 h-6 rounded-lg object-cover" />
+        <span className="text-sm font-bold text-slate-900 tracking-tight">Pulse Social</span>
       </div>
 
       <div className="flex items-center gap-2">

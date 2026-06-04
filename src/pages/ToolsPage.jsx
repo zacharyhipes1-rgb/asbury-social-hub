@@ -2851,19 +2851,23 @@ export default function ToolsPage() {
             })}
           </aside>
 
-          {/* Mobile: horizontal scroll chip bar */}
-          <div className="md:hidden flex gap-2 overflow-x-auto px-4 py-3 border-b border-slate-100 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Mobile: 2-col grid — no scrolling, all tools visible */}
+          <div className="md:hidden grid grid-cols-2 gap-2 px-4 py-4 border-b border-slate-100">
             {TOOLS.map(tool => {
               const isActive = activeTool === tool.id
+              const Icon = tool.icon
               return (
                 <button
                   key={tool.id}
                   onClick={() => setActiveTool(tool.id)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                    isActive ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
+                  className={`flex items-center gap-2 px-3 py-3 rounded-xl text-xs font-semibold transition-all border text-left ${
+                    isActive
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  {tool.label}
+                  {Icon && <Icon size={14} className={isActive ? 'text-white/80' : 'text-slate-400'} />}
+                  <span className="truncate">{tool.label}</span>
                 </button>
               )
             })}
