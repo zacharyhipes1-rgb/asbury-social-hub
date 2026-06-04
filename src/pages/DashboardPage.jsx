@@ -39,7 +39,8 @@ function useCountUp(target, duration = 600) {
 
 function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to, benchmarkLabel, benchmarkColor }) {
   const inner = (
-    <div className={`card-hover bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-sm transition-all ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
+    // h-full ensures every card in the grid row stretches to the same height
+    <div className={`h-full card-hover bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-sm transition-all flex flex-col ${to ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer group' : ''}`}>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${bgGradient}`}>
           <Icon size={16} className="text-white" />
@@ -48,24 +49,27 @@ function StatCard({ label, value, color, bgGradient, icon: Icon, subtitle, to, b
       </div>
       <p className={`text-2xl sm:text-3xl font-bold tracking-tight ${color}`}>{value}</p>
       <p className="text-xs sm:text-sm font-medium text-slate-700 mt-1">{label}</p>
-      {subtitle && <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">{subtitle}</p>}
-      {benchmarkLabel && (
-        <div className="flex items-center gap-1.5 mt-1">
-          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            benchmarkColor === 'green' ? 'bg-emerald-500' :
-            benchmarkColor === 'amber' ? 'bg-amber-400' :
-            'bg-red-500'
-          }`} />
-          <span className={`text-xs font-medium ${
-            benchmarkColor === 'green' ? 'text-emerald-600' :
-            benchmarkColor === 'amber' ? 'text-amber-600' :
-            'text-red-600'
-          }`}>{benchmarkLabel}</span>
-        </div>
-      )}
+      {/* mt-auto pins the bottom content so cards with/without benchmark stay the same height */}
+      <div className="mt-auto pt-2">
+        {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+        {benchmarkLabel && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              benchmarkColor === 'green' ? 'bg-emerald-500' :
+              benchmarkColor === 'amber' ? 'bg-amber-400' :
+              'bg-red-500'
+            }`} />
+            <span className={`text-xs font-medium ${
+              benchmarkColor === 'green' ? 'text-emerald-600' :
+              benchmarkColor === 'amber' ? 'text-amber-600' :
+              'text-red-600'
+            }`}>{benchmarkLabel}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
-  return to ? <Link to={to}>{inner}</Link> : inner
+  return to ? <Link to={to} className="block h-full">{inner}</Link> : inner
 }
 
 function PostRow({ post, onClick, onEdit, isSocialMedia, currentUser }) {
@@ -359,7 +363,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-7">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-7 items-stretch">
         <StatCard
           label="This Week"
           value={animatedWeek}
@@ -400,61 +404,29 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-7">
-        <Link
-          to="/calendar"
-          className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all text-center sm:text-left"
-        >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-            <CalendarDays size={17} className="text-indigo-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-xs sm:text-sm text-slate-900 leading-tight">Calendar</p>
-            <p className="hidden sm:block text-xs text-slate-400 mt-0.5">View week-by-week schedule</p>
-          </div>
-        </Link>
-        {isAdmin ? (
+      {/* Quick actions — fixed height, uniform layout on every breakpoint */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-7 items-stretch">
+        {[
+          { to: '/calendar', icon: CalendarDays, iconBg: 'bg-indigo-50', iconColor: 'text-indigo-600', label: 'Calendar',  sub: 'Week-by-week schedule', cardCls: 'bg-white border-slate-100' },
+          isAdmin
+            ? { to: '/admin',    icon: ShieldCheck,  iconBg: 'bg-amber-100',  iconColor: 'text-amber-700',  label: 'Queue',     sub: pendingPosts.length > 0 ? `${pendingPosts.length} need review` : 'All clear', cardCls: 'bg-amber-50 border-amber-100' }
+            : { to: '/upload',   icon: Upload,        iconBg: 'bg-violet-50',  iconColor: 'text-violet-600', label: 'Upload',    sub: 'Submit for review', cardCls: 'bg-white border-slate-100' },
+          { to: '/analytics', icon: BarChart2,    iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', label: 'Analytics', sub: 'Performance overview', cardCls: 'bg-white border-slate-100' },
+        ].map(({ to, icon: Icon, iconBg, iconColor, label, sub, cardCls }) => (
           <Link
-            to="/admin"
-            className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-amber-50 border border-amber-100 rounded-2xl hover:border-amber-200 hover:shadow-md transition-all text-center sm:text-left"
+            key={to}
+            to={to}
+            className={`group flex flex-col items-center justify-center gap-2 p-4 sm:p-5 border rounded-2xl shadow-sm hover:shadow-md transition-all text-center ${cardCls}`}
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <ShieldCheck size={17} className="text-amber-700" />
+            <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
+              <Icon size={17} className={iconColor} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-xs sm:text-sm text-amber-900 leading-tight">Queue</p>
-              <p className="hidden sm:block text-xs text-amber-600 mt-0.5">
-                {pendingPosts.length > 0 ? `${pendingPosts.length} need${pendingPosts.length === 1 ? 's' : ''} review` : 'All clear'}
-              </p>
+            <div>
+              <p className="font-semibold text-sm text-slate-900 leading-tight">{label}</p>
+              <p className="text-xs text-slate-400 mt-0.5 leading-snug">{sub}</p>
             </div>
           </Link>
-        ) : (
-          <Link
-            to="/upload"
-            className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all text-center sm:text-left"
-          >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
-              <Upload size={17} className="text-violet-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-xs sm:text-sm text-slate-900 leading-tight">Upload</p>
-              <p className="hidden sm:block text-xs text-slate-400 mt-0.5">Submit a new post for review</p>
-            </div>
-          </Link>
-        )}
-        <Link
-          to="/analytics"
-          className="group flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-200 transition-all text-center sm:text-left"
-        >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-            <BarChart2 size={17} className="text-emerald-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-xs sm:text-sm text-slate-900 leading-tight">Analytics</p>
-            <p className="hidden sm:block text-xs text-slate-400 mt-0.5">Performance & engagement overview</p>
-          </div>
-        </Link>
+        ))}
       </div>
 
       {/* Alert banners */}
