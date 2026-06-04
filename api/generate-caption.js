@@ -24,7 +24,7 @@ const PLATFORM_RULES = {
     name: 'LinkedIn',
     softLimit: 700,
     guidance: 'Professional but warm. Lead with an insight or human moment. Short paragraphs. Avoid excessive emojis. Focus on team, values, or industry angle.',
-    hashtagNote: 'Use 3–5 professional hashtags like #AutomotiveIndustry #CustomerExperience.',
+    hashtagNote: 'Use 3–5 professional hashtags like #FitnessIndustry #WellnessAtWork.',
   },
   x: {
     name: 'X (Twitter)',

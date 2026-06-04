@@ -66,7 +66,7 @@ export function UsersProvider({ children }) {
       const cleaned = parsed.filter(u => mockIds.has(u.id) || u.registration_type === 'self' || u.registration_type === 'invite')
 
       // Patch stale titles
-      const TITLE_PATCHES = { 'zhipes@asburyauto.com': 'SEO | AEO Strategist' }
+      const TITLE_PATCHES = { 'zhipes@asburyauto.com': 'Platform Admin · Found First' }
       const patched = cleaned.map(u => {
         const fix = TITLE_PATCHES[u.email.toLowerCase()]
         return fix && u.title !== fix ? { ...u, title: fix } : u

@@ -374,7 +374,7 @@ function AnalyticsChatPanel({ dealer, scoreData, drillEng, platformMix, range })
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-              placeholder="Ask about this dealership's performance…"
+              placeholder="Ask about this location's performance…"
               disabled={loading}
               className="flex-1 text-xs px-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 disabled:opacity-50"
             />

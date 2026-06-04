@@ -54,7 +54,7 @@ export const Events = {
 
   // Content
   UPLOAD_START:     (platform)         => trackEvent('upload_start',     { platform }),
-  UPLOAD_COMPLETE:  (platform, dealer) => trackEvent('upload_complete',  { platform, dealership: dealer }),
+  UPLOAD_COMPLETE:  (platform, dealer) => trackEvent('upload_complete',  { platform, location: dealer }),
   CAPTION_GENERATE: (platform)         => trackEvent('caption_generate', { platform }),
   CAPTION_USE:      (platform)         => trackEvent('caption_use',      { platform }),
 

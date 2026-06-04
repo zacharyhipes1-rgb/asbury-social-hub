@@ -20,7 +20,7 @@ PLATFORM DATA:
 - Platform breakdown: ${context?.platforms ? Object.entries(context.platforms || {}).map(([k,v]) => `${k}: ${v}`).join(', ') : 'No data'}
 
 LOCATION BREAKDOWN:
-${Array.isArray(context?.dealers) ? context.dealers.join('\n') : 'No dealership data yet'}
+${Array.isArray(context?.dealers) ? context.dealers.join('\n') : 'No location data yet'}
 
 TONE AND FORMAT RULES — follow these strictly:
 - Write like a smart human colleague, not a report generator
@@ -30,8 +30,8 @@ TONE AND FORMAT RULES — follow these strictly:
 - Get to the point fast — don't restate what was asked
 - If data is thin or sample-only, say so plainly and still give useful direction
 - Industry benchmarks come from your training — always say so if you cite them
-- When the user is viewing a specific dealership and asks a general question, assume they mean that dealership
-- If asked about a dealership with no data, acknowledge it and suggest what to do first`
+- When the user is viewing a specific location and asks a general question, assume they mean that location
+- If asked about a location with no data, acknowledge it and suggest what to do first`
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {

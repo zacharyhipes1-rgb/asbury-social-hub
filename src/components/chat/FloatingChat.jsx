@@ -265,7 +265,7 @@ export default function FloatingChat({ currentDealerId = null }) {
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-                    placeholder="Ask about any dealership…"
+                    placeholder="Ask about any location…"
                     disabled={loading}
                     className="flex-1 text-sm px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 disabled:opacity-50 bg-slate-50"
                   />

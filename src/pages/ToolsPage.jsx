@@ -157,7 +157,7 @@ function UtmBuilder() {
           <input
             value={url}
             onChange={e => setUrl(e.target.value)}
-            placeholder="https://asburyauto.com/inventory/..."
+            placeholder="https://yoursite.com/classes/..."
             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
           />
         </div>
@@ -590,12 +590,12 @@ const PROPERTY_FIXES = {
   description: {
     why: 'Descriptions help Google and AI engines understand what the page or entity is about — critical for AEO/GEO visibility.',
     steps: ['Write a 1–3 sentence description covering what you offer, where you are, and who you serve', 'Avoid keyword stuffing — write for humans and LLMs', 'Keep under 500 characters for best display in rich results'],
-    example: '"description": "Toyota of Roswell is an authorized Toyota dealership in Roswell, GA offering new and used vehicles, certified service, and genuine Toyota parts."',
+    example: '"description": "APEX Fitness Buckhead is a full-service fitness center in Atlanta, GA offering group classes, personal training, and 24/7 access."',
   },
   image: {
     why: 'An image is required for most rich result types and significantly increases click-through rate.',
     steps: ['Add an "image" property with the URL of a high-quality photo', 'Minimum 1200×630px recommended for rich results', 'Use your Google Business Profile photo or a professional exterior shot'],
-    example: '"image": "https://www.yoursite.com/images/dealership-exterior.jpg"',
+    example: '"image": "https://www.yoursite.com/images/location-exterior.jpg"',
   },
   priceRange: {
     why: 'Price range helps Google categorize your business and can appear in local search results.',
@@ -629,7 +629,7 @@ const PROPERTY_FIXES = {
   provider: {
     why: 'The provider property attributes a service to the business offering it, required for Service schema.',
     steps: ['Add a "provider" object referencing your organization', 'Include "@type" (typically "AutoDealer" or "Organization") and "@id"'],
-    example: '"provider": {\n  "@type": "AutoDealer",\n  "@id": "https://www.yoursite.com/#dealer",\n  "name": "Your Dealership"\n}',
+    example: '"provider": {\n  "@type": "LocalBusiness",\n  "@id": "https://www.yoursite.com/#dealer",\n  "name": "Your Business Name"\n}',
   },
   serviceType: {
     why: 'serviceType tells Google specifically what kind of service is being offered, enabling better categorization.',
@@ -674,13 +674,13 @@ function getFixGuidance(msg, schemaType) {
     why: '@type is the most critical property — without it Google cannot interpret the schema at all and will ignore it entirely.',
     steps: [
       'Add "@type" as the second property (after "@context") in your JSON-LD',
-      'For dealership pages use "AutoDealer" or "CarDealer"',
+      'For fitness/wellness use "LocalBusiness" or "SportsActivityLocation"',
       'For service pages use "Service"',
       'For blog/news articles use "Article" or "NewsArticle"',
       'For FAQs use "FAQPage"',
       'Full type list: schema.org/docs/full.html',
     ],
-    example: '{\n  "@context": "https://schema.org",\n  "@type": "AutoDealer",\n  "name": "Your Dealership",\n  ...\n}',
+    example: '{\n  "@context": "https://schema.org",\n  "@type": "LocalBusiness",\n  "name": "Your Business Name",\n  ...\n}',
   }
 
   // Missing @context
@@ -707,7 +707,7 @@ function getFixGuidance(msg, schemaType) {
     steps: [
       'Check the spelling exactly — schema.org types are CamelCase (e.g. AutoDealer, not autodealer)',
       'Visit schema.org to find the correct type name',
-      'Common automotive types: AutoDealer, CarDealer, Service, Product, Article, FAQPage, LocalBusiness',
+      'Common types: LocalBusiness, SportsActivityLocation, HealthAndBeautyBusiness, FAQPage, Organization',
     ],
   }
 
@@ -993,7 +993,7 @@ function SchemaValidator() {
         <textarea
           value={input}
           onChange={e => { setInput(e.target.value); setResults(null); setParseErr('') }}
-          placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "AutoDealer",\n  "name": "Crown Honda",\n  "address": { "@type": "PostalAddress", "addressLocality": "Dublin", "addressRegion": "OH" }\n}'}
+          placeholder={'{\n  "@context": "https://schema.org",\n  "@type": "LocalBusiness",\n  "name": "APEX Fitness Buckhead",\n  "address": { "@type": "PostalAddress", "addressLocality": "Atlanta", "addressRegion": "GA" }\n}'}
           rows={10}
           spellCheck={false}
           className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors resize-none font-mono text-slate-700 leading-relaxed"
@@ -1164,7 +1164,7 @@ function MetaInspector() {
           value={url}
           onChange={e => { setUrl(e.target.value); setResult(null); setError('') }}
           onKeyDown={e => e.key === 'Enter' && url.trim() && !loading && inspect()}
-          placeholder="https://asburyauto.com/dealers/crown-honda"
+          placeholder="https://yoursite.com/locations/buckhead"
           className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
         />
         <button
@@ -1278,7 +1278,7 @@ function PageSpeedScore() {
           value={url}
           onChange={e => { setUrl(e.target.value); setResult(null); setError('') }}
           onKeyDown={e => e.key === 'Enter' && url.trim() && !loading && run()}
-          placeholder="https://asburyauto.com"
+          placeholder="https://yoursite.com"
           className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors"
         />
         <div className="flex border border-slate-200 rounded-lg overflow-hidden">
@@ -1483,7 +1483,7 @@ function AdsBuilder() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className={labelCls}>Display URL Domain</label>
-              <input value={domain} onChange={e => setDomain(e.target.value)} placeholder="asburyauto.com" className={inputCls} />
+              <input value={domain} onChange={e => setDomain(e.target.value)} placeholder="yoursite.com" className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Path 1</label>
@@ -1551,7 +1551,7 @@ function AdsBuilder() {
             </div>
             <div className="px-3 py-3 flex items-center justify-between bg-slate-50 border-t border-slate-100">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-500 uppercase">asburyauto.com</p>
+                <p className="text-[10px] text-slate-500 uppercase">yoursite.com</p>
                 <p className="text-sm font-bold text-slate-800 truncate">{mHead || 'Your headline'}</p>
                 {mDesc && <p className="text-xs text-slate-500 truncate">{mDesc}</p>}
               </div>
@@ -1988,7 +1988,7 @@ function SchemaBuilder() {
             value={fetchUrl}
             onChange={e => { setFetchUrl(e.target.value); setFetchErr(''); setFetched(null) }}
             onKeyDown={e => e.key === 'Enter' && fetchUrl.trim() && !fetching && fetchFromUrl()}
-            placeholder="https://asburyauto.com/dealers/crown-honda"
+            placeholder="https://yoursite.com/locations/buckhead"
             className="flex-1 px-3 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-colors bg-white"
           />
           <button
@@ -2600,7 +2600,7 @@ function QrGenerator() {
         <label className={labelCls}>{type === 'url' ? 'URL' : type === 'phone' ? 'Phone Number' : 'Text'}</label>
         {type === 'text'
           ? <textarea value={value} onChange={e => setValue(e.target.value)} rows={3} placeholder="Any plain text..." className={`${inputCls} resize-none`} />
-          : <input value={value} onChange={e => setValue(e.target.value)} placeholder={type === 'url' ? 'asburyauto.com' : '(555) 123-4567'} className={inputCls} />
+          : <input value={value} onChange={e => setValue(e.target.value)} placeholder={type === 'url' ? 'yoursite.com' : '(555) 123-4567'} className={inputCls} />
         }
       </div>
 
@@ -2783,7 +2783,7 @@ const RESOURCE_SECTIONS = [
       { name: 'Google Analytics 4',      url: 'https://analytics.google.com',    desc: 'Event-based analytics. Set up UTM discipline before relying on source/medium data.' },
       { name: 'Google Tag Manager',      url: 'https://tagmanager.google.com',   desc: 'All tracking pixels and conversion events — managed without code deploys.' },
       { name: 'Looker Studio',           url: 'https://lookerstudio.google.com', desc: 'Custom dashboards pulling GA4, GSC, and ad platforms into one view.' },
-      { name: 'Google Business Profile', url: 'https://business.google.com',     desc: 'Manage dealership listings. Keep NAP consistent across all 175+ locations.' },
+      { name: 'Google Business Profile', url: 'https://business.google.com',     desc: 'Manage business location listings. Keep NAP consistent across all locations.' },
     ],
   },
   {

@@ -210,7 +210,7 @@ export default function AssetUploadModal({ isOpen, onClose, currentFolderId = nu
                 onChange={e => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
                 onBlur={() => tagInput.trim() && addTag(tagInput)}
-                placeholder={tags.length === 0 ? 'e.g. inventory, promotion, bmw…' : ''}
+                placeholder={tags.length === 0 ? 'e.g. class-photos, promotion, members…' : ''}
                 disabled={uploading}
                 className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-slate-300 disabled:opacity-60"
               />

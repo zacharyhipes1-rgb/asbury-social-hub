@@ -37,19 +37,19 @@ const INITIAL_FORM = {
 }
 
 const DEMO_FORM = {
-  dealership_ids: ['nalley-honda'],
+  dealership_ids: ['apex-buckhead'],
   platforms: ['instagram'],
   content_type: 'reel',
-  caption: 'Summer savings event is HERE! Stop by Nalley Honda this weekend and drive home in your dream car. Low APR financing available on select models.',
-  hashtags: ['#NalleyHonda', '#HondaDeals', '#CollegePark', '#SummerSavings'],
-  alt_text: 'Red Honda CR-V parked in front of Nalley Honda on a sunny day',
-  file_name: 'nalley_crv_promo.mp4',
+  caption: 'New PRs getting hit every morning at APEX Buckhead 💪 Our trainers are here to push you further. Drop your latest personal record in the comments.',
+  hashtags: ['#APEXFitness', '#APEXBuckhead', '#PersonalRecord', '#AtlantaFitness'],
+  alt_text: 'Member celebrating a PR in the APEX Buckhead weight room, trainer cheering in background',
+  file_name: 'apex_buckhead_pr_reel.mp4',
   file_size: 24500000,
   file_type: 'video/mp4',
   file_preview: null,
-  target_audience: 'Honda owners in College Park, ages 25–54',
-  posting_reason: 'Monthly sales event — drive weekend foot traffic',
-  optimal_posting_time: '12:00',
+  target_audience: 'Active adults 25–45 in Buckhead / Midtown Atlanta',
+  posting_reason: 'Community engagement — celebrate member milestones, drive comments',
+  optimal_posting_time: '06:30',
   scheduled_for: '2026-04-25',
 }
 
@@ -140,7 +140,7 @@ export default function FormWizard() {
       // Fan out: one row per (dealership × platform) pair.
       const admins     = getAdmins()
       const socialTeam = getSocialTeam()
-      const admin      = admins[0] || { name: 'Chad Mitchell', email: 'chad.mitchell@asburyauto.com' }
+      const admin      = admins[0] || { name: 'Jordan Mitchell', email: 'jmitchell@apexfitness.com' }
 
       const created = []
       for (const dId of dealershipList) {

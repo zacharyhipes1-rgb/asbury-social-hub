@@ -374,10 +374,10 @@ function GenerateImagePanel({ onImageReady, platform, dealership }) {
           onChange={e => setPrompt(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && e.metaKey && generate()}
           rows={3}
-          placeholder={`e.g. "Red Honda CR-V parked in front of a dealership on a sunny day, modern exterior, clear blue sky"`}
+          placeholder={`e.g. "APEX Fitness gym floor, natural light, members training, high energy, modern equipment"`}
           className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 resize-none"
         />
-        <p className="text-xs text-slate-400 mt-1">Be specific — vehicle model, color, setting, lighting, mood. ⌘+Enter to generate.</p>
+        <p className="text-xs text-slate-400 mt-1">Be specific — people, setting, lighting, energy, mood. ⌘+Enter to generate.</p>
       </div>
 
       {/* Options row */}
