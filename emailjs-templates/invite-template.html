@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You're invited to Pulse Social</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+
+          <!-- ── HEADER ── -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);border-radius:16px 16px 0 0;padding:32px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:12px;">
+                    <!-- Pulse waveform logo mark -->
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background:rgba(255,255,255,0.15);border-radius:12px;width:44px;height:44px;text-align:center;vertical-align:middle;">
+                          <svg width="26" height="26" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:9px auto 0;">
+                            <polyline points="8,50 30,50 38,22 46,72 54,50 62,40 68,50 92,50"
+                              fill="none" stroke="white" stroke-width="9"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <div style="color:#ffffff;font-size:22px;font-weight:700;line-height:1.2;letter-spacing:-0.3px;">Pulse Social</div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-top:2px;">CONTENT HUB</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ── HERO BANNER ── -->
+          <tr>
+            <td style="background:#ffffff;padding:36px 40px 8px;text-align:center;">
+              <div style="display:inline-block;background:#eef2ff;border-radius:50%;width:64px;height:64px;text-align:center;line-height:64px;margin-bottom:16px;">
+                <span style="font-size:28px;">✉️</span>
+              </div>
+              <h1 style="margin:0 0 8px;font-size:26px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">You're invited!</h1>
+              <p style="margin:0;font-size:15px;color:#64748b;line-height:1.6;">
+                You've been invited to join <strong style="color:#4f46e5;">Pulse Social</strong> — the all-in-one content management and approval platform.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ── BODY ── -->
+          <tr>
+            <td style="background:#ffffff;padding:24px 40px 32px;">
+
+              <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.7;">
+                Hi {{to_name}},<br/><br/>
+                {{body_text}}
+              </p>
+
+              <!-- Details card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:24px;">
+                <tr style="border-bottom:1px solid #e2e8f0;">
+                  <td style="padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;width:36%;">{{detail_a}}</td>
+                  <td style="padding:11px 16px;font-size:14px;color:#1e293b;font-weight:600;">{{detail_a_value}}</td>
+                </tr>
+                <tr style="border-bottom:1px solid #e2e8f0;">
+                  <td style="padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;">{{detail_b}}</td>
+                  <td style="padding:11px 16px;font-size:14px;color:#1e293b;font-weight:600;">{{detail_b_value}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:11px 16px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;">Platform</td>
+                  <td style="padding:11px 16px;font-size:14px;color:#1e293b;font-weight:600;">Pulse Social</td>
+                </tr>
+              </table>
+
+              <!-- Notes -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="border-left:3px solid #6366f1;background:#f8f7ff;border-radius:0 8px 8px 0;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:12px 16px;font-size:13px;color:#4b5563;line-height:1.6;">
+                    {{notes}}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                <tr>
+                  <td align="center" style="background:linear-gradient(135deg,#f97316,#ea580c);border-radius:12px;">
+                    <a href="{{cta_url}}"
+                      style="display:inline-block;padding:15px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.2px;">
+                      {{cta_label}} →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;text-align:center;line-height:1.6;">
+                Or copy and paste this link into your browser:<br/>
+                <span style="color:#6366f1;">{{cta_url}}</span>
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- ── FOOTER ── -->
+          <tr>
+            <td style="background:#f8fafc;border-radius:0 0 16px 16px;padding:20px 40px;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.8;">
+                Pulse Social &nbsp;·&nbsp; Powered by Found First<br/>
+                This invitation was sent to {{to_name}} ({{to_email}}). If you didn't expect this, you can safely ignore it.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
