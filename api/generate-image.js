@@ -20,8 +20,8 @@ export default async function handler(req, res) {
 
   if (!prompt?.trim()) return res.status(400).json({ error: 'Prompt is required.' })
 
-  // Enhance prompt for automotive social media context
-  const enhancedPrompt = `${prompt.trim()}, professional automotive marketing photography, high quality, sharp focus, well-lit, social media ready`
+  // Enhance prompt for fitness & wellness social media context
+  const enhancedPrompt = `${prompt.trim()}, professional fitness and wellness marketing photography, high energy, high quality, sharp focus, well-lit, social media ready`
   const enhancedNegative = `${negativePrompt} blurry, low quality, watermark, text overlay, logo, distorted, ugly, bad anatomy, amateur`
 
   try {

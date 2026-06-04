@@ -713,7 +713,7 @@ export default function CalendarView() {
               >
                 <span className="flex-1 text-left truncate">
                   {dealershipFilter === 'all'
-                    ? 'All Dealerships'
+                    ? 'All Locations'
                     : DEALERSHIPS.find(d => d.id === dealershipFilter)?.name || 'Select…'}
                 </span>
                 <ChevronDown size={13} className={`text-slate-400 flex-shrink-0 transition-transform ${dealerOpen ? 'rotate-180' : ''}`} />
@@ -731,7 +731,7 @@ export default function CalendarView() {
                     />
                   </div>
                   <div className="max-h-56 overflow-y-auto py-1">
-                    <button type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === 'all' ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter('all'); setDealerOpen(false); setDealerSearch('') }}>All Dealerships</button>
+                    <button type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === 'all' ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter('all'); setDealerOpen(false); setDealerSearch('') }}>All Locations</button>
                     {filteredDealers.map(d => (
                       <button key={d.id} type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === d.id ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter(d.id); setDealerOpen(false); setDealerSearch('') }}>{d.name}</button>
                     ))}
@@ -793,7 +793,7 @@ export default function CalendarView() {
               >
                 <span className="flex-1 text-left truncate">
                   {dealershipFilter === 'all'
-                    ? 'All Dealerships'
+                    ? 'All Locations'
                     : DEALERSHIPS.find(d => d.id === dealershipFilter)?.name || 'Select…'}
                 </span>
                 <ChevronDown size={13} className={`text-slate-400 flex-shrink-0 transition-transform ${dealerOpen ? 'rotate-180' : ''}`} />
@@ -811,7 +811,7 @@ export default function CalendarView() {
                     />
                   </div>
                   <div className="max-h-56 overflow-y-auto py-1">
-                    <button type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === 'all' ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter('all'); setDealerOpen(false); setDealerSearch('') }}>All Dealerships</button>
+                    <button type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === 'all' ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter('all'); setDealerOpen(false); setDealerSearch('') }}>All Locations</button>
                     {filteredDealers.map(d => (
                       <button key={d.id} type="button" className={`w-full text-left text-sm px-4 py-2 transition-colors ${dealershipFilter === d.id ? 'text-indigo-600 font-semibold bg-indigo-50' : 'text-slate-700 hover:bg-slate-50'}`} onClick={() => { setDealershipFilter(d.id); setDealerOpen(false); setDealerSearch('') }}>{d.name}</button>
                     ))}
@@ -923,7 +923,7 @@ export default function CalendarView() {
               <thead className="sticky top-0 z-20 shadow-sm">
                 <tr className="border-b border-slate-200 bg-white">
                   <th className="sticky left-0 bg-white z-30 px-4 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest border-r border-slate-200 min-w-[172px] max-w-[172px]">
-                    Dealership
+                    Location
                   </th>
                   {weekDays.map(day => {
                     const today   = isToday(day)

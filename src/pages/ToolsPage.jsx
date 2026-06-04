@@ -394,7 +394,7 @@ function BestTimes() {
   return (
     <div className="space-y-6">
       <p className="text-xs text-slate-400">
-        Based on industry averages. Validate against your own platform analytics — dealership audiences skew toward evening and weekend windows.
+        Based on industry averages. Validate against your own platform analytics — fitness audiences skew toward early morning and post-work windows.
       </p>
       {data.map(({ platform, color, slots }) => (
         <div key={platform}>
@@ -427,39 +427,34 @@ function HashtagPlanner() {
 
   const sets = [
     {
-      label: 'Automotive General',
+      label: 'Fitness General',
       color: '#6366f1',
-      tags: ['#automotive', '#carsofinstagram', '#car', '#vehicle', '#auto', '#newcar', '#usedcar', '#cardealer', '#dealership', '#ride'],
+      tags: ['#fitness', '#gym', '#workout', '#fitlife', '#health', '#exercise', '#fitnessmotivation', '#strongertogether', '#trainhard', '#gymlife'],
     },
     {
-      label: 'New Vehicle Inventory',
+      label: 'Group Classes',
       color: '#10b981',
-      tags: ['#newcar', '#carsforsale', '#newarrival', '#shopmycars', '#carshopping', '#buyacar', '#newinventory', '#carlovers', '#dreamcar', '#vehiclesofinstagram'],
+      tags: ['#groupfitness', '#bootcamp', '#hiit', '#yoga', '#pilates', '#spin', '#cardio', '#fitnessclass', '#groupworkout', '#classfitness'],
     },
     {
-      label: 'Service & Maintenance',
+      label: 'Personal Training',
       color: '#f59e0b',
-      tags: ['#carservice', '#autorepair', '#oilchange', '#carcare', '#vehiclemaintenance', '#autoshop', '#mechanicsofinstagram', '#tiresafety', '#cardetailing', '#keepitrunning'],
+      tags: ['#personaltrainer', '#personaltraining', '#strengthtraining', '#fitcoach', '#certifiedtrainer', '#nasm', '#1on1training', '#fitgoals', '#gymcoach', '#fitnesscoach'],
     },
     {
-      label: 'BMW',
-      color: '#1d1d1b',
-      tags: ['#BMW', '#BMWusa', '#BMWrepost', '#BMWofnorthamerica', '#bmwlife', '#bmwlove', '#bavarian', '#bmwm', '#ultimatedrivingmachine', '#bmwfan'],
+      label: 'Member Spotlight',
+      color: '#ec4899',
+      tags: ['#memberspotlight', '#transformationtuesday', '#fitnessjourney', '#memberresults', '#realresults', '#goalcrush', '#progressnotperfection', '#fitnessinspiration', '#inspire', '#communitystrong'],
     },
     {
-      label: 'Honda',
-      color: '#c00000',
-      tags: ['#Honda', '#HondaUSA', '#HondaOfAmerica', '#hondalife', '#hondafamily', '#hondacivic', '#hondacrv', '#hondapilot', '#hondaaccord', '#powerofdreams'],
+      label: 'APEX Fitness Brand',
+      color: '#7c3aed',
+      tags: ['#APEXFitness', '#APEXStrong', '#BeAPEX', '#APEXCommunity', '#AtlantaFitness', '#AtlantaGym', '#fitATL', '#southeastfitness', '#gymofatlanta', '#fitnessinATL'],
     },
     {
-      label: 'Toyota',
-      color: '#e60012',
-      tags: ['#Toyota', '#ToyotaUSA', '#LetsGoPlaces', '#toyotalife', '#toyotanation', '#4runner', '#tacoma', '#camry', '#tundra', '#toyotafamily'],
-    },
-    {
-      label: 'Local / Atlanta Market',
-      color: '#8b5cf6',
-      tags: ['#atlanta', '#atl', '#atlantacars', '#georgiacars', '#atlanta404', '#atlantadeals', '#atllife', '#georgiadealership', '#atlantaauto', '#visitatlanta'],
+      label: 'Events & Challenges',
+      color: '#0284c7',
+      tags: ['#fitnesschallenge', '#gymchallenge', '#5k', '#runclub', '#fitnessevent', '#communityrun', '#challengeaccepted', '#groupchallenge', '#30daychallenge', '#fitnessevents'],
     },
   ]
 
@@ -2343,7 +2338,7 @@ function ReadabilityScorer() {
           </div>
 
           <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 text-sm text-indigo-800">
-            Aim for <span className="font-bold">60–69 (Grade 8–9)</span> for mass-market automotive copy. Current: <span className="font-bold">{flesch.toFixed(0)}</span>
+            Aim for <span className="font-bold">60–69 (Grade 8–9)</span> for fitness and wellness brand copy. Current: <span className="font-bold">{flesch.toFixed(0)}</span>
           </div>
 
           <p className="text-xs text-slate-400">Avg syllables per word: <span className="text-slate-600 font-mono">{avgSyllablesPerWord.toFixed(2)}</span></p>

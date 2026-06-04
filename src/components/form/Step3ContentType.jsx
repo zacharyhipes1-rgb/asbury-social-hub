@@ -8,7 +8,7 @@ const ICON_MAP = {
 const CONTENT_TYPE_TIPS = {
   single_image:    'A single static image. Best for product shots, announcements, or promotions.',
   video:           'A native video post. Videos get 3× more engagement than static images on most platforms.',
-  carousel:        'Multiple images or cards. Ideal for showcasing multiple vehicles or telling a step-by-step story.',
+  carousel:        'Multiple images or cards. Ideal for showcasing multiple offers, trainers, or telling a step-by-step story.',
   text_post:       'Text-only post. Use sparingly — best for quick announcements or questions that drive comments.',
   event_promotion: 'Promotes an upcoming event. Shows on the Events tab and in feeds.',
   reel:            'Short-form video (up to 90s). Reels get the highest organic reach on Instagram.',

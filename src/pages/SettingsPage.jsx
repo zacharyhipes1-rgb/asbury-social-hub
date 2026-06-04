@@ -129,12 +129,11 @@ const PLATFORM_MAP = Object.fromEntries(PLATFORMS.map(p => [p.id, p]))
 const BRANDS = ['All', 'BMW', 'Honda', 'Toyota', 'Lexus', 'Acura', 'Corporate']
 
 const BRAND_BADGE = {
-  BMW:       'bg-slate-900 text-white',
-  Honda:     'bg-red-600 text-white',
-  Toyota:    'bg-red-700 text-white',
-  Lexus:     'bg-slate-700 text-white',
-  Acura:     'bg-slate-800 text-white',
-  Corporate: 'bg-indigo-600 text-white',
+  Flagship:  'bg-indigo-600 text-white',
+  Studio:    'bg-violet-600 text-white',
+  Standard:  'bg-slate-700 text-white',
+  Boutique:  'bg-pink-600 text-white',
+  Corporate: 'bg-slate-900 text-white',
 }
 
 // ─── Platform status dot ──────────────────────────────────────────────────────
@@ -639,7 +638,7 @@ export default function SettingsPage() {
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
       <div className="mb-7">
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
-        <p className="text-slate-400 mt-1 text-sm">Configure notifications, file hosting, and social media accounts per dealership</p>
+        <p className="text-slate-400 mt-1 text-sm">Configure notifications, file hosting, and social media accounts per location</p>
       </div>
 
       {/* ── EmailJS ── */}
@@ -790,7 +789,7 @@ export default function SettingsPage() {
         <div className="flex items-start justify-between gap-3 mb-1">
           <div>
             <h2 className="text-base font-bold text-slate-900">Social Media Accounts</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Each dealership connects its own handles — credentials never mix between locations</p>
+            <p className="text-xs text-slate-400 mt-0.5">Each location connects its own handles — credentials never mix between locations</p>
           </div>
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 mt-0.5 ${
             totalConnected === totalPossible

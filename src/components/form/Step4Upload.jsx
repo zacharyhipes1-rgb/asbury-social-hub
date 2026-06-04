@@ -436,7 +436,7 @@ function GenerateImagePanel({ onImageReady, platform, dealership }) {
               Regenerate
             </button>
           </div>
-          <p className="text-xs text-slate-400 text-center">Review AI-generated content carefully before submitting. Verify accuracy for brand/vehicle details.</p>
+          <p className="text-xs text-slate-400 text-center">Review AI-generated content carefully before submitting. Verify accuracy before submitting.</p>
         </div>
       )}
 
@@ -650,7 +650,7 @@ export default function Step4Upload({ data, onUpdate, onNext, onPrev }) {
                   ? data.file_type?.startsWith('video/')
                     ? 'AI will analyze a frame from your video to write captions specific to what\'s in it.'
                     : 'AI will analyze your uploaded image to write captions specific to what\'s in it.'
-                  : 'AI uses dealership, platform, and alt text for context. Upload to Cloudinary for image-aware captions.'
+                  : 'AI uses location, platform, and alt text for context. Upload to Cloudinary for image-aware captions.'
                 }
               </p>
               {aiError && (

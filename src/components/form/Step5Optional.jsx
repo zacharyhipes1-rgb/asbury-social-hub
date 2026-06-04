@@ -31,8 +31,8 @@ const PLATFORM_TIMES = {
 }
 
 const PLATFORM_TIME_TIPS = {
-  instagram: 'Tues–Fri 10–11am performs best for auto dealerships',
-  facebook:  'Wed 11am–1pm shows highest engagement for local business pages',
+  instagram: 'Mon–Fri 6–8am and 5–7pm peak for fitness audiences (pre/post workout)',
+  facebook:  'Wed–Fri 11am–1pm shows highest engagement for local fitness pages',
   tiktok:    'Tues & Thurs 7–9pm drives the most organic reach',
   linkedin:  'Tues–Thurs 9–10am hits decision-makers before their day fills up',
 }
@@ -229,7 +229,7 @@ export default function Step5Optional({ data, onUpdate, onSubmit, onPrev, isSubm
         <p className="text-sm text-amber-800">
           <span className="font-semibold">Before submitting:</span>{' '}
           {postCount > 1
-            ? <>One review item will be created for each dealership × platform pair (<strong>{postCount} total</strong>) and sent to {adminName} for approval. You'll receive an email notification once each one is approved, flagged, or removed.</>
+            ? <>One review item will be created for each location × platform pair (<strong>{postCount} total</strong>) and sent to {adminName} for approval. You'll receive an email notification once each one is approved, flagged, or removed.</>
             : <>Your content will be sent to {adminName} for review. You'll receive an email notification once it's approved, flagged, or removed.</>
           }
         </p>

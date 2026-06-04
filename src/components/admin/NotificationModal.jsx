@@ -143,7 +143,7 @@ export default function NotificationModal({ post, action, isOpen, onClose, onCon
               <p>{cfg.bodyIntro()}</p>
               <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 text-xs space-y-1.5">
                 <p><span className="font-semibold text-slate-500">Platform:</span> {platform?.name} · {ct?.name}</p>
-                <p><span className="font-semibold text-slate-500">Dealership:</span> {dealership?.name}</p>
+                <p><span className="font-semibold text-slate-500">Location:</span> {dealership?.name}</p>
                 {post.caption && (
                   <p><span className="font-semibold text-slate-500">Caption:</span> {post.caption.slice(0, 100)}{post.caption.length > 100 ? '…' : ''}</p>
                 )}

@@ -132,7 +132,7 @@ export default function FormWizard() {
       const extraCount = (dealershipList.length * platformList.length) - 1
       addToast(
         extraCount > 0
-          ? `Post updated and resubmitted. (Note: edits are applied to this single post — additional dealership/platform selections were ignored.)`
+          ? `Post updated and resubmitted. (Note: edits are applied to this single post — additional location/platform selections were ignored.)`
           : 'Post updated and resubmitted for approval.',
         'success'
       )

@@ -491,7 +491,7 @@ export default function DashboardPage() {
       {isAdmin && (
         <div className="mb-7">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dealership Activity — This Week</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Location Activity — This Week</p>
             <p className="text-xs text-slate-400">{dealershipHealth.filter(d => d.status === 'inactive').length} inactive</p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -570,7 +570,7 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/60">
                     <th className="px-5 py-3 w-12" />
-                    {['Dealership', 'Platform', 'Type', 'Caption', 'Uploaded by', 'Scheduled', 'Status'].map((h) => (
+                    {['Location', 'Platform', 'Type', 'Caption', 'Uploaded by', 'Scheduled', 'Status'].map((h) => (
                       <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                         {h}
                       </th>

@@ -19,7 +19,7 @@ const PAGE_CONTEXT = {
 }
 
 const STARTERS = [
-  'Which dealership needs the most attention?',
+  'Which location needs the most attention?',
   'What content is performing best?',
   'How do we improve our approval rate?',
   'Give me a content plan for this week.',
@@ -199,7 +199,7 @@ export default function FloatingChat({ currentDealerId = null }) {
                       <div className="bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-slate-700 leading-relaxed max-w-[85%]">
                         {analyticsContext.currentDealer
                           ? <>Hey! I can see you're looking at <strong>{analyticsContext.currentDealer.name}</strong>. What would you like to know about their performance?</>
-                          : <>Hey! I have data on all {analyticsContext.dealers.length} active dealerships. Ask me anything — content strategy, approval rates, what's working, or what needs attention.</>
+                          : <>Hey! I have data on all {analyticsContext.dealers.length} active locations. Ask me anything — content strategy, approval rates, what's working, or what needs attention.</>
                         }
                       </div>
                     </div>

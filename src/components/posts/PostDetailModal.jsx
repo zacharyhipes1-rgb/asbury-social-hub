@@ -241,7 +241,7 @@ export default function PostDetailModal({ post, isOpen, onClose }) {
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Post Details</p>
           </div>
           <div className="px-4 py-1">
-            <DetailRow icon={MapPin}       label="Dealership"    value={`${dealership?.name}, ${dealership?.location}`} />
+            <DetailRow icon={MapPin}       label="Location"    value={`${dealership?.name}, ${dealership?.location}`} />
             <DetailRow icon={Calendar}     label="Scheduled"     value={post.scheduled_for} />
             <DetailRow icon={Clock}        label="Best time"     value={post.optimal_posting_time} />
             <DetailRow icon={Users}        label="Audience"      value={post.target_audience} />

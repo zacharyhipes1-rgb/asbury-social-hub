@@ -69,16 +69,16 @@ const METRIC_GUIDANCE = {
   impressions: {
     icon: '👁️',
     plain: 'How many times your posts appeared in someone\'s feed — including repeat views by the same person.',
-    benchmark: 'Local dealerships typically see 1,500–8,000 impressions per published post depending on follower count and content type.',
+    benchmark: 'Fitness & wellness brands typically see 1,000–10,000 impressions per post depending on follower count and content type.',
     evaluate: (v) => v > 5000
       ? 'Your impressions are strong. Reels and carousels are likely driving above-average distribution.'
       : v > 2000
-        ? 'Solid reach for a dealership your size. Consistency in posting frequency will grow this further.'
+        ? 'Solid reach for a location your size. Consistency in posting frequency will grow this further.'
         : 'Below average. Prioritize Reels (2–3× higher impressions than static images) and optimize posting times.',
     tips: [
       'Post Reels — they get 2–3× more impressions than static images on Instagram',
       'Use 8–12 relevant hashtags per post (mix of broad, local, and niche)',
-      'Post between 9am–11am or 5pm–7pm in your dealership\'s local time zone',
+      'Post between 6am–8am or 5pm–7pm — fitness audiences are most active before and after work',
       'Respond to every comment within 1 hour — engagement signals boost algorithmic distribution',
       'Repost or "boost" top-performing organic posts as paid ads for amplified reach',
     ],
@@ -93,7 +93,7 @@ const METRIC_GUIDANCE = {
         ? 'Moderate reach. Adding location tags and collaborating with local businesses can expand your audience.'
         : 'Low reach relative to published post count. Focus on content formats the algorithm favors (Reels, carousels).',
     tips: [
-      'Tag your dealership\'s location on every post — it makes posts discoverable in local searches',
+      'Tag your location on every post — it makes content discoverable in local fitness searches',
       'Collaborate with local businesses or community organizations for co-posted content',
       'Share posts to Stories immediately after publishing — it drives a second wave of reach',
       'Carousel posts keep people swiping longer, which signals quality to the algorithm',
@@ -103,18 +103,18 @@ const METRIC_GUIDANCE = {
   engRate: {
     icon: '💬',
     plain: 'What percentage of people who saw your post actually interacted with it (likes, comments, shares, saves). This is the most important metric for organic growth.',
-    benchmark: 'Industry average engagement rate is 1–3%. For automotive, 2–4% is good. Anything above 5% is excellent.',
+    benchmark: 'Industry average engagement rate is 1–3%. For fitness & wellness brands, 3–5% is strong. Anything above 6% is excellent.',
     evaluate: (v) => {
       const num = parseFloat(v)
       if (num >= 5) return 'Excellent engagement. Your audience is highly active — this content style is working. Scale it.'
-      if (num >= 2) return 'Good engagement rate. Above industry average for automotive. Focus on maintaining content consistency.'
+      if (num >= 2) return 'Good engagement rate. Above industry average for fitness brands. Focus on maintaining content consistency.'
       if (num >= 1) return 'Average engagement. Try more conversational captions with direct questions to drive comments.'
       return 'Below average. Engagement rate is the top signal for algorithmic reach. Prioritize content that prompts reactions.'
     },
     tips: [
       'End every caption with a direct question (e.g. "Which color would you choose? 👇")',
       'Use polls and question stickers in Stories — they\'re the easiest way to drive interaction',
-      'Feature real customers and employees — human-face content consistently outperforms vehicle-only shots',
+      'Feature real members and trainers — human-face content consistently outperforms equipment-only shots',
       'Reply to every comment to double your engagement count and build community',
       '"Save-worthy" content (tips, checklists, comparisons) drives the highest-quality engagement signals',
     ],
@@ -122,15 +122,15 @@ const METRIC_GUIDANCE = {
   clicks: {
     icon: '🔗',
     plain: 'Estimated number of times people clicked your profile, bio link, or any link in your posts. Clicks represent genuine purchase intent.',
-    benchmark: 'A 1–3% click-through rate on social content is typical. Car dealerships with clear CTAs see 2–5% CTR.',
+    benchmark: 'A 1–3% click-through rate on social content is typical. Fitness brands with clear CTAs see 2–5% CTR.',
     evaluate: (v) => v > 100
       ? 'Strong click volume — your CTAs are working. Make sure your bio link goes to a high-converting landing page.'
       : v > 30
-        ? 'Moderate clicks. Adding a clear CTA in every caption ("Link in bio to schedule a test drive") will boost this.'
+        ? 'Moderate clicks. Adding a clear CTA in every caption ("Book your free trial — link in bio") will boost this.'
         : 'Low clicks relative to impressions. Every post needs a specific CTA directing followers to take action.',
     tips: [
-      'Every caption should end with a clear CTA: "Schedule your test drive — link in bio"',
-      'Use a link-in-bio tool (Linktree, etc.) to route traffic to inventory, service scheduling, or specials',
+      'Every caption should end with a clear CTA: "Book your free trial — link in bio"',
+      'Use a link-in-bio tool (Linktree, etc.) to route traffic to class booking, membership signup, or promotions',
       'Facebook and LinkedIn allow clickable links in posts — use them with every promotional post',
       'Stories with "Swipe Up" or link stickers convert at 3–5× the rate of bio link clicks',
       'Run retargeting ads to people who clicked but didn\'t convert — high-intent audience',
@@ -273,7 +273,7 @@ function AnalyticsChatPanel({ dealer, scoreData, drillEng, platformMix, range })
     'Why is our approval rate what it is?',
     'What content should we post more of?',
     'How do we improve engagement?',
-    'What are the best times to post for this dealership?',
+    'What are the best times to post for this location?',
   ]
 
   const send = useCallback(async (text) => {
@@ -660,7 +660,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Analytics</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Per-dealership performance · click any row to drill in</p>
+          <p className="text-sm text-slate-400 mt-0.5">Per-location performance · click any row to drill in</p>
         </div>
         <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium">
           {[['7d','7 days'],['30d','30 days'],['all','All time']].map(([val, label]) => (
@@ -688,7 +688,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-rose-800">
-                  {needsAttention.length} dealership{needsAttention.length > 1 ? 's' : ''} need attention
+                  {needsAttention.length} location{needsAttention.length > 1 ? 's' : ''} need attention
                 </p>
                 <p className="text-xs text-rose-500 mt-0.5 truncate">
                   {needsAttention.map(d => d.name).join(', ')}
@@ -810,7 +810,7 @@ export default function AnalyticsPage() {
       <div ref={scoreboardRef} className="card-hover bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
           <div>
-            <h2 className="font-semibold text-slate-900">Dealership Scoreboard</h2>
+            <h2 className="font-semibold text-slate-900">Location Scoreboard</h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Sort by any column · Click a row to drill in
             </p>
@@ -825,7 +825,7 @@ export default function AnalyticsPage() {
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
                 <th className="px-3 sm:px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Dealership
+                  Location
                 </th>
                 {[
                   ['thisWeek',     'This Week',     null],
@@ -1097,7 +1097,7 @@ export default function AnalyticsPage() {
             </div>
             <div>
               <p className="font-semibold text-slate-700 text-sm">Connect platform accounts for live engagement data</p>
-              <p className="text-xs text-slate-400 mt-0.5">Per-dealership impressions, reach, and engagement — each handle isolated, not blended</p>
+              <p className="text-xs text-slate-400 mt-0.5">Per-location impressions, reach, and engagement — each handle isolated, not blended</p>
             </div>
           </div>
           <Link
@@ -1115,9 +1115,9 @@ export default function AnalyticsPage() {
           <TrendingUp size={18} className="text-orange-500" />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-slate-700 text-sm">Google Analytics 4 — Website Impact per Dealership</p>
+          <p className="font-semibold text-slate-700 text-sm">Google Analytics 4 — Website Impact per Location</p>
           <p className="text-xs text-slate-400 mt-1 leading-relaxed max-w-xl">
-            Once UTM parameters are consistently applied per dealership, connect GA4 to see social-driven traffic, VDP views, and lead form completions — isolated per location so you know exactly which stores social is converting for.
+            Once UTM parameters are consistently applied per location, connect GA4 to see social-driven traffic, booking page visits, and lead form completions — isolated per location so you know exactly which sites social is converting for.
           </p>
           <p className="text-[10px] text-slate-300 mt-2">Planned for Phase 2 · Requires UTM discipline first</p>
         </div>

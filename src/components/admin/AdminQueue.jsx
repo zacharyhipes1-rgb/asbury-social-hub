@@ -34,18 +34,18 @@ function CloneModal({ post, onClose, onClone }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-900">Clone to Another Dealership</h3>
+          <h3 className="font-semibold text-slate-900">Clone to Another Location</h3>
           <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-700"><X size={16} /></button>
         </div>
         <p className="text-sm text-slate-500 mb-4">
-          Creates a copy of this post for a different dealership. Caption, hashtags, and media carry over. Status resets to Pending.
+          Creates a copy of this post for a different location. Caption, hashtags, and media carry over. Status resets to Pending.
         </p>
         <select
           value={targetId}
           onChange={e => setTargetId(e.target.value)}
           className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-slate-400 bg-white mb-4"
         >
-          <option value="">Select dealership…</option>
+          <option value="">Select location…</option>
           {others.map(d => <option key={d.id} value={d.id}>{d.name} — {d.location}</option>)}
         </select>
         <div className="flex gap-2 justify-end">
@@ -221,7 +221,7 @@ export default function AdminQueue() {
               onChange={(e) => setDealershipFilter(e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 focus:outline-none focus:border-slate-400 bg-white"
             >
-              <option value="all">All Dealerships</option>
+              <option value="all">All Locations</option>
               {DEALERSHIPS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
@@ -371,7 +371,7 @@ export default function AdminQueue() {
                       className="rounded border-slate-300 text-indigo-600"
                     />
                   </th>
-                  {['Dealership', 'Platform & Type', 'Caption', 'Uploader', 'Scheduled', 'Status', 'Actions'].map(h => (
+                  {['Location', 'Platform & Type', 'Caption', 'Uploader', 'Scheduled', 'Status', 'Actions'].map(h => (
                     <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                       {h}
                     </th>
@@ -527,7 +527,7 @@ export default function AdminQueue() {
 
                           {/* Clone */}
                           {post.approval_status !== 'deleted' && (
-                            <button onClick={() => setClonePost(post)} title="Clone to another dealership"
+                            <button onClick={() => setClonePost(post)} title="Clone to another location"
                               className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
                               <Copy size={14} />
                             </button>
