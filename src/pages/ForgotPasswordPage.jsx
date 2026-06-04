@@ -174,8 +174,9 @@ function StepEmail({ onNext, onPending }) {
     if (RECAPTCHA_SITE_KEY && !captchaToken) { setError('Please complete the reCAPTCHA check.'); return }
 
     const user = getUserByEmail(trimmed)
-    if (!user)        { setError('No account found with that email address.'); return }
-    if (!user.active) { setError('That account is deactivated. Contact your administrator.'); return }
+    if (!user)         { setError('No account found with that email address.'); return }
+    if (user.blocked)  { setError('This account has been blocked. Contact your administrator.'); return }
+    if (!user.active)  { setError('That account is deactivated. Contact your administrator.'); return }
 
     setLoading(true)
 

@@ -135,6 +135,10 @@ export function AuthProvider({ children }) {
       setLoginError('No account found with that email address.')
       return false
     }
+    if (user.blocked) {
+      setLoginError('This account has been blocked. Contact your administrator.')
+      return false
+    }
     if (!user.active) {
       setLoginError('This account has been deactivated. Contact your administrator.')
       return false

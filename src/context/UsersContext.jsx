@@ -147,7 +147,15 @@ export function UsersProvider({ children }) {
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active: false } : u)))
 
   const reactivateUser = (id) =>
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active: true } : u)))
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active: true, blocked: false } : u)))
+
+  // Hard block — prevents login AND password reset requests.
+  // Blocked users remain blocked even if an admin accidentally tries to reactivate.
+  const blockUser = (id) =>
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active: false, blocked: true } : u)))
+
+  const unblockUser = (id) =>
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, blocked: false } : u)))
 
   const deleteUser = (id) =>
     setUsers((prev) => prev.filter((u) => u.id !== id))
@@ -175,6 +183,8 @@ export function UsersProvider({ children }) {
         updateUser,
         deactivateUser,
         reactivateUser,
+        blockUser,
+        unblockUser,
         deleteUser,
         setPasswordByEmail,
         getUserByEmail,

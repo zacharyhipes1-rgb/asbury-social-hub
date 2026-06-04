@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   Users, UserPlus, Shield, Eye, AtSign, Search, X, Check, Pencil,
   UserX, UserCheck, Trash2, AlertTriangle, FileText, Mail, Send,
-  Clock, RotateCcw, KeyRound,
+  Clock, RotateCcw, KeyRound, Ban, ShieldOff,
 } from 'lucide-react'
 import { useUsers } from '../context/UsersContext'
 import { useAuth } from '../context/AuthContext'
@@ -211,19 +211,43 @@ function DeleteConfirmModal({ user, onClose, onConfirm }) {
   )
 }
 
-function UserActions({ user, onEdit, onToggle, onDelete, canDelete, deleteTitle, alwaysVisible = false }) {
+function UserActions({ user, onEdit, onToggle, onBlock, onUnblock, onDelete, canDelete, deleteTitle, alwaysVisible = false }) {
   return (
     <div className={`flex items-center gap-1 ${alwaysVisible ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}>
-      <button onClick={() => onEdit(user)}
-        className="p-2 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center" title="Edit">
-        <Pencil size={15} />
-      </button>
-      <button onClick={() => onToggle(user)}
-        className={`p-2 rounded-lg transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center ${
-          user.active ? 'hover:bg-amber-50 text-slate-400 hover:text-amber-600' : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
-        }`} title={user.active ? 'Deactivate' : 'Reactivate'}>
-        {user.active ? <UserX size={15} /> : <UserCheck size={15} />}
-      </button>
+      {/* Edit — not shown for blocked users */}
+      {!user.blocked && (
+        <button onClick={() => onEdit(user)}
+          className="p-2 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center" title="Edit">
+          <Pencil size={15} />
+        </button>
+      )}
+
+      {/* Activate / Deactivate — hidden while blocked */}
+      {!user.blocked && (
+        <button onClick={() => onToggle(user)}
+          className={`p-2 rounded-lg transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center ${
+            user.active ? 'hover:bg-amber-50 text-slate-400 hover:text-amber-600' : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
+          }`} title={user.active ? 'Deactivate' : 'Reactivate'}>
+          {user.active ? <UserX size={15} /> : <UserCheck size={15} />}
+        </button>
+      )}
+
+      {/* Block / Unblock */}
+      {user.blocked ? (
+        <button onClick={() => onUnblock(user)}
+          className="p-2 rounded-lg hover:bg-emerald-50 text-rose-400 hover:text-emerald-600 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+          title="Unblock user">
+          <ShieldOff size={15} />
+        </button>
+      ) : (
+        <button onClick={() => onBlock(user)}
+          className="p-2 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+          title="Block user — prevents login and password reset">
+          <Ban size={15} />
+        </button>
+      )}
+
+      {/* Delete */}
       <button
         onClick={() => canDelete && onDelete(user)}
         disabled={!canDelete}
@@ -237,19 +261,37 @@ function UserActions({ user, onEdit, onToggle, onDelete, canDelete, deleteTitle,
   )
 }
 
-function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin, postCount }) {
+function UserStatusBadge({ user }) {
+  if (user.blocked) return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border text-rose-700 bg-rose-50 border-rose-200">
+      <Ban size={10} /> Blocked
+    </span>
+  )
+  if (user.active) return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border text-emerald-700 bg-emerald-50 border-emerald-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border text-slate-500 bg-slate-50 border-slate-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-300" /> Inactive
+    </span>
+  )
+}
+
+function UserRow({ user, onEdit, onToggle, onBlock, onUnblock, onDelete, isCurrentUser, isLastAdmin, postCount }) {
   const canDelete = !isCurrentUser && !isLastAdmin
   const deleteTitle = isCurrentUser ? "You can't delete your own account"
     : isLastAdmin ? "Can't delete the only admin"
     : 'Delete user permanently'
 
   return (
-    <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors group">
+    <tr className={`border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors group ${user.blocked ? 'bg-rose-50/30' : ''}`}>
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
           <Avatar name={user.name} />
           <div>
-            <p className="text-sm font-semibold text-slate-800">{user.name}</p>
+            <p className={`text-sm font-semibold ${user.blocked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{user.name}</p>
             <p className="text-xs text-slate-400">{user.title || '—'}</p>
           </div>
         </div>
@@ -267,43 +309,31 @@ function UserRow({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin,
           {postCount}
         </span>
       </td>
+      <td className="px-5 py-4"><UserStatusBadge user={user} /></td>
       <td className="px-5 py-4">
-        <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
-          user.active ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${user.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
-          {user.active ? 'Active' : 'Deactivated'}
-        </span>
-      </td>
-      <td className="px-5 py-4">
-        <UserActions user={user} onEdit={onEdit} onToggle={onToggle} onDelete={onDelete} canDelete={canDelete} deleteTitle={deleteTitle} />
+        <UserActions user={user} onEdit={onEdit} onToggle={onToggle} onBlock={onBlock} onUnblock={onUnblock} onDelete={onDelete} canDelete={canDelete} deleteTitle={deleteTitle} />
       </td>
     </tr>
   )
 }
 
-function UserCard({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin, postCount }) {
+function UserCard({ user, onEdit, onToggle, onBlock, onUnblock, onDelete, isCurrentUser, isLastAdmin, postCount }) {
   const canDelete = !isCurrentUser && !isLastAdmin
   const deleteTitle = isCurrentUser ? "You can't delete your own account"
     : isLastAdmin ? "Can't delete the only admin"
     : 'Delete user permanently'
 
   return (
-    <div className="px-4 py-4 border-b border-slate-50 last:border-0">
+    <div className={`px-4 py-4 border-b border-slate-50 last:border-0 ${user.blocked ? 'bg-rose-50/30' : ''}`}>
       <div className="flex items-start gap-3 mb-3">
         <Avatar name={user.name} />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+              <p className={`text-sm font-semibold truncate ${user.blocked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{user.name}</p>
               <p className="text-xs text-slate-400 truncate">{user.title || '—'}</p>
             </div>
-            <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
-              user.active ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${user.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
-              {user.active ? 'Active' : 'Off'}
-            </span>
+            <div className="flex-shrink-0"><UserStatusBadge user={user} /></div>
           </div>
           <p className="text-xs text-slate-500 mt-1 truncate flex items-center gap-1">
             <AtSign size={11} className="text-slate-400 flex-shrink-0" />
@@ -318,7 +348,7 @@ function UserCard({ user, onEdit, onToggle, onDelete, isCurrentUser, isLastAdmin
           </div>
         </div>
       </div>
-      <UserActions user={user} onEdit={onEdit} onToggle={onToggle} onDelete={onDelete} canDelete={canDelete} deleteTitle={deleteTitle} alwaysVisible />
+      <UserActions user={user} onEdit={onEdit} onToggle={onToggle} onBlock={onBlock} onUnblock={onUnblock} onDelete={onDelete} canDelete={canDelete} deleteTitle={deleteTitle} alwaysVisible />
     </div>
   )
 }
@@ -600,7 +630,7 @@ function InviteCard({ invite, onResend, onRevoke }) {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
-  const { users, addUser, updateUser, deactivateUser, reactivateUser, deleteUser, getPendingUsers } = useUsers()
+  const { users, addUser, updateUser, deactivateUser, reactivateUser, blockUser, unblockUser, deleteUser, getPendingUsers } = useUsers()
   const { currentUser } = useAuth()
   const { posts } = usePosts()
   const { invites, createInvite, revokeInvite, resendInvite } = useInvites()
@@ -668,8 +698,19 @@ export default function UsersPage() {
   }
 
   const handleToggle = (user) => {
+    if (user.blocked) return  // blocked users must be explicitly unblocked
     if (user.active) deactivateUser(user.id)
     else reactivateUser(user.id)
+  }
+
+  const handleBlock = (user) => {
+    blockUser(user.id)
+    addToast(`${user.name} has been blocked. They cannot log in or reset their password.`, 'success')
+  }
+
+  const handleUnblock = (user) => {
+    unblockUser(user.id)
+    addToast(`${user.name} unblocked — account is now inactive. Reactivate to restore access.`, 'success')
   }
 
   const handleDeleteConfirm = () => {
@@ -886,6 +927,8 @@ export default function UsersPage() {
                     key={user.id} user={user}
                     onEdit={u => setModal({ mode: 'edit', user: u })}
                     onToggle={handleToggle}
+                    onBlock={handleBlock}
+                    onUnblock={handleUnblock}
                     onDelete={setDeleteTarget}
                     isCurrentUser={user.id === currentUser?.id}
                     isLastAdmin={user.role === 'admin' && adminCount === 1}
@@ -913,6 +956,8 @@ export default function UsersPage() {
                         key={user.id} user={user}
                         onEdit={u => setModal({ mode: 'edit', user: u })}
                         onToggle={handleToggle}
+                    onBlock={handleBlock}
+                    onUnblock={handleUnblock}
                         onDelete={setDeleteTarget}
                         isCurrentUser={user.id === currentUser?.id}
                         isLastAdmin={user.role === 'admin' && adminCount === 1}
