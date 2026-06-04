@@ -110,37 +110,40 @@ export async function sendOtpCode({ recipient, code }) {
     to: recipient,
     logPreview: `OTP for ${recipient.email}`,
     templateParams: {
-      to_name:  recipient.name,
-      to_email: recipient.email,
-      subject:  'Your Pulse Social verification code',
-      otp_code: code,
+      // Explicit variables for the Password Reset EmailJS template
+      to_name:       recipient.name,
+      to_email:      recipient.email,
+      subject:       'Your Pulse Social verification code',
+      otp_code:      code,
+      otp_expiry:    '15 minutes',
+      platform_name: 'Pulse Social',
+      reset_url:     `${origin()}/forgot-password`,
     },
   })
 }
 
 export async function sendInvite({ invite, invitedBy }) {
-  const link     = `${origin()}/signup?invite=${invite.token}`
-  const roleName = invite.role === 'admin'  ? 'Administrator'
+  const link         = `${origin()}/signup?invite=${invite.token}`
+  const roleName     = invite.role === 'admin'  ? 'Administrator'
     : invite.role === 'viewer' ? 'View Only'
     : 'Social Media Manager'
-  const to = { name: invite.name || invite.email, email: invite.email }
+  const inviterName  = invite.invited_by_name || invitedBy?.name || 'An administrator'
+  const to           = { name: invite.name || invite.email, email: invite.email }
+
   return sendEmail({
     type: 'invite', to,
     logPreview: `Invite to ${invite.email} as ${roleName}`,
-    templateParams: notifParams({
-      to,
+    templateParams: {
+      // Explicit variables for the Invite EmailJS template — all auto-generated
+      to_name:        to.name,
+      to_email:       to.email,
       subject:        "You've been invited to join Pulse Social",
-      headerSubtitle: "You're Invited",
-      statusLabel:    'New Invitation',
-      statusColor:    '#4f46e5',
-      statusBg:       '#eef2ff',
-      bodyText:       `${invite.invited_by_name || invitedBy?.name || 'An administrator'} has invited you to join the Pulse Social — the social media content management platform for approvals, scheduling, and publishing across all locations.`,
-      detailA: 'Your Role',  detailAVal: roleName,
-      detailB: 'Invited By', detailBVal: invite.invited_by_name || invitedBy?.name || 'Administrator',
-      notes:   'This invitation expires in 7 days. No account will be created unless you click the button.',
-      ctaUrl:  link,
-      ctaLabel:'Accept Invitation',
-    }),
+      invited_by:     inviterName,
+      role_name:      roleName,
+      invite_link:    link,
+      platform_name:  'Pulse Social',
+      expiry_note:    'This invitation expires in 7 days. No account will be created unless you click the button below.',
+    },
   })
 }
 
