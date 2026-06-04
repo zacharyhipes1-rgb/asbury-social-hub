@@ -47,7 +47,7 @@ function ContentBrief({ dealershipId }) {
                 value={draft}
                 onChange={e => setDraft(e.target.value)}
                 rows={3}
-                placeholder="Describe this dealership's content focus, tone, key messages..."
+                placeholder="Describe this location's content focus, tone, key messages..."
                 className="w-full text-xs text-slate-700 border border-indigo-200 rounded-lg px-2.5 py-2 bg-white focus:outline-none focus:border-indigo-400 resize-none"
                 autoFocus
               />
@@ -64,7 +64,7 @@ function ContentBrief({ dealershipId }) {
             <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{brief}</p>
           ) : (
             <button onClick={() => setEditing(true)} className="text-xs text-indigo-500 hover:text-indigo-700 underline underline-offset-2">
-              Add a content brief for this dealership…
+              Add a content brief for this location…
             </button>
           )}
         </div>
@@ -73,7 +73,7 @@ function ContentBrief({ dealershipId }) {
   )
 }
 
-const BRAND_ORDER = ['Honda', 'BMW', 'Lexus', 'Acura', 'Toyota', 'Corporate']
+const BRAND_ORDER = ['Flagship', 'Studio', 'Standard', 'Boutique', 'Corporate']
 
 export default function Step1Dealership({ data, onUpdate, onNext }) {
   const selectedIds = data.dealership_ids || []
@@ -105,9 +105,9 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-5 sm:mb-6">
-        <h3 className="text-lg font-semibold text-slate-900">Select Dealership(s)</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Select Location(s)</h3>
         <p className="text-sm text-slate-500 mt-1">
-          Choose one or more dealerships. The same content will be submitted for each location you select.
+          Choose one or more locations. The same content will be submitted for each location you select.
         </p>
       </div>
 
@@ -178,7 +178,7 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
       {selectedIds.length > 1 && (
         <div className="mt-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100">
           <p className="text-xs font-semibold text-indigo-700 mb-1.5">
-            {selectedIds.length} dealerships selected — content will be submitted for each
+            {selectedIds.length} locations selected — content will be submitted for each
           </p>
           <div className="flex flex-wrap gap-1.5">
             {selectedIds.map(id => {
@@ -205,10 +205,10 @@ export default function Step1Dealership({ data, onUpdate, onNext }) {
         >
           <span>
             {selectedIds.length === 0
-              ? 'Select a dealership'
+              ? 'Select a location'
               : selectedIds.length === 1
               ? `Continue with ${DEALERSHIPS.find(d => d.id === selectedIds[0])?.name}`
-              : `Continue with ${selectedIds.length} dealerships`}
+              : `Continue with ${selectedIds.length} locations`}
           </span>
           <ChevronRight size={16} className="flex-shrink-0" />
         </button>

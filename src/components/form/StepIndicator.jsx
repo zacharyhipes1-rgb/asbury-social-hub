@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react'
 
 const STEPS = [
-  { number: 1, label: 'Dealership',    hint: 'Choose which dealership this content belongs to' },
+  { number: 1, label: 'Location',      hint: 'Choose which location this content belongs to' },
   { number: 2, label: 'Platform',      hint: 'Pick the social media platform for this post' },
   { number: 3, label: 'Content Type',  hint: 'Select the format — image, video, reel, etc.' },
   { number: 4, label: 'Upload',        hint: 'Add your media file, caption, and hashtags' },

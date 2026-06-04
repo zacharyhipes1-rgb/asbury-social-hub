@@ -507,7 +507,7 @@ export default function DashboardPage() {
                   'bg-slate-200'
                 }`} />
                 <p className="text-xs font-semibold text-slate-700 leading-tight truncate" title={d.name}>
-                  {d.name.replace(/^(Nalley|David McDavid|Coggin|Crown|North Point|Plaza|Courtesy|Asbury)\s+/i, '')}
+                  {d.name.replace(/^APEX\s+/i, '')}
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">{d.recentCount} post{d.recentCount !== 1 ? 's' : ''}</p>
               </div>

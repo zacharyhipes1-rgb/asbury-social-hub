@@ -87,18 +87,18 @@ export default async function handler(req, res) {
   const visionUrl   = getVisionUrl(fileUrl, fileType)
   const hasVision   = !!visionUrl
 
-  const textPrompt = `You are an expert automotive social media copywriter.
+  const textPrompt = `You are an expert social media copywriter specializing in multi-location businesses.
 ${hasVision
-  ? `You have been shown the actual image/video content above. Base the captions on what you literally see in it — specific details, visual elements, setting, vehicles, people, mood, action. Do NOT invent things that are not visible.`
+  ? `You have been shown the actual image/video content above. Base the captions on what you literally see in it — specific details, visual elements, setting, people, mood, action. Do NOT invent things that are not visible.`
   : altText
     ? `You do not have the image, but the uploader described it as: "${altText}". Base captions on this description.`
-    : `No image was provided. Write general captions appropriate to the dealership and platform.`
+    : `No image was provided. Write general captions appropriate to the location and platform.`
 }
 
-DEALERSHIP:
+LOCATION:
 - Name: ${dealershipName}
-- Location: ${dealershipLocation || 'USA'}
-- Brand: ${dealershipBrand}
+- City: ${dealershipLocation || 'USA'}
+- Type: ${dealershipBrand}
 
 POST DETAILS:
 - Platform: ${platform.name}
@@ -114,12 +114,12 @@ PLATFORM RULES for ${platform.name}:
 
 WRITE 3 DISTINCT CAPTIONS:
 1. Emotional / community angle — focus on feeling, story, or local connection
-2. Offer / value angle — highlight the deal, urgency, or vehicle benefit
+2. Offer / value angle — highlight the promotion, urgency, or key benefit
 3. Curiosity / hook angle — open loop, surprising fact, or bold statement
 
 Rules:
-- Base captions on what is actually shown in the content, not generic dealership filler
-- Each ends with a specific CTA (book a test drive, DM us, visit this weekend, etc.)
+- Base captions on what is actually shown in the content, not generic filler
+- Each ends with a specific CTA relevant to the location type
 - Hashtags go at the END separated by a blank line
 - Do NOT use "At ${dealershipName}, we..." openings
 - Make each option distinctly different in angle and tone

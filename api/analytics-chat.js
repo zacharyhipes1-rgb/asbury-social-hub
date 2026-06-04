@@ -14,12 +14,12 @@ CURRENT PAGE: ${context?.currentPage || 'Pulse Social'}
 ${context?.currentDealer ? `CURRENTLY VIEWING: ${context.currentDealer}` : ''}
 
 PLATFORM DATA:
-- Total posts across all dealerships: ${context?.totalPosts ?? 0}
+- Total posts across all locations: ${context?.totalPosts ?? 0}
 - Pending approval: ${context?.totalPending ?? 0}
 - Overall approval rate: ${context?.overallRate != null ? context.overallRate + '%' : 'No data yet'}
 - Platform breakdown: ${context?.platforms ? Object.entries(context.platforms || {}).map(([k,v]) => `${k}: ${v}`).join(', ') : 'No data'}
 
-DEALERSHIP BREAKDOWN:
+LOCATION BREAKDOWN:
 ${Array.isArray(context?.dealers) ? context.dealers.join('\n') : 'No dealership data yet'}
 
 TONE AND FORMAT RULES — follow these strictly:
