@@ -368,6 +368,37 @@ export async function notifyPasswordResetDenied({ user }) {
   })
 }
 
+export async function notifyProfileChange({ user, changedEmail, changedPassword, oldEmail }) {
+  const changes = []
+  if (changedEmail)    changes.push('email address')
+  if (changedPassword) changes.push('password')
+  if (!changes.length) return
+
+  const changeList = changes.join(' and ')
+  const notifyAddr = oldEmail || user.email   // always notify the OLD address
+
+  const to = { name: user.name, email: notifyAddr }
+  return sendEmail({
+    type: 'profile_change', to,
+    logPreview: `Profile change alert: ${changeList} changed`,
+    templateParams: notifParams({
+      to,
+      subject:        `🔐 Security alert: your Pulse Social ${changeList} was changed`,
+      headerSubtitle: 'Security Notification',
+      statusLabel:    '⚠️ Account Updated',
+      statusColor:    '#b45309',
+      statusBg:       '#fffbeb',
+      bodyText:       `Your Pulse Social account ${changeList} was just changed. If you made this change, no action is needed. If you did NOT make this change, contact your administrator immediately.`,
+      detailA: 'Account',  detailAVal: user.name,
+      detailB: 'Changed',  detailBVal: changeList.charAt(0).toUpperCase() + changeList.slice(1),
+      detailC: 'Time',     detailCVal: new Date().toLocaleString(),
+      notes:   'If you did not make this change, contact your system administrator right away.',
+      ctaUrl:  `${origin()}/login`,
+      ctaLabel:'Sign In to Pulse Social',
+    }),
+  })
+}
+
 export function isEmailServiceConfigured() {
   const config = getConfig()
   if (!config?.serviceId || !config?.publicKey) return false

@@ -19,10 +19,10 @@ const PAGE_CONTEXT = {
 }
 
 const STARTERS = [
-  'Which location needs the most attention?',
-  'What content is performing best?',
-  'How do we improve our approval rate?',
-  'Give me a content plan for this week.',
+  'Which location has the biggest growth opportunity right now?',
+  'What content format is getting approved fastest and why?',
+  'Give me a content strategy for this week across all locations.',
+  'Where are we losing posts in the approval process?',
 ]
 
 export default function FloatingChat({ currentDealerId = null }) {

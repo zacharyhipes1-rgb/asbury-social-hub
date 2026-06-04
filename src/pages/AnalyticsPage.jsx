@@ -269,10 +269,10 @@ function AnalyticsChatPanel({ dealer, scoreData, drillEng, platformMix, range })
   }
 
   const STARTERS = [
-    'Why is our approval rate what it is?',
-    'What content should we post more of?',
-    'How do we improve engagement?',
-    'What are the best times to post for this location?',
+    'How does this location compare to the rest of the network?',
+    'What 3 content ideas would perform best here right now?',
+    'What is the biggest opportunity for improvement at this location?',
+    'Which platform should this location double down on and why?',
   ]
 
   const send = useCallback(async (text) => {
