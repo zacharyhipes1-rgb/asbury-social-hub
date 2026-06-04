@@ -496,32 +496,43 @@ async function testCloudinary(cfg) {
 async function sendTestEmail(cfg, fromUser) {
   const hub = typeof window !== 'undefined' ? window.location.origin : ''
 
-  // Try OTP template first, then notification template
+  // Each template gets variables that match its actual production usage.
+  // Tests always send to the currently logged-in admin's email.
   const templates = [
-    { id: cfg.templateOtp, params: {
-      to_name: fromUser.name, to_email: fromUser.email,
-      subject: 'Pulse Social — Email Test',
-      otp_code: '482910',
-    }},
-    { id: cfg.templateNotification || cfg.templateId, params: {
-      to_name: fromUser.name, to_email: fromUser.email,
-      subject: 'Pulse Social — Email Test',
-      header_subtitle: 'Email Test',
-      status_label:    '✅ Configuration Verified',
-      status_color:    '#4f46e5',
-      status_bg:       '#eef2ff',
-      body_text:       'Your EmailJS configuration is working correctly! All email notifications are ready to deliver.',
-      detail_a: 'Sent To',  detail_a_value: fromUser.email,
-      detail_b: 'Template', detail_b_value: 'Notification',
-      detail_c: '',         detail_c_value: '',
-      notes:     '',
-      cta_url:   hub,
-      cta_label: 'Open Pulse Social',
-    }},
-  ].filter(t => t.id)
+    // Password Reset / OTP template
+    cfg.templateOtp && {
+      id: cfg.templateOtp,
+      label: 'Password Reset / OTP',
+      params: {
+        to_name:       fromUser.name,
+        to_email:      fromUser.email,
+        subject:       'Pulse Social — Password Reset Test',
+        otp_code:      '482910',
+        otp_expiry:    '15 minutes',
+        platform_name: 'Pulse Social',
+        reset_url:     hub + '/forgot-password',
+      },
+    },
+    // New User Invitation template
+    (cfg.templateNotification || cfg.templateId) && {
+      id: cfg.templateNotification || cfg.templateId,
+      label: 'New User Invitation',
+      params: {
+        to_name:       fromUser.name,
+        to_email:      fromUser.email,
+        subject:       'Pulse Social — Invitation Test',
+        invited_by:    fromUser.name,
+        role_name:     'Social Media Manager',
+        invite_link:   hub + '/signup?invite=test-token',
+        platform_name: 'Pulse Social',
+        expiry_note:   'This is a test email. In production, invitations expire in 7 days.',
+      },
+    },
+  ].filter(Boolean)
 
   if (!templates.length) throw new Error('No template ID configured')
 
+  // Send test to whichever template is configured first
   const { id: templateId, params } = templates[0]
   const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
@@ -677,11 +688,11 @@ export default function SettingsPage() {
             ))}
             <div className="pt-1">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email Templates</p>
-              <p className="text-xs text-slate-400 mb-3">Create 2 templates in EmailJS — one for OTP codes, one for everything else (invites, approvals, upload alerts).</p>
+              <p className="text-xs text-slate-400 mb-3">Create 2 templates in EmailJS — one for password reset codes, one for new user invitations. Make sure each template has <strong>To Email</strong> set to <code className="bg-slate-100 px-1 rounded text-indigo-600">&#123;&#123;to_email&#125;&#125;</code> in the EmailJS editor.</p>
               <div className="space-y-3">
                 {[
-                  { key: 'templateOtp',          label: 'Password Reset / OTP',         placeholder: 'template_xxxxxxx' },
-                  { key: 'templateNotification',  label: 'All Other Notifications',      placeholder: 'template_xxxxxxx' },
+                  { key: 'templateOtp',          label: 'Password Reset / OTP',  placeholder: 'template_xxxxxxx' },
+                  { key: 'templateNotification',  label: 'New User Invitation',   placeholder: 'template_xxxxxxx' },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
                     <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
