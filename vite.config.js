@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://pulsesocialapp.vercel.app',
+        target: 'https://pulsesocialapp-staging.vercel.app',
         changeOrigin: true,
         secure: true,
       },
