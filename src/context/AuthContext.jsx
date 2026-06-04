@@ -161,6 +161,15 @@ export function AuthProvider({ children }) {
     if (fresh?.active) setCurrentUser(fresh)
   }
 
+  // Use this after a profile save instead of refreshCurrentUser.
+  // refreshCurrentUser reads from users state which may not have re-rendered yet,
+  // causing it to overwrite the session with stale data via the localStorage useEffect.
+  // updateCurrentUser sets state directly from the known-fresh merged object.
+  const updateCurrentUser = (userData) => {
+    if (!userData) return
+    setCurrentUser({ ...userData })
+  }
+
   const isAdmin       = currentUser?.role === 'admin'
   const isSocialMedia = currentUser?.role === 'social_media' || isAdmin
   const isViewer      = currentUser?.role === 'viewer'
@@ -172,6 +181,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         refreshCurrentUser,
+        updateCurrentUser,
         isAdmin,
         isSocialMedia,
         isViewer,

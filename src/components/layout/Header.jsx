@@ -91,7 +91,7 @@ function avatarGradient(name = '') {
 }
 
 export default function Header({ onMenuToggle, menuOpen }) {
-  const { currentUser, logout, isAdmin, refreshCurrentUser } = useAuth()
+  const { currentUser, logout, isAdmin, updateCurrentUser } = useAuth()
   const { updateUser } = useUsers()
   const { getPendingPosts } = usePosts()
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -109,10 +109,12 @@ export default function Header({ onMenuToggle, menuOpen }) {
   const handleProfileSave = async (form) => {
     const updated = await updateUser(currentUser.id, form)
     if (updated) {
-      const { password_hash, ...safe } = updated
-      localStorage.setItem('asbury_current_user', JSON.stringify(safe))
+      // Set currentUser directly from the merged result — this triggers AuthContext's
+      // localStorage useEffect automatically with the correct new data.
+      // Do NOT call refreshCurrentUser() here: it reads from users state which hasn't
+      // re-rendered yet (React batches), causing it to overwrite with stale data.
+      updateCurrentUser(updated)
     }
-    refreshCurrentUser()
     setProfileOpen(false)
   }
 
