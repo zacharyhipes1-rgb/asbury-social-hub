@@ -620,9 +620,20 @@ export default function SettingsPage() {
     setEmailTest(true); setEmailResult(null)
     try {
       await sendTestEmail(emailCfg, currentUser)
-      setEmailResult({ ok: true, msg: `Test email sent to ${currentUser.email}` })
+      setEmailResult({ ok: true, msg: `Test sent to ${currentUser.email}` })
     } catch (e) {
-      setEmailResult({ ok: false, msg: e.message || 'Send failed' })
+      const raw = (e.message || '').toLowerCase()
+      let msg = e.message || 'Send failed'
+      if (raw.includes('recipient') || raw.includes('address') || raw.includes('empty')) {
+        msg = 'EmailJS template is missing the "To Email" field. Open each template in EmailJS → scroll to the top → set "To Email" to {{to_email}} → Save.'
+      } else if (raw.includes('service') || raw.includes('not found')) {
+        msg = 'Service ID not found. Double-check the Service ID in EmailJS → Email Services.'
+      } else if (raw.includes('template')) {
+        msg = 'Template ID not found. Double-check the template ID in EmailJS → Email Templates.'
+      } else if (raw.includes('public') || raw.includes('key') || raw.includes('user')) {
+        msg = 'Invalid Public Key. Copy it from EmailJS → Account → General.'
+      }
+      setEmailResult({ ok: false, msg })
     }
     setEmailTest(false)
   }
@@ -708,11 +719,13 @@ export default function SettingsPage() {
             </div>
           </div>
           {emailResult && (
-            <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border ${
+            <div className={`flex items-start gap-2.5 px-4 py-3 rounded-xl text-sm border ${
               emailResult.ok ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'
             }`}>
-              {emailResult.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-              {emailResult.msg}
+              <div className="flex-shrink-0 mt-0.5">
+                {emailResult.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+              </div>
+              <span className="leading-relaxed">{emailResult.msg}</span>
             </div>
           )}
           <div className="flex items-center gap-3 pt-1 flex-wrap">
