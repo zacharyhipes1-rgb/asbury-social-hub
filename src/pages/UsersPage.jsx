@@ -838,8 +838,8 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex items-end gap-1 mb-6 border-b border-slate-200">
+      {/* Tab bar — overflow-x-auto so it scrolls on mobile instead of cutting off */}
+      <div className="flex items-end gap-1 mb-6 border-b border-slate-200 overflow-x-auto scrollbar-hide -mx-4 sm:mx-0 px-4 sm:px-0">
         {[
           { id: 'team',        label: 'Team Members',    count: counts.total,         countColor: 'bg-slate-200 text-slate-600' },
           { id: 'pending',     label: 'Pending Requests',count: pendingUsers.length,  countColor: 'bg-amber-100 text-amber-700',  hidden: pendingUsers.length === 0 },
@@ -869,19 +869,19 @@ export default function UsersPage() {
       {activeTab === 'team' && (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6 items-stretch">
             {[
-              { label: 'Total Users',  value: counts.total,  icon: Users,  from: 'from-slate-600',   to: 'to-slate-800' },
-              { label: 'Admins',       value: counts.admin,  icon: Shield, from: 'from-violet-500',  to: 'to-purple-700' },
-              { label: 'Social Media', value: counts.social, icon: AtSign, from: 'from-indigo-500',  to: 'to-indigo-700' },
-              { label: 'View Only',    value: counts.viewer, icon: Eye,    from: 'from-slate-400',   to: 'to-slate-600' },
+              { label: 'Total',   value: counts.total,  icon: Users,  from: 'from-slate-600',  to: 'to-slate-800'  },
+              { label: 'Admins',  value: counts.admin,  icon: Shield, from: 'from-violet-500', to: 'to-purple-700' },
+              { label: 'Social',  value: counts.social, icon: AtSign, from: 'from-indigo-500', to: 'to-indigo-700' },
+              { label: 'Viewer',  value: counts.viewer, icon: Eye,    from: 'from-slate-400',  to: 'to-slate-600'  },
             ].map(({ label, value, icon: Icon, from, to }) => (
-              <div key={label} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${from} ${to} flex items-center justify-center mb-3`}>
-                  <Icon size={18} className="text-white" />
+              <div key={label} className="h-full bg-white rounded-2xl border border-slate-100 p-3 sm:p-5 shadow-sm flex flex-col items-center sm:items-start text-center sm:text-left">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${from} ${to} flex items-center justify-center mb-2 sm:mb-3 flex-shrink-0`}>
+                  <Icon size={15} className="text-white" />
                 </div>
-                <p className="text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
-                <p className="text-sm font-medium text-slate-600 mt-1">{label}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
+                <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5 leading-tight">{label}</p>
               </div>
             ))}
           </div>

@@ -218,62 +218,60 @@ function PostCard({ post, onView, onAction, onPublish, onClone, isExiting, isFla
         {/* ── Action bar ── */}
         {!isDeleted && (
           <div
-            className="flex items-center gap-2 mt-3.5 pt-3.5 border-t border-slate-50 flex-wrap"
+            className="mt-3.5 pt-3.5 border-t border-slate-50 space-y-2"
             onClick={e => e.stopPropagation()}
           >
-            {/* View */}
-            <button
-              onClick={() => onView(post)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-            >
-              <Eye size={13} /> View
-            </button>
-
-            <div className="flex-1" />
-
-            {/* Secondary: Clone */}
-            <button
-              onClick={() => onClone(post)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+            {/* Row 1: secondary actions */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onView(post)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <Eye size={13} /> View
+              </button>
+              <button
+                onClick={() => onClone(post)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
               title="Clone to another location"
             >
               <Copy size={13} /> Clone
             </button>
 
-            {/* Primary actions */}
-            {isApproved && (
+              <div className="flex-1" />
+              {/* Delete always visible in secondary row */}
               <button
-                onClick={() => onPublish(post)}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100"
+                onClick={() => onAction(post, 'delete')}
+                className="btn-press p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
               >
-                <Send size={13} /> Mark Published
+                <Trash2 size={14} />
               </button>
-            )}
+            </div>
 
+            {/* Row 2: primary actions — full width so they never wrap */}
             {(isPending || isFlagged) && (
-              <>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => onAction(post, 'flag')}
-                  className="btn-press flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-100"
+                  className="btn-press flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-100"
                 >
                   <AlertTriangle size={13} /> Revise
                 </button>
                 <button
                   onClick={() => onAction(post, 'approve')}
-                  className="btn-press flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200"
+                  className="btn-press flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200"
                 >
                   <CheckCircle size={13} /> Approve
                 </button>
-              </>
+              </div>
             )}
-
-            {/* Delete */}
-            <button
-              onClick={() => onAction(post, 'delete')}
-              className="btn-press flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <Trash2 size={13} />
-            </button>
+            {isApproved && (
+              <button
+                onClick={() => onPublish(post)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100"
+              >
+                <Send size={13} /> Mark Published
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -367,18 +365,18 @@ export default function AdminQueue() {
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 items-stretch">
         {[
           { label: 'Pending Review', count: pendingCount,   color: 'text-amber-600',   bg: 'bg-amber-50',   border: 'border-amber-100',  dot: 'bg-amber-400'   },
           { label: 'Approved',       count: approvedCount,  color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', dot: 'bg-emerald-400' },
           { label: 'Needs Revision', count: flaggedCount,   color: 'text-orange-600',  bg: 'bg-orange-50',  border: 'border-orange-100',  dot: 'bg-orange-400'  },
           { label: 'Published',      count: publishedCount, color: 'text-blue-600',    bg: 'bg-blue-50',    border: 'border-blue-100',    dot: 'bg-blue-400'    },
         ].map(stat => (
-          <div key={stat.label} className={`${stat.bg} border ${stat.border} rounded-2xl px-4 py-4`}>
+          <div key={stat.label} className={`h-full ${stat.bg} border ${stat.border} rounded-2xl px-4 py-4 flex flex-col justify-between`}>
             <p className={`text-3xl font-bold tracking-tight ${stat.color}`}>{stat.count}</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${stat.dot}`} />
-              <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
+            <div className="flex items-center gap-1.5 mt-2">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${stat.dot}`} />
+              <p className="text-xs text-slate-500 font-medium leading-tight">{stat.label}</p>
             </div>
           </div>
         ))}

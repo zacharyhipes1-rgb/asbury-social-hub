@@ -209,7 +209,14 @@ function MobilePostCard({ post, onClick }) {
           {post.approval_status}
         </span>
         {post.optimal_posting_time && (
-          <span className="text-xs text-slate-400">Best: {post.optimal_posting_time}</span>
+          <span className="text-xs text-slate-400">
+            Best: {(() => {
+              try {
+                const d = new Date(post.optimal_posting_time)
+                return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+              } catch { return post.optimal_posting_time }
+            })()}
+          </span>
         )}
       </div>
     </button>

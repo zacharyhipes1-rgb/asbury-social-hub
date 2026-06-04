@@ -177,7 +177,7 @@ function MetricCard({ metricKey, label, value, note }) {
   const [open, setOpen] = useState(false)
   const g = METRIC_GUIDANCE[metricKey]
   if (!g) return (
-    <div className="bg-white rounded-xl border border-slate-100 px-4 py-3">
+    <div className="h-full bg-white rounded-xl border border-slate-100 px-4 py-3 flex flex-col">
       <p className="text-lg font-bold text-slate-900">{value}</p>
       <p className="text-xs text-slate-500 mt-0.5">{label}</p>
       {note && <p className="text-[10px] text-slate-400 mt-0.5">{note}</p>}
@@ -188,7 +188,8 @@ function MetricCard({ metricKey, label, value, note }) {
     : null
 
   return (
-    <div className={`rounded-xl border transition-all cursor-pointer ${open ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-sm'}`}
+    // h-full so all cards in the row stretch to the same height
+    <div className={`h-full rounded-xl border transition-all cursor-pointer flex flex-col ${open ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white border-slate-100 hover:border-indigo-200 hover:shadow-sm'}`}
       onClick={() => setOpen(o => !o)}>
       <div className="px-4 py-3 flex items-start justify-between gap-2">
         <div>
@@ -955,7 +956,7 @@ export default function AnalyticsPage() {
                               </div>
                               <p className="text-[10px] text-slate-400 mb-2 flex items-center gap-1"><Info size={9} />Click any card for plain-language explanation + recommendations</p>
                               {drillEng ? (
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-stretch">
                                   <MetricCard metricKey="impressions" label="Est. Impressions" value={fmt(drillEng.impressions)} note="Sample data" />
                                   <MetricCard metricKey="reach"       label="Est. Reach"       value={fmt(drillEng.reach)}       note="Sample data" />
                                   <MetricCard metricKey="engRate"     label="Avg. Eng. Rate"   value={drillEng.engRate ? `${drillEng.engRate}%` : '—'} note="Sample data" />
@@ -1045,7 +1046,7 @@ export default function AnalyticsPage() {
                             </div>
 
                             {/* Workflow metric cards */}
-                            <div className="mt-4 grid grid-cols-2 gap-3">
+                            <div className="mt-4 grid grid-cols-2 gap-3 items-stretch">
                               <MetricCard
                                 metricKey="approvalRate"
                                 label="Approval Rate"
