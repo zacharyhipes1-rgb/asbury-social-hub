@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Bring A Friend Month | Iron Tribe Fitness</title>
 <meta name="description" content="For one month only, every Iron Tribe member can bring a friend to any 45-minute class. Your friend trains free for a full week. No contract, no catch." />
-<meta name="theme-color" content="#0B0B0C" />
+<meta name="theme-color" content="#000000" />
 <meta name="robots" content="index,follow" />
 
 <!-- Open Graph -->
@@ -19,7 +19,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Barlow+Semi+Condensed:wght@500;600;700&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
 <!--
   ============================================================================
@@ -33,38 +33,70 @@
   and counters below are hand-rolled with IntersectionObserver +
   requestAnimationFrame, which are CSP-safe.
 
+  Colors and type follow the official Iron Tribe Fitness Brand Style Guide
+  (docs/brand/ITF_Brand_Guidelines.pdf; tokens in docs/brand/README.md):
+  Iron Tribe Orange #FF6F20 leads, Iron Tribe Red #EF4040 is secondary, and
+  the two form the signature gradient used on the mark.
+
+  FONTS: the brand faces are Ridley Grotesk (headline), DIN 2014 Narrow
+  (subhead) and Avenir (body). None are free for web use, so this page uses
+  the documented substitutes - Archivo, Barlow Semi Condensed and Mulish.
+  To switch to the real faces, self-host the licensed .woff2 files and swap
+  the three --font-* tokens below; the CSP already allows font-src 'self'.
+
   BEFORE LAUNCH - swap these placeholders:
-    1. .brand-mark SVG  -> official Iron Tribe shield/wordmark asset
-    2. --itf-red        -> exact brand red from the official style guide
-    3. Testimonial block -> real, attributable member quotes (currently
+    1. .brand-mark SVG  -> official Iron Tribe logo/mark asset. The guide says
+                           prefer the gradient version, or white on dark.
+    2. Testimonial block -> real, attributable member quotes (currently
                             marked PLACEHOLDER - do not ship as-is)
-    4. data-location options -> the real participating gym list
-    5. Form submit handler -> EmailJS or Supabase endpoint (both are already
+    3. data-location options -> the real participating gym list
+    4. Form submit handler -> EmailJS or Supabase endpoint (both are already
                               allowed by the app's connect-src policy)
-    6. Offer terms in the footer -> legal-approved copy for your market
+    5. Offer terms in the footer -> legal-approved copy for your market
   ============================================================================
 -->
 
 <style>
 /* ---------------------------------------------------------------- tokens */
 :root{
-  --ink:        #0B0B0C;
-  --ink-2:      #121215;
-  --ink-3:      #1A1B1F;
-  --steel:      #26272C;
+  /* --- Official Iron Tribe Fitness brand colors ------------------------ */
+  --itf-orange: #FF6F20;   /* Iron Tribe Orange - primary */
+  --itf-red:    #EF4040;   /* Iron Tribe Red - secondary */
+  --itf-black:  #000000;
+  --itf-gray:   #55585B;   /* banner gray */
+  --itf-gray-2: #9BA7AF;   /* logo gray */
+  --itf-gray-3: #848689;   /* program gray */
+  --itf-blue:   #25AAE1;   /* accent */
+  --itf-yellow: #F5EE31;   /* accent */
+
+  /* The signature gradient: the guide pairs orange into red on the mark. */
+  --itf-grad:   linear-gradient(97deg, var(--itf-orange) 0%, var(--itf-red) 100%);
+
+  /* --- Surfaces, built off brand black --------------------------------- */
+  --ink:        #000000;
+  --ink-2:      #0C0D0E;
+  --ink-3:      #15171A;
+  --steel:      #22252A;
   --steel-2:    #3A3C43;
-  --bone:       #F4F3F0;
-  --bone-dim:   rgba(244,243,240,.66);
-  --bone-faint: rgba(244,243,240,.40);
+  --bone:       #FFFFFF;
+  --bone-dim:   rgba(255,255,255,.68);
+  --bone-faint: rgba(255,255,255,.44);
 
-  /* Iron Tribe signature red. Verify against the official style guide. */
-  --itf-red:    #C8102E;
-  --itf-red-hi: #E8323C;
-  --itf-red-dk: #8E0B20;
-  --red-glow:   rgba(200,16,46,.28);
+  /* Working aliases so the orange leads and red supports. */
+  --hot:        var(--itf-orange);
+  --hot-hi:     #FF8A45;
+  --hot-dk:     #D2540F;
+  --hot-glow:   rgba(255,111,32,.32);
 
-  --rule:       rgba(244,243,240,.12);
-  --rule-strong:rgba(244,243,240,.22);
+  --rule:       rgba(255,255,255,.13);
+  --rule-strong:rgba(255,255,255,.24);
+
+  /* --- Type ------------------------------------------------------------ */
+  /* Brand: Ridley Grotesk / DIN 2014 Narrow / Avenir.
+     Substitutes below - see docs/brand/README.md. */
+  --font-head: 'Archivo','Helvetica Neue',Arial,sans-serif;
+  --font-sub:  'Barlow Semi Condensed','Archivo',Arial,sans-serif;
+  --font-body: 'Mulish','Avenir Next','Avenir',system-ui,sans-serif;
 
   --maxw: 1180px;
   --ease: cubic-bezier(.22,.61,.36,1);
@@ -81,7 +113,7 @@ html{
   overflow-x:hidden;overflow-x:clip;
 }
 body{
-  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-family:var(--font-body);
   background:var(--ink);
   color:var(--bone);
   overflow-x:hidden;overflow-x:clip;
@@ -100,29 +132,29 @@ body::after{
 
 /* ------------------------------------------------------------- typography */
 .display{
-  font-family:'Barlow Condensed','Inter',sans-serif;
+  font-family:var(--font-head);
   font-weight:800;
   text-transform:uppercase;
-  line-height:.92;
-  letter-spacing:-.005em;
+  line-height:.94;
+  letter-spacing:-.018em;
 }
-h1.display{font-size:clamp(2.85rem,8.2vw,5.8rem);font-weight:900}
-h2.display{font-size:clamp(2.15rem,5.4vw,3.7rem)}
-h3.display{font-size:clamp(1.35rem,2.6vw,1.75rem);line-height:1.04}
+h1.display{font-size:clamp(2.5rem,6.9vw,4.9rem);font-weight:900}
+h2.display{font-size:clamp(1.95rem,4.6vw,3.15rem);font-weight:900}
+h3.display{font-size:clamp(1.18rem,2.2vw,1.42rem);line-height:1.1;font-weight:800;letter-spacing:-.012em}
 .eyebrow{
-  font-family:'Barlow Condensed',sans-serif;
-  font-weight:700;font-size:.82rem;text-transform:uppercase;
-  letter-spacing:.24em;color:var(--itf-red-hi);
+  font-family:var(--font-sub);
+  font-weight:700;font-size:.86rem;text-transform:uppercase;
+  letter-spacing:.2em;color:var(--itf-orange);
 }
-.lede{font-size:clamp(1.02rem,1.9vw,1.2rem);color:var(--bone-dim);max-width:60ch}
-.red{color:var(--itf-red-hi)}
+.lede{font-size:clamp(1.02rem,1.9vw,1.18rem);color:var(--bone-dim);max-width:60ch}
+.hot{color:var(--itf-orange)}
 
-/* Angled red highlight behind a word - core Iron Tribe poster motif */
+/* Angled brand-gradient highlight behind a word - Iron Tribe poster motif */
 .nb{white-space:nowrap}
 .slash{position:relative;display:inline-block;padding:0 .18em;color:var(--bone);z-index:0}
 .slash::before{
-  content:"";position:absolute;inset:.06em -.02em .1em;z-index:-1;
-  background:var(--itf-red);
+  content:"";position:absolute;inset:.07em -.02em .12em;z-index:-1;
+  background:var(--itf-grad);
   transform:skewX(-9deg);
 }
 
@@ -146,36 +178,48 @@ section{position:relative}
 .header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:70px}
 .brand{display:flex;align-items:center;gap:11px;min-width:0}
 .brand-mark{width:30px;height:34px;flex:none}
-.brand-type{font-family:'Barlow Condensed',sans-serif;line-height:.86;text-transform:uppercase}
-.brand-type b{display:block;font-weight:900;font-size:1.28rem;letter-spacing:.03em}
-.brand-type span{display:block;font-weight:600;font-size:.62rem;letter-spacing:.36em;color:var(--bone-faint)}
+.brand-type{font-family:var(--font-sub);line-height:.86;text-transform:uppercase}
+.brand-type b{display:block;font-weight:900;font-size:1.2rem;letter-spacing:.01em;white-space:nowrap}
+.brand-type span{display:block;font-weight:600;font-size:.6rem;letter-spacing:.32em;color:var(--bone-faint);white-space:nowrap}
 .header-cta{display:flex;align-items:center;gap:20px}
 .header-link{
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  font-family:var(--font-sub);font-weight:700;text-transform:uppercase;
   letter-spacing:.13em;font-size:.88rem;color:var(--bone-dim);transition:color .2s;
 }
 .header-link:hover{color:var(--bone)}
 @media (max-width:720px){.header-link{display:none}}
+@media (max-width:560px){
+  .header-inner{height:62px}
+  .brand-mark{width:26px;height:30px}
+  .brand-type b{font-size:1.02rem}
+  .brand-type span{font-size:.54rem;letter-spacing:.28em}
+  .header-cta .btn{padding:10px 15px;font-size:.82rem;letter-spacing:.07em}
+  .header-cta .lbl-full{display:none}
+  .header-cta .lbl-short{display:inline}
+}
 
 /* --------------------------------------------------------------- buttons  */
 .btn{
-  --btn-bg:var(--itf-red);--btn-fg:#fff;--btn-bd:var(--itf-red);
+  --btn-bg:var(--itf-grad);--btn-fg:#fff;--btn-bd:var(--itf-orange);
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.02rem;
+  font-family:var(--font-sub);font-weight:800;font-size:1.02rem;
   text-transform:uppercase;letter-spacing:.11em;
   padding:15px 30px;border:2px solid var(--btn-bd);background:var(--btn-bg);color:var(--btn-fg);
   cursor:pointer;position:relative;overflow:hidden;
   transition:transform .16s var(--ease),box-shadow .22s var(--ease),background .22s,color .22s,border-color .22s;
   clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+  white-space:nowrap;
 }
-.btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px -10px var(--red-glow)}
+.lbl-short{display:none}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 34px -10px var(--hot-glow);filter:saturate(1.12) brightness(1.06)}
 .btn:active{transform:translateY(0)}
-.btn-ghost{--btn-bg:transparent;--btn-fg:var(--bone);--btn-bd:var(--rule-strong)}
+.btn-ghost{--btn-bg:none;background-color:transparent;--btn-fg:var(--bone);--btn-bd:var(--rule-strong)}
+.btn-ghost:hover{filter:none}
 .btn-ghost:hover{--btn-bd:var(--bone);background:rgba(244,243,240,.06)}
 .btn-sm{padding:11px 20px;font-size:.88rem}
 .btn-block{width:100%}
 :where(a,button,input,select,summary):focus-visible{
-  outline:3px solid var(--itf-red-hi);outline-offset:3px;
+  outline:3px solid var(--itf-orange);outline-offset:3px;
 }
 
 /* ------------------------------------------------------------------ hero  */
@@ -188,15 +232,16 @@ section{position:relative}
 .hero::before{
   content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;
   background:
-    radial-gradient(120% 90% at 78% 8%, rgba(200,16,46,.20), transparent 58%),
-    radial-gradient(90% 70% at 8% 100%, rgba(200,16,46,.10), transparent 60%),
-    linear-gradient(180deg,#0E0E10 0%,#0B0B0C 62%,#0B0B0C 100%);
+    radial-gradient(62% 50% at 84% 4%, rgba(255,111,32,.26), transparent 63%),
+    radial-gradient(42% 36% at 97% 54%, rgba(239,64,64,.11), transparent 68%),
+    radial-gradient(46% 40% at 0% 104%, rgba(255,111,32,.07), transparent 66%),
+    linear-gradient(180deg,#08090A 0%,#000000 58%,#000000 100%);
 }
 .hero::after{
   content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;opacity:.5;
   background-image:
-    linear-gradient(to right,rgba(244,243,240,.045) 1px,transparent 1px),
-    linear-gradient(to bottom,rgba(244,243,240,.045) 1px,transparent 1px);
+    linear-gradient(to right,rgba(255,255,255,.05) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(255,255,255,.05) 1px,transparent 1px);
   background-size:78px 78px;
   mask-image:radial-gradient(85% 75% at 50% 42%,#000 35%,transparent 100%);
   -webkit-mask-image:radial-gradient(85% 75% at 50% 42%,#000 35%,transparent 100%);
@@ -205,15 +250,15 @@ section{position:relative}
 .shape{position:absolute}
 .shape-frame{
   width:min(360px,42vw);aspect-ratio:17/10;top:13%;right:5%;
-  border:2px solid rgba(200,16,46,.30);
+  border:2px solid rgba(255,111,32,.30);
 }
 .shape-frame::before{
   content:"";position:absolute;inset:11px;border:1px solid rgba(244,243,240,.07);
 }
-.shape-bar{width:min(300px,44vw);height:10px;bottom:6%;left:3%;background:var(--itf-red);opacity:.55;transform:skewX(-20deg)}
+.shape-bar{width:min(300px,44vw);height:10px;bottom:6%;left:3%;background:var(--itf-grad);opacity:.6;transform:skewX(-20deg)}
 .shape-bar-2{width:min(170px,26vw);height:10px;bottom:2.6%;left:3%;background:rgba(244,243,240,.11);transform:skewX(-20deg)}
-.shape-diamond{width:64px;height:64px;top:63%;right:15%;background:rgba(200,16,46,.22);transform:rotate(45deg)}
-.shape-dot{width:11px;height:11px;border-radius:50%;background:var(--itf-red-hi);top:27%;left:7%}
+.shape-diamond{width:64px;height:64px;top:63%;right:15%;background:rgba(255,111,32,.22);transform:rotate(45deg)}
+.shape-dot{width:11px;height:11px;border-radius:50%;background:var(--itf-orange);top:27%;left:7%}
 .shape-ring{width:120px;height:120px;border-radius:50%;border:2px solid rgba(244,243,240,.09);top:8%;left:16%}
 @media (max-width:760px){
   .shape-frame,.shape-ring,.shape-dot,.shape-diamond{display:none}
@@ -227,13 +272,13 @@ section{position:relative}
 
 .hero-flag{
   display:inline-flex;align-items:center;gap:11px;margin-bottom:20px;
-  padding:8px 15px 8px 12px;border:1px solid rgba(200,16,46,.45);
-  background:rgba(200,16,46,.10);
+  padding:8px 15px 8px 12px;border:1px solid rgba(255,111,32,.45);
+  background:rgba(255,111,32,.10);
 }
-.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--itf-red-hi);flex:none;position:relative}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--itf-orange);flex:none;position:relative}
 .pulse-dot::after{
   content:"";position:absolute;inset:-5px;border-radius:50%;
-  border:1px solid var(--itf-red-hi);animation:ping 2.1s ease-out infinite;
+  border:1px solid var(--itf-orange);animation:ping 2.1s ease-out infinite;
 }
 @keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
 
@@ -248,62 +293,62 @@ section{position:relative}
 }
 
 .hero-proof{display:flex;flex-wrap:wrap;gap:10px 24px;padding-top:18px;border-top:1px solid var(--rule)}
-.proof-item{display:flex;align-items:center;gap:9px;font-family:'Barlow Condensed',sans-serif;
+.proof-item{display:flex;align-items:center;gap:9px;font-family:var(--font-sub);
   font-weight:600;text-transform:uppercase;letter-spacing:.11em;font-size:.83rem;color:var(--bone-dim)}
-.proof-item svg{width:15px;height:15px;color:var(--itf-red-hi);flex:none}
+.proof-item svg{width:15px;height:15px;color:var(--itf-orange);flex:none}
 
 /* offer ticket card */
 .ticket{
-  position:relative;background:linear-gradient(165deg,#17171B,#0F0F12);
+  position:relative;background:linear-gradient(165deg,var(--ink-3),var(--ink-2));
   border:1px solid var(--rule-strong);padding:clamp(26px,3.4vw,36px);
   clip-path:polygon(0 0,100% 0,100% calc(100% - 22px),calc(100% - 22px) 100%,0 100%);
   box-shadow:0 34px 80px -34px rgba(0,0,0,.95);
 }
 .ticket::before{
   content:"";position:absolute;top:0;left:0;right:0;height:5px;
-  background:linear-gradient(90deg,var(--itf-red),var(--itf-red-hi),var(--itf-red-dk));
+  background:var(--itf-grad);
 }
 .ticket-tag{
   position:absolute;top:20px;right:20px;
-  background:var(--itf-red);color:#fff;padding:5px 12px;
-  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.76rem;
+  background:var(--itf-grad);color:#fff;padding:5px 12px;
+  font-family:var(--font-sub);font-weight:800;font-size:.76rem;
   letter-spacing:.2em;text-transform:uppercase;
 }
 .ticket h3{margin-bottom:6px}
 .ticket-price{display:flex;align-items:baseline;gap:12px;margin:18px 0 6px}
-.ticket-price b{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(3.4rem,9vw,4.6rem);line-height:.8;color:var(--bone)}
-.ticket-price s{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.5rem;color:var(--bone-faint)}
-.ticket-price em{font-style:normal;font-family:'Barlow Condensed',sans-serif;font-weight:700;
+.ticket-price b{font-family:var(--font-head);font-weight:900;font-size:clamp(3.4rem,9vw,4.6rem);line-height:.8;color:var(--bone)}
+.ticket-price s{font-family:var(--font-sub);font-weight:700;font-size:1.5rem;color:var(--bone-faint)}
+.ticket-price em{font-style:normal;font-family:var(--font-sub);font-weight:700;
   text-transform:uppercase;letter-spacing:.14em;font-size:.86rem;color:var(--bone-dim)}
 .ticket ul{list-style:none;margin:20px 0 24px;display:grid;gap:11px}
 .ticket li{display:flex;gap:11px;align-items:flex-start;font-size:.95rem;color:var(--bone-dim)}
-.ticket li svg{width:17px;height:17px;flex:none;margin-top:3px;color:var(--itf-red-hi)}
+.ticket li svg{width:17px;height:17px;flex:none;margin-top:3px;color:var(--itf-orange)}
 .ticket-foot{border-top:1px solid var(--rule);padding-top:16px;margin-top:4px}
 
 /* countdown */
 .countdown{display:flex;gap:8px;margin-top:14px}
 .cd-cell{flex:1;text-align:center;background:rgba(244,243,240,.045);border:1px solid var(--rule);padding:9px 4px}
-.cd-cell b{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.6rem;line-height:1;color:var(--bone)}
+.cd-cell b{display:block;font-family:var(--font-head);font-weight:900;font-size:1.6rem;line-height:1;color:var(--bone)}
 .cd-cell span{display:block;font-size:.6rem;letter-spacing:.17em;text-transform:uppercase;color:var(--bone-faint);margin-top:5px}
 
 .scroll-cue{
   position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:3;
   display:flex;flex-direction:column;align-items:center;gap:7px;
-  font-family:'Barlow Condensed',sans-serif;font-size:.68rem;letter-spacing:.24em;
+  font-family:var(--font-sub);font-size:.68rem;letter-spacing:.24em;
   text-transform:uppercase;color:var(--bone-faint);
 }
-.scroll-cue svg{width:20px;height:20px;color:var(--itf-red-hi);animation:bob 2.1s ease-in-out infinite}
+.scroll-cue svg{width:20px;height:20px;color:var(--itf-orange);animation:bob 2.1s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}
 @media (max-height:760px){.scroll-cue{display:none}}
 
 /* ---------------------------------------------------------------- ticker  */
 .ticker{
-  background:var(--itf-red);color:#fff;overflow:hidden;
+  background:var(--itf-grad);color:#fff;overflow:hidden;
   border-block:1px solid rgba(0,0,0,.25);padding:13px 0;
 }
 .ticker-track{display:flex;width:max-content;animation:slide 34s linear infinite}
 .ticker-track span{
-  font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;
+  font-family:var(--font-sub);font-weight:800;text-transform:uppercase;
   letter-spacing:.2em;font-size:.95rem;padding:0 26px;white-space:nowrap;
   display:inline-flex;align-items:center;gap:26px;
 }
@@ -314,7 +359,7 @@ section{position:relative}
 .sec-head{max-width:70ch;margin-bottom:clamp(38px,5vw,58px)}
 .sec-head .eyebrow{display:block;margin-bottom:14px}
 .sec-head h2{margin-bottom:16px}
-.rule-accent{width:64px;height:5px;background:var(--itf-red);margin-bottom:22px}
+.rule-accent{width:64px;height:5px;background:var(--itf-grad);margin-bottom:22px}
 
 /* ----------------------------------------------------------------- steps  */
 .steps{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
@@ -325,8 +370,8 @@ section{position:relative}
 }
 .step:hover{background:var(--ink-3)}
 .step-num{
-  font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:3.4rem;line-height:1;
-  color:transparent;-webkit-text-stroke:1.5px rgba(200,16,46,.6);margin-bottom:18px;
+  font-family:var(--font-sub);font-weight:900;font-size:3.4rem;line-height:1;
+  color:transparent;-webkit-text-stroke:1.5px rgba(255,111,32,.6);margin-bottom:18px;
 }
 .step h3{margin-bottom:10px}
 .step p{color:var(--bone-dim);font-size:.97rem}
@@ -340,16 +385,16 @@ section{position:relative}
   transition:border-color .28s var(--ease),transform .28s var(--ease),background .28s;
 }
 .card::before{
-  content:"";position:absolute;top:0;left:0;width:0;height:3px;background:var(--itf-red);
+  content:"";position:absolute;top:0;left:0;width:0;height:3px;background:var(--itf-grad);
   transition:width .38s var(--ease);
 }
 .card:hover{transform:translateY(-6px);border-color:var(--rule-strong)}
 .card:hover::before{width:100%}
 .card-ico{
   width:46px;height:46px;display:grid;place-items:center;margin-bottom:20px;
-  border:1px solid rgba(200,16,46,.45);background:rgba(200,16,46,.10);
+  border:1px solid rgba(255,111,32,.45);background:rgba(255,111,32,.10);
 }
-.card-ico svg{width:22px;height:22px;color:var(--itf-red-hi)}
+.card-ico svg{width:22px;height:22px;color:var(--itf-orange)}
 .card h3{margin-bottom:9px}
 .card p{color:var(--bone-dim);font-size:.95rem}
 
@@ -357,23 +402,23 @@ section{position:relative}
 .stats-band{background:var(--ink-2);border-block:1px solid var(--rule)}
 .stats{display:grid;gap:36px 24px;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));text-align:center}
 .stat b{
-  display:block;font-family:'Barlow Condensed',sans-serif;font-weight:900;
+  display:block;font-family:var(--font-sub);font-weight:900;
   font-size:clamp(2.9rem,6.5vw,4.2rem);line-height:.9;color:var(--bone);
 }
-.stat b i{font-style:normal;color:var(--itf-red-hi)}
+.stat b i{font-style:normal;color:var(--itf-orange)}
 .stat span{
-  display:block;margin-top:11px;font-family:'Barlow Condensed',sans-serif;font-weight:600;
+  display:block;margin-top:11px;font-family:var(--font-sub);font-weight:600;
   text-transform:uppercase;letter-spacing:.15em;font-size:.8rem;color:var(--bone-faint);
 }
 
 /* ------------------------------------------------------------ testimonial */
 .quote-wrap{
-  position:relative;border-left:5px solid var(--itf-red);
+  position:relative;border-left:5px solid var(--itf-orange);
   padding:clamp(22px,3vw,32px) clamp(24px,3.4vw,40px);background:var(--ink-2);
 }
 .quote-wrap p{font-size:clamp(1.14rem,2.4vw,1.5rem);line-height:1.5;color:var(--bone);margin-bottom:18px}
 .quote-by{
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  font-family:var(--font-sub);font-weight:700;text-transform:uppercase;
   letter-spacing:.15em;font-size:.84rem;color:var(--bone-faint);
 }
 .quotes{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
@@ -388,12 +433,12 @@ section{position:relative}
   padding:clamp(26px,3.6vw,40px);position:relative;
   clip-path:polygon(0 0,100% 0,100% calc(100% - 20px),calc(100% - 20px) 100%,0 100%);
 }
-.form-card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--itf-red)}
+.form-card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--itf-grad)}
 .field-row{display:grid;gap:16px}
 @media (min-width:560px){.field-row.two{grid-template-columns:1fr 1fr}}
 .field{display:block;margin-bottom:16px}
 .field > span{
-  display:block;font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  display:block;font-family:var(--font-sub);font-weight:700;
   text-transform:uppercase;letter-spacing:.13em;font-size:.76rem;color:var(--bone-dim);margin-bottom:7px;
 }
 .field input,.field select{
@@ -406,14 +451,14 @@ section{position:relative}
   background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;
 }
 .field input::placeholder{color:rgba(244,243,240,.30)}
-.field input:focus,.field select:focus{outline:none;border-color:var(--itf-red-hi);background:rgba(244,243,240,.08)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--itf-orange);background:rgba(244,243,240,.08)}
 .field input:user-invalid{border-color:var(--itf-red)}
 .consent{display:flex;gap:11px;align-items:flex-start;margin:6px 0 22px;font-size:.84rem;color:var(--bone-faint);line-height:1.5}
-.consent input{width:17px;height:17px;flex:none;margin-top:2px;accent-color:var(--itf-red)}
+.consent input{width:17px;height:17px;flex:none;margin-top:2px;accent-color:var(--itf-orange)}
 .form-note{margin-top:14px;font-size:.78rem;color:var(--bone-faint);text-align:center}
 
 .form-done{display:none;text-align:center;padding:26px 8px}
-.form-done svg{width:52px;height:52px;color:var(--itf-red-hi);margin:0 auto 18px}
+.form-done svg{width:52px;height:52px;color:var(--itf-orange);margin:0 auto 18px}
 .form-done h3{margin-bottom:10px}
 .form-done p{color:var(--bone-dim);font-size:.96rem;max-width:42ch;margin:0 auto}
 form.sent{display:none}
@@ -424,15 +469,15 @@ form.sent{display:none}
 .faq details{border-bottom:1px solid var(--rule)}
 .faq summary{
   list-style:none;cursor:pointer;padding:24px 44px 24px 0;position:relative;
-  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  font-family:var(--font-sub);font-weight:700;text-transform:uppercase;
   letter-spacing:.04em;font-size:clamp(1.05rem,2.2vw,1.28rem);
   transition:color .2s;
 }
 .faq summary::-webkit-details-marker{display:none}
-.faq summary:hover{color:var(--itf-red-hi)}
+.faq summary:hover{color:var(--itf-orange)}
 .faq summary::after{
   content:"";position:absolute;right:6px;top:50%;width:13px;height:13px;
-  border-right:2px solid var(--itf-red-hi);border-bottom:2px solid var(--itf-red-hi);
+  border-right:2px solid var(--itf-orange);border-bottom:2px solid var(--itf-orange);
   transform:translateY(-70%) rotate(45deg);transition:transform .25s var(--ease);
 }
 .faq details[open] summary::after{transform:translateY(-30%) rotate(-135deg)}
@@ -442,11 +487,11 @@ form.sent{display:none}
 .closing{position:relative;overflow:hidden;text-align:center;background:var(--ink)}
 .closing::before{
   content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse 620px 320px at 50% 58%,rgba(200,16,46,.24),transparent 70%);
+  background:radial-gradient(ellipse 540px 260px at 50% 60%,rgba(255,111,32,.24),transparent 72%);
 }
 .closing::after{
   content:"";position:absolute;left:50%;top:50%;translate:-50% -50%;
-  width:150%;height:150px;background:rgba(200,16,46,.05);transform:rotate(-7deg);pointer-events:none;
+  width:150%;height:130px;background:rgba(255,111,32,.045);transform:rotate(-7deg);pointer-events:none;
 }
 .closing-inner{position:relative;z-index:2;max-width:760px;margin:0 auto}
 .closing h2{margin-bottom:18px}
@@ -493,15 +538,15 @@ form.sent{display:none}
       <!-- PLACEHOLDER MARK - replace with the official Iron Tribe shield SVG -->
       <svg class="brand-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
         <path d="M15 1.5 28 6v11.5c0 8-5.4 13-13 15.2C8.4 30.5 3 25.5 3 17.5V6L15 1.5Z"
-              stroke="#C8102E" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M11 11h8M15 11v12" stroke="#F4F3F0" stroke-width="2.4" stroke-linecap="square"/>
+              stroke="#FF6F20" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M11 11h8M15 11v12" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="square"/>
       </svg>
       <span class="brand-type"><b>Iron Tribe</b><span>Fitness</span></span>
     </a>
     <div class="header-cta">
       <a class="header-link" href="#how">How It Works</a>
       <a class="header-link" href="#faq">FAQ</a>
-      <a class="btn btn-sm" href="#claim">Claim the free week</a>
+      <a class="btn btn-sm" href="#claim"><span class="lbl-full">Claim the free week</span><span class="lbl-short">Free week</span></a>
     </div>
   </div>
 </header>
@@ -885,8 +930,8 @@ form.sent{display:none}
     <div class="footer-top">
       <div class="brand">
         <svg class="brand-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
-          <path d="M15 1.5 28 6v11.5c0 8-5.4 13-13 15.2C8.4 30.5 3 25.5 3 17.5V6L15 1.5Z" stroke="#C8102E" stroke-width="2.2" stroke-linejoin="round"/>
-          <path d="M11 11h8M15 11v12" stroke="#F4F3F0" stroke-width="2.4" stroke-linecap="square"/>
+          <path d="M15 1.5 28 6v11.5c0 8-5.4 13-13 15.2C8.4 30.5 3 25.5 3 17.5V6L15 1.5Z" stroke="#FF6F20" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M11 11h8M15 11v12" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="square"/>
         </svg>
         <span class="brand-type"><b>Iron Tribe</b><span>Fitness</span></span>
       </div>
