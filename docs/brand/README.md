@@ -92,4 +92,17 @@ fonts throughout, and text sits on a high-contrast background. Standard sizes ar
 
 ## Where this is applied
 
-- `public/iron-tribe-bring-a-friend.html` — Bring a Friend Month landing page.
+Two design directions for the Bring a Friend Month promotion. Same copy, same brand,
+same offer — pick one before launch and delete the other.
+
+| File | Direction |
+|---|---|
+| `public/iron-tribe-bring-a-friend.html` | **Option A, dark cinematic.** Black field, orange rake light, film grain, glowing gradient buttons, card grids, scroll-tilt reveals. |
+| `public/iron-tribe-bring-a-friend-poster.html` | **Option B, printed press.** White stock, huge black display type, hairline rules, hanging numerals, rotated ink stamp, fill-in-the-blanks application form, full-bleed orange closing panel. Follows the poster rules in the guide. |
+
+### Note on orange contrast
+
+`#FF6F20` on white is about 2.9:1, which fails WCAG for body text. On light layouts use
+orange for large display type, rules, numerals, stamps and filled panels only. Body copy
+runs in `#55585B` (about 7:1) or black. A filled orange panel carries **black** type, not
+white — white on `#FF6F20` is about 2.3:1.

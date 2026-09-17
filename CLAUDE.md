@@ -27,6 +27,10 @@ Build animation and interactivity with inline JS and CSS instead.
 Fonts may come from `fonts.googleapis.com` / `fonts.gstatic.com` or be self-hosted.
 Network calls are limited to Supabase, Cloudinary and EmailJS.
 
+There are currently two design directions for the Bring a Friend promo page (a dark
+cinematic one and a light printed-press one). Both are listed in `docs/brand/README.md`.
+One should be chosen and the other deleted before launch.
+
 ## Static marketing pages
 
 Files in `public/` are served by Vercel ahead of the SPA rewrite, so a standalone HTML page
