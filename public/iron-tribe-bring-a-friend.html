@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bring A Friend Month | Iron Tribe Fitness</title>
+<meta name="description" content="For one month only, every Iron Tribe member can bring a friend to any 45-minute class. Your friend trains free for a full week. No contract, no catch." />
+<meta name="theme-color" content="#0B0B0C" />
+<meta name="robots" content="index,follow" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Bring A Friend Month | Iron Tribe Fitness" />
+<meta property="og:description" content="Bring the friend who keeps saying they need to get back in the gym. They train free for a full week." />
+<meta property="og:image" content="/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<script>document.documentElement.className += ' js';</script>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<!--
+  ============================================================================
+  IRON TRIBE FITNESS - "BRING A FRIEND MONTH" LANDING PAGE
+  ============================================================================
+  Self-contained: all CSS and JS are inline. No external JS libraries.
+  This is deliberate - the host app ships a strict Content-Security-Policy
+  (script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com), so any
+  CDN-hosted animation library (GSAP, ScrollTrigger, etc.) would be blocked
+  at runtime and the page would render blank. All scroll reveals, parallax
+  and counters below are hand-rolled with IntersectionObserver +
+  requestAnimationFrame, which are CSP-safe.
+
+  BEFORE LAUNCH - swap these placeholders:
+    1. .brand-mark SVG  -> official Iron Tribe shield/wordmark asset
+    2. --itf-red        -> exact brand red from the official style guide
+    3. Testimonial block -> real, attributable member quotes (currently
+                            marked PLACEHOLDER - do not ship as-is)
+    4. data-location options -> the real participating gym list
+    5. Form submit handler -> EmailJS or Supabase endpoint (both are already
+                              allowed by the app's connect-src policy)
+    6. Offer terms in the footer -> legal-approved copy for your market
+  ============================================================================
+-->
+
+<style>
+/* ---------------------------------------------------------------- tokens */
+:root{
+  --ink:        #0B0B0C;
+  --ink-2:      #121215;
+  --ink-3:      #1A1B1F;
+  --steel:      #26272C;
+  --steel-2:    #3A3C43;
+  --bone:       #F4F3F0;
+  --bone-dim:   rgba(244,243,240,.66);
+  --bone-faint: rgba(244,243,240,.40);
+
+  /* Iron Tribe signature red. Verify against the official style guide. */
+  --itf-red:    #C8102E;
+  --itf-red-hi: #E8323C;
+  --itf-red-dk: #8E0B20;
+  --red-glow:   rgba(200,16,46,.28);
+
+  --rule:       rgba(244,243,240,.12);
+  --rule-strong:rgba(244,243,240,.22);
+
+  --maxw: 1180px;
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+
+/* ---------------------------------------------------------------- reset  */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{
+  scroll-behavior:smooth;-webkit-text-size-adjust:100%;
+  /* The perspective/rotateX reveal state flares an element's painted box
+     wider than its layout box, which produced a horizontal scrollbar on
+     narrow viewports. clip contains it without creating a scroll container
+     (hidden is the fallback for older engines). */
+  overflow-x:hidden;overflow-x:clip;
+}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--ink);
+  color:var(--bone);
+  overflow-x:hidden;overflow-x:clip;
+  -webkit-font-smoothing:antialiased;
+  line-height:1.6;
+}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+
+/* Global film grain - sells the industrial, printed-poster texture */
+body::after{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ------------------------------------------------------------- typography */
+.display{
+  font-family:'Barlow Condensed','Inter',sans-serif;
+  font-weight:800;
+  text-transform:uppercase;
+  line-height:.92;
+  letter-spacing:-.005em;
+}
+h1.display{font-size:clamp(2.85rem,8.2vw,5.8rem);font-weight:900}
+h2.display{font-size:clamp(2.15rem,5.4vw,3.7rem)}
+h3.display{font-size:clamp(1.35rem,2.6vw,1.75rem);line-height:1.04}
+.eyebrow{
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:.82rem;text-transform:uppercase;
+  letter-spacing:.24em;color:var(--itf-red-hi);
+}
+.lede{font-size:clamp(1.02rem,1.9vw,1.2rem);color:var(--bone-dim);max-width:60ch}
+.red{color:var(--itf-red-hi)}
+
+/* Angled red highlight behind a word - core Iron Tribe poster motif */
+.nb{white-space:nowrap}
+.slash{position:relative;display:inline-block;padding:0 .18em;color:var(--bone);z-index:0}
+.slash::before{
+  content:"";position:absolute;inset:.06em -.02em .1em;z-index:-1;
+  background:var(--itf-red);
+  transform:skewX(-9deg);
+}
+
+/* ----------------------------------------------------------------- layout */
+.wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,4vw,34px)}
+section{position:relative}
+.section-pad{padding:clamp(72px,11vw,124px) 0}
+
+/* ----------------------------------------------------------------- header */
+.site-header{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  transition:background .3s var(--ease),border-color .3s var(--ease),backdrop-filter .3s;
+  border-bottom:1px solid transparent;
+}
+.site-header.stuck{
+  background:rgba(11,11,12,.92);
+  backdrop-filter:saturate(140%) blur(12px);
+  -webkit-backdrop-filter:saturate(140%) blur(12px);
+  border-bottom-color:var(--rule);
+}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:70px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-mark{width:30px;height:34px;flex:none}
+.brand-type{font-family:'Barlow Condensed',sans-serif;line-height:.86;text-transform:uppercase}
+.brand-type b{display:block;font-weight:900;font-size:1.28rem;letter-spacing:.03em}
+.brand-type span{display:block;font-weight:600;font-size:.62rem;letter-spacing:.36em;color:var(--bone-faint)}
+.header-cta{display:flex;align-items:center;gap:20px}
+.header-link{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  letter-spacing:.13em;font-size:.88rem;color:var(--bone-dim);transition:color .2s;
+}
+.header-link:hover{color:var(--bone)}
+@media (max-width:720px){.header-link{display:none}}
+
+/* --------------------------------------------------------------- buttons  */
+.btn{
+  --btn-bg:var(--itf-red);--btn-fg:#fff;--btn-bd:var(--itf-red);
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.02rem;
+  text-transform:uppercase;letter-spacing:.11em;
+  padding:15px 30px;border:2px solid var(--btn-bd);background:var(--btn-bg);color:var(--btn-fg);
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .16s var(--ease),box-shadow .22s var(--ease),background .22s,color .22s,border-color .22s;
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px -10px var(--red-glow)}
+.btn:active{transform:translateY(0)}
+.btn-ghost{--btn-bg:transparent;--btn-fg:var(--bone);--btn-bd:var(--rule-strong)}
+.btn-ghost:hover{--btn-bd:var(--bone);background:rgba(244,243,240,.06)}
+.btn-sm{padding:11px 20px;font-size:.88rem}
+.btn-block{width:100%}
+:where(a,button,input,select,summary):focus-visible{
+  outline:3px solid var(--itf-red-hi);outline-offset:3px;
+}
+
+/* ------------------------------------------------------------------ hero  */
+.hero{
+  position:relative;min-height:100svh;display:flex;align-items:center;
+  padding:96px 0 56px;overflow:hidden;background:var(--ink);
+  isolation:isolate;
+}
+/* layered background: vignette + red rake light + blueprint grid */
+.hero::before{
+  content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(120% 90% at 78% 8%, rgba(200,16,46,.20), transparent 58%),
+    radial-gradient(90% 70% at 8% 100%, rgba(200,16,46,.10), transparent 60%),
+    linear-gradient(180deg,#0E0E10 0%,#0B0B0C 62%,#0B0B0C 100%);
+}
+.hero::after{
+  content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(to right,rgba(244,243,240,.045) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(244,243,240,.045) 1px,transparent 1px);
+  background-size:78px 78px;
+  mask-image:radial-gradient(85% 75% at 50% 42%,#000 35%,transparent 100%);
+  -webkit-mask-image:radial-gradient(85% 75% at 50% 42%,#000 35%,transparent 100%);
+}
+.hero-shapes{position:absolute;inset:0;z-index:-1;pointer-events:none;will-change:transform}
+.shape{position:absolute}
+.shape-frame{
+  width:min(360px,42vw);aspect-ratio:17/10;top:13%;right:5%;
+  border:2px solid rgba(200,16,46,.30);
+}
+.shape-frame::before{
+  content:"";position:absolute;inset:11px;border:1px solid rgba(244,243,240,.07);
+}
+.shape-bar{width:min(300px,44vw);height:10px;bottom:6%;left:3%;background:var(--itf-red);opacity:.55;transform:skewX(-20deg)}
+.shape-bar-2{width:min(170px,26vw);height:10px;bottom:2.6%;left:3%;background:rgba(244,243,240,.11);transform:skewX(-20deg)}
+.shape-diamond{width:64px;height:64px;top:63%;right:15%;background:rgba(200,16,46,.22);transform:rotate(45deg)}
+.shape-dot{width:11px;height:11px;border-radius:50%;background:var(--itf-red-hi);top:27%;left:7%}
+.shape-ring{width:120px;height:120px;border-radius:50%;border:2px solid rgba(244,243,240,.09);top:8%;left:16%}
+@media (max-width:760px){
+  .shape-frame,.shape-ring,.shape-dot,.shape-diamond{display:none}
+}
+
+.hero-grid{
+  position:relative;z-index:2;display:grid;gap:clamp(34px,5vw,64px);
+  grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);align-items:center;
+}
+@media (max-width:980px){.hero-grid{grid-template-columns:1fr}}
+
+.hero-flag{
+  display:inline-flex;align-items:center;gap:11px;margin-bottom:20px;
+  padding:8px 15px 8px 12px;border:1px solid rgba(200,16,46,.45);
+  background:rgba(200,16,46,.10);
+}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--itf-red-hi);flex:none;position:relative}
+.pulse-dot::after{
+  content:"";position:absolute;inset:-5px;border-radius:50%;
+  border:1px solid var(--itf-red-hi);animation:ping 2.1s ease-out infinite;
+}
+@keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+
+.hero h1{margin-bottom:20px}
+.hero .lede{margin-bottom:26px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:26px}
+@media (max-width:560px){
+  .hero-actions{flex-direction:column;align-items:stretch}
+  .hero-actions .btn{width:100%}
+  .closing-actions{flex-direction:column;align-items:stretch}
+  .closing-actions .btn{width:100%}
+}
+
+.hero-proof{display:flex;flex-wrap:wrap;gap:10px 24px;padding-top:18px;border-top:1px solid var(--rule)}
+.proof-item{display:flex;align-items:center;gap:9px;font-family:'Barlow Condensed',sans-serif;
+  font-weight:600;text-transform:uppercase;letter-spacing:.11em;font-size:.83rem;color:var(--bone-dim)}
+.proof-item svg{width:15px;height:15px;color:var(--itf-red-hi);flex:none}
+
+/* offer ticket card */
+.ticket{
+  position:relative;background:linear-gradient(165deg,#17171B,#0F0F12);
+  border:1px solid var(--rule-strong);padding:clamp(26px,3.4vw,36px);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 22px),calc(100% - 22px) 100%,0 100%);
+  box-shadow:0 34px 80px -34px rgba(0,0,0,.95);
+}
+.ticket::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,var(--itf-red),var(--itf-red-hi),var(--itf-red-dk));
+}
+.ticket-tag{
+  position:absolute;top:20px;right:20px;
+  background:var(--itf-red);color:#fff;padding:5px 12px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.76rem;
+  letter-spacing:.2em;text-transform:uppercase;
+}
+.ticket h3{margin-bottom:6px}
+.ticket-price{display:flex;align-items:baseline;gap:12px;margin:18px 0 6px}
+.ticket-price b{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(3.4rem,9vw,4.6rem);line-height:.8;color:var(--bone)}
+.ticket-price s{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.5rem;color:var(--bone-faint)}
+.ticket-price em{font-style:normal;font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  text-transform:uppercase;letter-spacing:.14em;font-size:.86rem;color:var(--bone-dim)}
+.ticket ul{list-style:none;margin:20px 0 24px;display:grid;gap:11px}
+.ticket li{display:flex;gap:11px;align-items:flex-start;font-size:.95rem;color:var(--bone-dim)}
+.ticket li svg{width:17px;height:17px;flex:none;margin-top:3px;color:var(--itf-red-hi)}
+.ticket-foot{border-top:1px solid var(--rule);padding-top:16px;margin-top:4px}
+
+/* countdown */
+.countdown{display:flex;gap:8px;margin-top:14px}
+.cd-cell{flex:1;text-align:center;background:rgba(244,243,240,.045);border:1px solid var(--rule);padding:9px 4px}
+.cd-cell b{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.6rem;line-height:1;color:var(--bone)}
+.cd-cell span{display:block;font-size:.6rem;letter-spacing:.17em;text-transform:uppercase;color:var(--bone-faint);margin-top:5px}
+
+.scroll-cue{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:3;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  font-family:'Barlow Condensed',sans-serif;font-size:.68rem;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--bone-faint);
+}
+.scroll-cue svg{width:20px;height:20px;color:var(--itf-red-hi);animation:bob 2.1s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}
+@media (max-height:760px){.scroll-cue{display:none}}
+
+/* ---------------------------------------------------------------- ticker  */
+.ticker{
+  background:var(--itf-red);color:#fff;overflow:hidden;
+  border-block:1px solid rgba(0,0,0,.25);padding:13px 0;
+}
+.ticker-track{display:flex;width:max-content;animation:slide 34s linear infinite}
+.ticker-track span{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;
+  letter-spacing:.2em;font-size:.95rem;padding:0 26px;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:26px;
+}
+.ticker-track span::after{content:"";width:7px;height:7px;background:rgba(255,255,255,.65);transform:rotate(45deg)}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* --------------------------------------------------------- section header */
+.sec-head{max-width:70ch;margin-bottom:clamp(38px,5vw,58px)}
+.sec-head .eyebrow{display:block;margin-bottom:14px}
+.sec-head h2{margin-bottom:16px}
+.rule-accent{width:64px;height:5px;background:var(--itf-red);margin-bottom:22px}
+
+/* ----------------------------------------------------------------- steps  */
+.steps{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+@media (min-width:860px){.steps{grid-template-columns:repeat(3,1fr)}}
+.step{
+  background:var(--ink-2);padding:clamp(28px,3.6vw,40px);
+  position:relative;transition:background .3s var(--ease);
+}
+.step:hover{background:var(--ink-3)}
+.step-num{
+  font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:3.4rem;line-height:1;
+  color:transparent;-webkit-text-stroke:1.5px rgba(200,16,46,.6);margin-bottom:18px;
+}
+.step h3{margin-bottom:10px}
+.step p{color:var(--bone-dim);font-size:.97rem}
+
+/* -------------------------------------------------------------- benefits  */
+.bento{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr))}
+.card{
+  background:linear-gradient(170deg,rgba(244,243,240,.045),rgba(244,243,240,.012));
+  border:1px solid var(--rule);padding:clamp(26px,3vw,32px);
+  position:relative;overflow:hidden;
+  transition:border-color .28s var(--ease),transform .28s var(--ease),background .28s;
+}
+.card::before{
+  content:"";position:absolute;top:0;left:0;width:0;height:3px;background:var(--itf-red);
+  transition:width .38s var(--ease);
+}
+.card:hover{transform:translateY(-6px);border-color:var(--rule-strong)}
+.card:hover::before{width:100%}
+.card-ico{
+  width:46px;height:46px;display:grid;place-items:center;margin-bottom:20px;
+  border:1px solid rgba(200,16,46,.45);background:rgba(200,16,46,.10);
+}
+.card-ico svg{width:22px;height:22px;color:var(--itf-red-hi)}
+.card h3{margin-bottom:9px}
+.card p{color:var(--bone-dim);font-size:.95rem}
+
+/* ----------------------------------------------------------------- stats  */
+.stats-band{background:var(--ink-2);border-block:1px solid var(--rule)}
+.stats{display:grid;gap:36px 24px;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));text-align:center}
+.stat b{
+  display:block;font-family:'Barlow Condensed',sans-serif;font-weight:900;
+  font-size:clamp(2.9rem,6.5vw,4.2rem);line-height:.9;color:var(--bone);
+}
+.stat b i{font-style:normal;color:var(--itf-red-hi)}
+.stat span{
+  display:block;margin-top:11px;font-family:'Barlow Condensed',sans-serif;font-weight:600;
+  text-transform:uppercase;letter-spacing:.15em;font-size:.8rem;color:var(--bone-faint);
+}
+
+/* ------------------------------------------------------------ testimonial */
+.quote-wrap{
+  position:relative;border-left:5px solid var(--itf-red);
+  padding:clamp(22px,3vw,32px) clamp(24px,3.4vw,40px);background:var(--ink-2);
+}
+.quote-wrap p{font-size:clamp(1.14rem,2.4vw,1.5rem);line-height:1.5;color:var(--bone);margin-bottom:18px}
+.quote-by{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  letter-spacing:.15em;font-size:.84rem;color:var(--bone-faint);
+}
+.quotes{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+
+/* ------------------------------------------------------------------ form  */
+.claim{background:var(--ink-2);border-block:1px solid var(--rule)}
+.claim-grid{display:grid;gap:clamp(34px,5vw,60px);align-items:start}
+@media (min-width:940px){.claim-grid{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr)}}
+
+.form-card{
+  background:var(--ink);border:1px solid var(--rule-strong);
+  padding:clamp(26px,3.6vw,40px);position:relative;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 20px),calc(100% - 20px) 100%,0 100%);
+}
+.form-card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--itf-red)}
+.field-row{display:grid;gap:16px}
+@media (min-width:560px){.field-row.two{grid-template-columns:1fr 1fr}}
+.field{display:block;margin-bottom:16px}
+.field > span{
+  display:block;font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  text-transform:uppercase;letter-spacing:.13em;font-size:.76rem;color:var(--bone-dim);margin-bottom:7px;
+}
+.field input,.field select{
+  width:100%;background:rgba(244,243,240,.05);border:1px solid var(--rule);
+  padding:13px 14px;font-size:.96rem;color:var(--bone);
+  transition:border-color .2s,background .2s;appearance:none;border-radius:0;
+}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23F4F3F0' stroke-width='1.6'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;
+}
+.field input::placeholder{color:rgba(244,243,240,.30)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--itf-red-hi);background:rgba(244,243,240,.08)}
+.field input:user-invalid{border-color:var(--itf-red)}
+.consent{display:flex;gap:11px;align-items:flex-start;margin:6px 0 22px;font-size:.84rem;color:var(--bone-faint);line-height:1.5}
+.consent input{width:17px;height:17px;flex:none;margin-top:2px;accent-color:var(--itf-red)}
+.form-note{margin-top:14px;font-size:.78rem;color:var(--bone-faint);text-align:center}
+
+.form-done{display:none;text-align:center;padding:26px 8px}
+.form-done svg{width:52px;height:52px;color:var(--itf-red-hi);margin:0 auto 18px}
+.form-done h3{margin-bottom:10px}
+.form-done p{color:var(--bone-dim);font-size:.96rem;max-width:42ch;margin:0 auto}
+form.sent{display:none}
+.form-card.sent .form-done{display:block}
+
+/* ------------------------------------------------------------------- faq  */
+.faq{border-top:1px solid var(--rule)}
+.faq details{border-bottom:1px solid var(--rule)}
+.faq summary{
+  list-style:none;cursor:pointer;padding:24px 44px 24px 0;position:relative;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;font-size:clamp(1.05rem,2.2vw,1.28rem);
+  transition:color .2s;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:hover{color:var(--itf-red-hi)}
+.faq summary::after{
+  content:"";position:absolute;right:6px;top:50%;width:13px;height:13px;
+  border-right:2px solid var(--itf-red-hi);border-bottom:2px solid var(--itf-red-hi);
+  transform:translateY(-70%) rotate(45deg);transition:transform .25s var(--ease);
+}
+.faq details[open] summary::after{transform:translateY(-30%) rotate(-135deg)}
+.faq .answer{padding:0 0 26px;color:var(--bone-dim);max-width:78ch;font-size:.98rem}
+
+/* --------------------------------------------------------------- closing  */
+.closing{position:relative;overflow:hidden;text-align:center;background:var(--ink)}
+.closing::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 620px 320px at 50% 58%,rgba(200,16,46,.24),transparent 70%);
+}
+.closing::after{
+  content:"";position:absolute;left:50%;top:50%;translate:-50% -50%;
+  width:150%;height:150px;background:rgba(200,16,46,.05);transform:rotate(-7deg);pointer-events:none;
+}
+.closing-inner{position:relative;z-index:2;max-width:760px;margin:0 auto}
+.closing h2{margin-bottom:18px}
+.closing .lede{margin:0 auto 32px}
+.closing-actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+
+/* ---------------------------------------------------------------- footer  */
+.site-footer{background:var(--ink-2);border-top:1px solid var(--rule);padding:48px 0 40px;font-size:.84rem;color:var(--bone-faint)}
+.footer-top{display:flex;flex-wrap:wrap;gap:22px;justify-content:space-between;align-items:center;
+  padding-bottom:26px;margin-bottom:26px;border-bottom:1px solid var(--rule)}
+.footer-links{display:flex;flex-wrap:wrap;gap:10px 24px}
+.footer-links a{transition:color .2s}
+.footer-links a:hover{color:var(--bone)}
+.terms{max-width:88ch;line-height:1.65}
+
+/* ------------------------------------------------------- reveal on scroll */
+.js .reveal{opacity:0;transform:translateY(34px);transition:opacity .72s var(--ease),transform .72s var(--ease)}
+.js .reveal.in{opacity:1;transform:none}
+.js .reveal-tilt{
+  opacity:0;transform:perspective(900px) rotateX(15deg) translateY(48px);transform-origin:top center;
+  transition:opacity .68s var(--ease),transform .68s var(--ease);
+}
+.js .reveal-tilt.in{opacity:1;transform:perspective(900px) rotateX(0) translateY(0)}
+
+@media (max-width:640px){
+  .js .reveal-tilt{transform:perspective(1200px) rotateX(9deg) translateY(38px)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .js .reveal,.js .reveal-tilt{opacity:1!important;transform:none!important}
+  .ticker-track{animation:none}
+}
+</style>
+</head>
+
+<body>
+
+<!-- ========================================================= HEADER ===== -->
+<header class="site-header" id="siteHeader">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top" aria-label="Iron Tribe Fitness home">
+      <!-- PLACEHOLDER MARK - replace with the official Iron Tribe shield SVG -->
+      <svg class="brand-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+        <path d="M15 1.5 28 6v11.5c0 8-5.4 13-13 15.2C8.4 30.5 3 25.5 3 17.5V6L15 1.5Z"
+              stroke="#C8102E" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M11 11h8M15 11v12" stroke="#F4F3F0" stroke-width="2.4" stroke-linecap="square"/>
+      </svg>
+      <span class="brand-type"><b>Iron Tribe</b><span>Fitness</span></span>
+    </a>
+    <div class="header-cta">
+      <a class="header-link" href="#how">How It Works</a>
+      <a class="header-link" href="#faq">FAQ</a>
+      <a class="btn btn-sm" href="#claim">Claim the free week</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ========================================================== HERO ==== -->
+  <section class="hero">
+    <div class="hero-shapes" id="heroShapesBack">
+      <span class="shape shape-frame"></span>
+      <span class="shape shape-ring"></span>
+    </div>
+    <div class="hero-shapes" id="heroShapesMid">
+      <span class="shape shape-bar"></span>
+      <span class="shape shape-bar-2"></span>
+      <span class="shape shape-diamond"></span>
+      <span class="shape shape-dot"></span>
+    </div>
+
+    <div class="wrap hero-grid" id="heroContent">
+      <div>
+        <div class="hero-flag reveal">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          <span class="eyebrow">Bring A Friend Month &mdash; On Now</span>
+        </div>
+
+        <h1 class="display reveal">
+          Bring a friend.<br />
+          Both of you<br />
+          get <span class="nb"><span class="slash">better</span>.</span>
+        </h1>
+
+        <p class="lede reveal">
+          All month, every Iron Tribe member can bring a friend to any 45-minute class.
+          Your friend gets a full week on us &mdash; no card, no contract, no catch.
+          You get the one thing that makes training stick: someone who notices when you don't show up.
+        </p>
+
+        <div class="hero-actions reveal">
+          <a class="btn" href="#claim">Claim the free week</a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+
+        <ul class="hero-proof reveal" style="list-style:none">
+          <li class="proof-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            45-minute classes
+          </li>
+          <li class="proof-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Coached start to finish
+          </li>
+          <li class="proof-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M17 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="3.5"/><path d="M22 20v-2a4 4 0 0 0-3-3.9"/></svg>
+            Capped class sizes
+          </li>
+          <li class="proof-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M4 7V5h16v2M9 5v14M15 5v14M4 19h16"/></svg>
+            Scaled for day one
+          </li>
+        </ul>
+      </div>
+
+      <!-- offer ticket -->
+      <aside class="ticket reveal-tilt" aria-label="Guest pass offer summary">
+        <span class="ticket-tag">Guest Pass</span>
+        <span class="eyebrow">For your friend</span>
+        <h3 class="display" style="margin-top:8px">Seven days<br />unlimited</h3>
+        <div class="ticket-price">
+          <b>$0</b>
+          <div>
+            <s>$49</s>
+            <em style="display:block">First-time guests</em>
+          </div>
+        </div>
+        <ul>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Unlimited classes for seven straight days
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            A coach walking them through every movement
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            A goal-setting sit-down before day one
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            No payment details, no auto-enroll
+          </li>
+        </ul>
+        <div class="ticket-foot">
+          <span class="eyebrow" style="color:var(--bone-faint)">Offer closes in</span>
+          <div class="countdown" id="countdown" role="timer" aria-live="off">
+            <div class="cd-cell"><b data-cd="d">--</b><span>Days</span></div>
+            <div class="cd-cell"><b data-cd="h">--</b><span>Hrs</span></div>
+            <div class="cd-cell"><b data-cd="m">--</b><span>Min</span></div>
+            <div class="cd-cell"><b data-cd="s">--</b><span>Sec</span></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <a class="scroll-cue" href="#how" aria-label="Scroll to how it works">
+      Scroll
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </a>
+  </section>
+
+  <!-- ======================================================== TICKER ==== -->
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span>Bring a friend month</span><span>Free week for every guest</span><span>No contract to try</span><span>Same workout, every tribe</span>
+      <span>Bring a friend month</span><span>Free week for every guest</span><span>No contract to try</span><span>Same workout, every tribe</span>
+    </div>
+  </div>
+
+  <!-- ========================================================== HOW ===== -->
+  <section class="section-pad" id="how">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Three steps</span>
+        <h2 class="display">Takes about<br />ninety seconds.</h2>
+        <div class="rule-accent"></div>
+        <p class="lede">No sales call, no trial gimmick. Pick a person, pick a class, show up together.</p>
+      </div>
+
+      <div class="steps">
+        <article class="step reveal-tilt">
+          <div class="step-num">01</div>
+          <h3 class="display">Pick your person</h3>
+          <p>The one who keeps saying they need to get back in the gym. The one who'd never walk in alone. That's who this is for.</p>
+        </article>
+        <article class="step reveal-tilt">
+          <div class="step-num">02</div>
+          <h3 class="display">Book the class</h3>
+          <p>Choose any 45-minute slot on the schedule. We hold two spots side by side and text your friend the details.</p>
+        </article>
+        <article class="step reveal-tilt">
+          <div class="step-num">03</div>
+          <h3 class="display">Show up together</h3>
+          <p>Warm-up, workout, cool down. Your coach scales every movement to them. All they have to do is walk in.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== BENEFITS ===== -->
+  <section class="section-pad" style="background:var(--ink-2);border-block:1px solid var(--rule)">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">The guest week</span>
+        <h2 class="display">What your<br />friend walks into.</h2>
+        <div class="rule-accent"></div>
+        <p class="lede">Not a tour and a hard sell. Seven days of the actual thing you do every week.</p>
+      </div>
+
+      <div class="bento">
+        <article class="card reveal-tilt">
+          <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="1.5"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+          <h3 class="display">A full week, free</h3>
+          <p>Seven days of unlimited classes. No payment details on file, nothing to cancel, nothing that quietly renews.</p>
+        </article>
+
+        <article class="card reveal-tilt">
+          <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg></div>
+          <h3 class="display">A coach who learns their name</h3>
+          <p>Every class is coached front to back. Form gets corrected in the room, not in a video they'll never watch.</p>
+        </article>
+
+        <article class="card reveal-tilt">
+          <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M3 17l5-5 4 3 5-7 4 4"/><path d="M3 21h18"/></svg></div>
+          <h3 class="display">One workout, every tribe</h3>
+          <p>Members at every Iron Tribe run the same programmed workout each day, and the results go up on the board.</p>
+        </article>
+
+        <article class="card reveal-tilt">
+          <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M4 9v6M20 9v6M7 6v12M17 6v12M7 12h10"/></svg></div>
+          <h3 class="display">Scaled to day one</h3>
+          <p>Every movement has a version that fits. A first-timer and a twelve-year member finish the same workout in the same room.</p>
+        </article>
+
+        <article class="card reveal-tilt">
+          <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <h3 class="display">Forty-five minutes flat</h3>
+          <p>Warm-up, workout, cool down. Built to survive a real calendar, so it still happens on the hard weeks.</p>
+        </article>
+
+        <article class="card reveal-tilt">
+          <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M17 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="3.5"/><path d="M22 20v-2a4 4 0 0 0-3-3.9M16.5 3.6a4 4 0 0 1 0 7"/></svg></div>
+          <h3 class="display">A room that notices</h3>
+          <p>Class sizes are capped on purpose. People learn your name in week one and ask where you were in week two.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== STATS ===== -->
+  <section class="section-pad stats-band">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat reveal"><b data-count="2008" data-plain="1">2008</b><span>Started in a two-car garage</span></div>
+        <div class="stat reveal"><b data-count="40" data-suffix="+">40+</b><span>Locations and counting</span></div>
+        <div class="stat reveal"><b data-count="45">45</b><span>Minutes per class</span></div>
+        <div class="stat reveal"><b data-count="1">1</b><span>Workout a day, every tribe</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== TESTIMONIALS ==== -->
+  <!--
+    PLACEHOLDER COPY - these are illustrative, not real member quotes.
+    Replace with genuine, attributable testimonials before this page goes live.
+  -->
+  <section class="section-pad">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">From the floor</span>
+        <h2 class="display">Nobody's first<br />class is pretty.</h2>
+        <div class="rule-accent"></div>
+      </div>
+      <div class="quotes">
+        <figure class="quote-wrap reveal">
+          <p>&ldquo;I came as somebody's guest and spent the whole warm-up planning my exit. By Thursday I was the one texting a friend to come Saturday.&rdquo;</p>
+          <figcaption class="quote-by">Member &mdash; Iron Tribe [Location]</figcaption>
+        </figure>
+        <figure class="quote-wrap reveal">
+          <p>&ldquo;The coach scaled every single movement for me and never once made it a thing. That's the reason I came back on day two.&rdquo;</p>
+          <figcaption class="quote-by">Member &mdash; Iron Tribe [Location]</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== CLAIM ===== -->
+  <section class="section-pad claim" id="claim">
+    <div class="wrap claim-grid">
+      <div class="reveal">
+        <span class="eyebrow">Claim the pass</span>
+        <h2 class="display" style="margin:14px 0 16px">Send us<br />their name.</h2>
+        <div class="rule-accent"></div>
+        <p class="lede" style="margin-bottom:26px">
+          Drop your friend's details below and we'll text them their guest pass plus the class times
+          that fit their schedule. If you're the friend, put your own name in both fields &mdash; you
+          don't need a member to sponsor you.
+        </p>
+        <ul style="list-style:none;display:grid;gap:13px">
+          <li class="proof-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>No payment details required</li>
+          <li class="proof-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>We reply the same day</li>
+          <li class="proof-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>One text, not a phone campaign</li>
+        </ul>
+      </div>
+
+      <div class="form-card reveal-tilt" id="formCard">
+        <form id="claimForm" novalidate>
+          <label class="field">
+            <span>Your name</span>
+            <input type="text" name="member_name" autocomplete="name" placeholder="Member bringing the guest" required />
+          </label>
+
+          <div class="field-row two">
+            <label class="field">
+              <span>Friend's first name</span>
+              <input type="text" name="guest_name" autocomplete="off" placeholder="Jordan" required />
+            </label>
+            <label class="field">
+              <span>Friend's mobile</span>
+              <input type="tel" name="guest_phone" autocomplete="off" placeholder="(205) 555-0142" required />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Friend's email</span>
+            <input type="email" name="guest_email" autocomplete="off" placeholder="jordan@email.com" required />
+          </label>
+
+          <div class="field-row two">
+            <label class="field">
+              <span>Home gym</span>
+              <!-- Replace with the real participating-location list -->
+              <select name="location" required>
+                <option value="" selected disabled>Choose a location</option>
+                <option>Birmingham &mdash; Downtown</option>
+                <option>Birmingham &mdash; Homewood</option>
+                <option>Birmingham &mdash; Mountain Brook</option>
+                <option>Hoover</option>
+                <option>Nashville &mdash; Belle Meade</option>
+                <option>Franklin</option>
+                <option>Another location</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Best class time</span>
+              <select name="class_time" required>
+                <option value="" selected disabled>Choose a time</option>
+                <option>Early morning (5&ndash;7am)</option>
+                <option>Mid morning (8&ndash;10am)</option>
+                <option>Midday (11am&ndash;1pm)</option>
+                <option>Evening (4&ndash;7pm)</option>
+                <option>Weekend</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="consent">
+            <input type="checkbox" name="consent" required />
+            <span>My friend is good with Iron Tribe texting or emailing them about this guest pass.</span>
+          </label>
+
+          <button class="btn btn-block" type="submit">Send the guest pass</button>
+          <p class="form-note">First-time guests only. We'll confirm the spot before anyone shows up.</p>
+        </form>
+
+        <div class="form-done" role="status" aria-live="polite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M17 9l-6.5 6.5L7 12"/></svg>
+          <h3 class="display">Pass is on its way</h3>
+          <p>We'll text your friend within the day with their guest pass and the class times that fit. Tell them to wear whatever they'd run in.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== FAQ ===== -->
+  <section class="section-pad" id="faq">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Straight answers</span>
+        <h2 class="display">Before they ask.</h2>
+        <div class="rule-accent"></div>
+      </div>
+
+      <div class="faq reveal">
+        <details>
+          <summary>Does my friend need to be in shape first?</summary>
+          <div class="answer">No, and that reflex is exactly what the guest week exists to kill. Every movement in every class has a scaled version. The coach gives them theirs before the clock starts, so they work at their level in the same room as everyone else.</div>
+        </details>
+        <details>
+          <summary>Is someone going to hard-sell them at the end?</summary>
+          <div class="answer">No. They get a goal-setting conversation before day one and a check-in at the end of the week. If it isn't a fit, that's a fine answer and the week still cost them nothing.</div>
+        </details>
+        <details>
+          <summary>What should they bring?</summary>
+          <div class="answer">Training shoes, a water bottle, and about ten minutes of buffer on their first day so the coach can walk them around before class.</div>
+        </details>
+        <details>
+          <summary>Can I bring more than one friend?</summary>
+          <div class="answer">Yes. Submit the form once per guest so each person gets their own pass and their own spot in class. Spots are capped, so earlier in the month is easier.</div>
+        </details>
+        <details>
+          <summary>What if they've trained at Iron Tribe before?</summary>
+          <div class="answer">The free week is for first-time guests. If they're a former member, send the form anyway and the gym will sort out a return offer instead.</div>
+        </details>
+        <details>
+          <summary>Do I get anything for bringing someone?</summary>
+          <div class="answer">Member rewards for Bring a Friend Month are set by each location. Ask your coach what yours is running, or note it on the form and we'll confirm when we reply.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== CLOSING ===== -->
+  <section class="section-pad closing">
+    <div class="wrap closing-inner reveal">
+      <span class="eyebrow">Bring a friend month</span>
+      <h2 class="display" style="margin-top:14px">Nobody gets<br />strong <span class="nb"><span class="slash">alone</span>.</span></h2>
+      <p class="lede">One text. One class. One person who shows up because you asked them to.</p>
+      <div class="closing-actions">
+        <a class="btn" href="#claim">Claim the free week</a>
+        <a class="btn btn-ghost" href="#how">How it works</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ========================================================= FOOTER ===== -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+          <path d="M15 1.5 28 6v11.5c0 8-5.4 13-13 15.2C8.4 30.5 3 25.5 3 17.5V6L15 1.5Z" stroke="#C8102E" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M11 11h8M15 11v12" stroke="#F4F3F0" stroke-width="2.4" stroke-linecap="square"/>
+        </svg>
+        <span class="brand-type"><b>Iron Tribe</b><span>Fitness</span></span>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="#how">How it works</a>
+        <a href="#claim">Claim a pass</a>
+        <a href="#faq">FAQ</a>
+        <a href="#top">Back to top</a>
+      </nav>
+    </div>
+    <p class="terms">
+      Offer terms: free guest week is available to first-time guests aged 18 and over who live in the
+      area served by the participating location. One free week per guest. Participating locations only.
+      A signed waiver is required before the first class. Iron Tribe reserves the right to modify or end
+      this promotion at any time. Promotional page &mdash; confirm all offer details with your local gym.
+    </p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var showEverything = function () {
+    document.querySelectorAll('.reveal, .reveal-tilt').forEach(function (el) {
+      el.style.transitionDelay = '0ms';
+      el.classList.add('in');
+    });
+  };
+
+  try {
+    main();
+  } catch (err) {
+    // Never let a script failure leave the page blank.
+    if (window.console && console.error) console.error('[bring-a-friend]', err);
+    showEverything();
+  }
+
+  function main() {
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ------------------------------------------------ sticky header state */
+  var header = document.getElementById('siteHeader');
+  var onScroll = function () {
+    if (window.scrollY > 24) header.classList.add('stuck');
+    else header.classList.remove('stuck');
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  /* --------------------------------------------- scroll reveal sequence */
+  var revealables = document.querySelectorAll('.reveal, .reveal-tilt');
+
+  if (!('IntersectionObserver' in window) || reduced) {
+    revealables.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        // stagger siblings so grids cascade instead of popping as one block
+        var siblings = Array.prototype.slice.call(el.parentNode.children)
+          .filter(function (n) { return n.classList && (n.classList.contains('reveal') || n.classList.contains('reveal-tilt')); });
+        var index = Math.max(0, siblings.indexOf(el));
+        el.style.transitionDelay = Math.min(index * 90, 450) + 'ms';
+        el.classList.add('in');
+        io.unobserve(el);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+    revealables.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ------------------------------------------------ hero mouse parallax */
+  /* Two shape layers drift at different rates; content pans slightly with
+     the cursor. Same depth effect the design calls for, without GSAP. */
+  var hero = document.querySelector('.hero');
+  var layers = [
+    { el: document.getElementById('heroShapesBack'), ax: -46, ay: -23 },
+    { el: document.getElementById('heroShapesMid'),  ax: -22, ay: -11 },
+    { el: document.getElementById('heroContent'),    ax: 9,   ay: 5 }
+  ].filter(function (l) { return l.el; });
+
+  if (hero && !reduced && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+
+    var tick = function () {
+      // ease toward the target for a slow camera-pan feel
+      cx += (tx - cx) * 0.06;
+      cy += (ty - cy) * 0.06;
+      layers.forEach(function (l) {
+        l.el.style.transform = 'translate3d(' + (cx * l.ax).toFixed(2) + 'px,' + (cy * l.ay).toFixed(2) + 'px,0)';
+      });
+      if (Math.abs(tx - cx) > 0.0005 || Math.abs(ty - cy) > 0.0005) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = null;
+      }
+    };
+
+    hero.addEventListener('mousemove', function (e) {
+      var r = hero.getBoundingClientRect();
+      tx = (e.clientX - r.left) / r.width - 0.5;
+      ty = (e.clientY - r.top) / r.height - 0.5;
+      if (!raf) raf = requestAnimationFrame(tick);
+    });
+
+    hero.addEventListener('mouseleave', function () {
+      tx = 0; ty = 0;
+      if (!raf) raf = requestAnimationFrame(tick);
+    });
+  }
+
+  /* ----------------------------------------------------- stat counters  */
+  var stats = document.querySelectorAll('[data-count]');
+  var runCount = function (el) {
+    var target = parseInt(el.getAttribute('data-count'), 10);
+    if (isNaN(target)) return;
+    var suffix = el.getAttribute('data-suffix') || '';
+    if (reduced) { el.textContent = target + suffix; return; }
+    var plain = el.hasAttribute('data-plain');
+    var from = plain ? Math.max(target - 40, 0) : 0;
+    el.textContent = from + '';
+    var start = null, dur = 1400;
+    var step = function (ts) {
+      if (start === null) start = ts;
+      var p = Math.min((ts - start) / dur, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      var val = Math.round(from + (target - from) * eased);
+      el.textContent = val + (p === 1 ? suffix : '');
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  if ('IntersectionObserver' in window) {
+    var statIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        runCount(entry.target);
+        statIo.unobserve(entry.target);
+      });
+    }, { threshold: 0.6 });
+    stats.forEach(function (el) { statIo.observe(el); });
+  } else {
+    stats.forEach(runCount);
+  }
+
+  /* ---------------------------------------------------------- countdown */
+  /* Counts down to the last moment of the current month, so the promo
+     stays accurate without anyone editing a hardcoded date each cycle.
+     Swap in a fixed end date if the offer window is not a calendar month. */
+  var cd = document.getElementById('countdown');
+  if (cd) {
+    var cells = {
+      d: cd.querySelector('[data-cd="d"]'),
+      h: cd.querySelector('[data-cd="h"]'),
+      m: cd.querySelector('[data-cd="m"]'),
+      s: cd.querySelector('[data-cd="s"]')
+    };
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+
+    var tickCd = function () {
+      var now = new Date();
+      var end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      var diff = Math.max(0, end - now);
+      var s = Math.floor(diff / 1000);
+      cells.d.textContent = pad(Math.floor(s / 86400));
+      cells.h.textContent = pad(Math.floor(s % 86400 / 3600));
+      cells.m.textContent = pad(Math.floor(s % 3600 / 60));
+      cells.s.textContent = pad(s % 60);
+    };
+    tickCd();
+    setInterval(tickCd, 1000);
+  }
+
+  /* --------------------------------------------------------- claim form */
+  /* No network call: the host app's connect-src allows EmailJS and
+     Supabase, so wire the submit to whichever the gym uses. Until then
+     this validates, logs the payload and shows the confirmation state. */
+  var form = document.getElementById('claimForm');
+  var card = document.getElementById('formCard');
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+
+      var payload = Object.fromEntries(new FormData(form).entries());
+      // TODO: POST payload to EmailJS / Supabase here.
+      console.log('[bring-a-friend] guest pass request', payload);
+
+      form.classList.add('sent');
+      card.classList.add('sent');
+      card.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    });
+  }
+
+  /* Last-resort safety net: if anything above silently failed to reveal a
+     section, show it rather than leave a hole in the page. */
+  window.setTimeout(function () {
+    var stuck = document.querySelectorAll('.reveal:not(.in), .reveal-tilt:not(.in)');
+    stuck.forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight && r.bottom > 0) el.classList.add('in');
+    });
+  }, 3000);
+  }
+})();
+</script>
+</body>
+</html>
