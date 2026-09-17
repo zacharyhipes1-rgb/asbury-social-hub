@@ -27,9 +27,15 @@ Build animation and interactivity with inline JS and CSS instead.
 Fonts may come from `fonts.googleapis.com` / `fonts.gstatic.com` or be self-hosted.
 Network calls are limited to Supabase, Cloudinary and EmailJS.
 
-There are currently two design directions for the Bring a Friend promo page (a dark
-cinematic one and a light printed-press one). Both are listed in `docs/brand/README.md`.
-One should be chosen and the other deleted before launch.
+The Bring a Friend promo page is `public/iron-tribe-bring-a-friend.html`. Its offer is the
+Fall 2026 **Rooted** campaign: a six week trial, $259 for group classes or $499 for personal
+training, running 21 Sep to 30 Oct 2026, with the call to action being a text of the word
+FRIEND to the location's phone number. The campaign document is the source of truth for every
+offer fact. Do not restate the offer from memory and do not soften or sharpen it to suit copy.
+
+Two values must be set in the CONFIG block at the top of that page's script before it can go
+live: the location phone number and the location name. Assets and the outstanding shot list
+are in `docs/brand/rooted-asset-list.md`.
 
 ## Static marketing pages
 
