@@ -59,5 +59,10 @@ remove the `hidden` attribute and delete the placeholder block next to it.
 
 ## Share card
 
-`public/og-bring-a-friend.jpg`, 1200x630, built by us from the brand system. It still carries
-the old "free week" headline and **must be regenerated for the Rooted offer** before launch.
+`public/og-bring-a-friend.jpg`, 1200x630, built by us from the brand system and regenerated
+for Rooted. It reads "Six weeks of coaching", carries the dates and both prices, and no longer
+mentions a free week.
+
+The one outstanding item on it: `og:image` is still a root-relative path. Make it an absolute
+URL, and set `og:url`, once the production domain is known. Facebook and LinkedIn do not
+reliably resolve relative image paths.
