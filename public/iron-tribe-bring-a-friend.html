@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Rooted: Six Week Trial | Iron Tribe Fitness</title>
+<meta name="description" content="Rooted is Iron Tribe's six week fall trial, September 21 to October 30. Bring a friend and you both get new shoes when you sign up. Coached group classes for $259 or personal training for $499. Text FRIEND to get started." />
+<meta name="theme-color" content="#000000" />
+<meta name="robots" content="index,follow" />
+
+<!--
+  AT LAUNCH: og:image must be an ABSOLUTE url and og:url should be set.
+  Facebook and LinkedIn do not reliably resolve root-relative image paths.
+-->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Iron Tribe Fitness" />
+<meta property="og:title" content="Rooted: Six Week Trial | Iron Tribe Fitness" />
+<meta property="og:description" content="Bring a friend to Iron Tribe and you both get new shoes when you sign up. Six weeks of coached training, September 21 to October 30. Group classes $259, personal training $499." />
+<meta property="og:image" content="/og-bring-a-friend.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Iron Tribe Fitness Rooted six week trial" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Rooted: Six Week Trial | Iron Tribe Fitness" />
+<meta name="twitter:description" content="Bring a friend to Iron Tribe and you both get new shoes when you sign up. Six weeks of coached training, September 21 to October 30." />
+<meta name="twitter:image" content="/og-bring-a-friend.jpg" />
+
+<script>document.documentElement.className += ' js';</script>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Barlow+Semi+Condensed:wght@500;600;700&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<!--
+  ============================================================================
+  IRON TRIBE FITNESS - ROOTED (FALL 2026 BRING A FRIEND) LANDING PAGE
+  ============================================================================
+
+  OFFER SOURCE OF TRUTH: Fall 2026 Bring a Friend Campaign Overview.
+  Everything below is taken from that document. Do not change offer facts
+  to make copy sound stronger.
+
+      Campaign      Rooted, part of Fall 2026 Bring a Friend
+      Runs          21 Sep 2026 to 30 Oct 2026
+      Offer         6 week trial
+                    POWER  $259   (group classes)
+                    PRIME  $499   (personal training)
+      Member add-on Hybrid upgrade $249 (12 Prime sessions, 2x/week)
+                    $219 when the member brings a non-member friend
+      Incentive     A pair of shoes for BOTH member and friend on a
+                    successful sign up, plus an exclusive t-shirt for the
+                    member (shirt is member only)
+
+                    NOTE, READ BEFORE EDITING THIS LINE. The campaign
+                    document words this as a "shoe voucher". The client
+                    confirmed on 18 Sep 2026 that it is a full pair rather
+                    than a voucher for part of the cost, and asked for the
+                    headline to lead on it. That is the ONLY place this
+                    page knowingly departs from the document's wording, and
+                    it is a correction from the client, not a rewrite for
+                    stronger copy. The sign up condition is unchanged and
+                    is stated in the hero, the member panel and the small
+                    print. If the campaign document is reissued, reconcile
+                    this first.
+      Challenge     Body composition, scored on InBody body fat % and
+                    attendance. 1st $500, 2nd $250, 3rd $100
+      Final InBody  26 Oct 2026
+      CTA           Text FRIEND to the gym's location phone number
+      Onboarding    Call to schedule a consultation, full consultation to
+                    pick the program, waiver + 6 week agreement, InBody scan
+                    and intake form (POWER) or full assessment (PRIME),
+                    payment taken at sign up to hold the Rooted spot
+
+  NAMING: the campaign document is explicit that non-members do not know
+  what "POWER" means. Public copy says "Iron Tribe class" for POWER and
+  "personal training" for PRIME. Internal program names stay internal.
+
+  ---------------------------------------------------------------------------
+  TWO THINGS MUST BE FILLED IN BEFORE THIS PAGE CAN GO LIVE
+  ---------------------------------------------------------------------------
+  Both are marked NEEDS-INPUT below and in the CONFIG block in the script.
+
+    1. LOCATION. Gym name, address, neighbourhood, parking, class times and
+       coach names. The campaign document is franchise wide and names no
+       location. Nothing local has been invented here.
+
+    2. TEXT NUMBER. The campaign document shows the CTA number as
+       (###-##-####). That number is the entire call to action, so the page
+       cannot function without it. Set PHONE in the CONFIG block and the
+       sms: links, the displayed number and the tracking hook all update.
+
+  ---------------------------------------------------------------------------
+  IMAGERY
+  ---------------------------------------------------------------------------
+  No Iron Tribe photography was supplied and no location photography exists
+  in this repo. The six photographs here are Adobe Stock, licensed to this
+  account, downloaded, cropped and committed to /public/img/rooted/. They are
+  served from this origin, so they need no third party host and satisfy the
+  CSP under img-src 'self'.
+
+  Every one was opened and looked at before it went in. Each shows training
+  this program actually runs (barbell, kettlebell, rower, bodyweight work on
+  a coached floor), safe technique, and real equipment. The coached class
+  photo is cropped to cut another gym's wall signage out of the left of frame.
+
+  They are NOT photographs of this gym and no caption claims otherwise. The
+  class photo and the mid page band each carry a visible "not this location"
+  caption. Replace all six with real location photography before launch; the
+  shot list, and the asset IDs, licences and crops, are in
+  docs/brand/rooted-asset-list.md.
+
+  VIDEO: the campaign document asks for a walkthrough video (parking, front
+  door, where you put your things, waiver, into class, meet the coaches).
+  That has to be filmed at the gym. No substitute was generated, because a
+  generated or stock video would misrepresent the location. The player below
+  is built and wired; drop the file in and remove the hidden attribute.
+  ============================================================================
+-->
+
+<style>
+/* ---------------------------------------------------------------- tokens */
+:root{
+  --itf-orange:#FF6F20; --itf-red:#EF4040; --itf-black:#000;
+  --itf-gray:#55585B; --itf-gray-2:#9BA7AF; --itf-gray-3:#848689;
+  --itf-grad:linear-gradient(97deg,var(--itf-orange) 0%,var(--itf-red) 100%);
+
+  --ink:#000; --ink-2:#0B0C0D; --ink-3:#141619; --ink-4:#1E2125;
+  --bone:#FFF; --bone-dim:rgba(255,255,255,.72); --bone-faint:rgba(255,255,255,.5);
+  --rule:rgba(255,255,255,.14); --rule-2:rgba(255,255,255,.26);
+
+  --font-head:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --font-sub:'Barlow Semi Condensed','Archivo',Arial,sans-serif;
+  --font-body:'Mulish','Avenir Next','Avenir',system-ui,sans-serif;
+
+  --maxw:1180px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden;overflow-x:clip;scroll-padding-top:70px}
+body{font-family:var(--font-body);background:var(--ink);color:var(--bone);line-height:1.62;
+  overflow-x:hidden;overflow-x:clip;-webkit-font-smoothing:antialiased}
+img,svg,video{display:block;max-width:100%}
+[hidden]{display:none}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+:where(a,button,input,select,summary,video):focus-visible{outline:3px solid var(--itf-orange);outline-offset:3px}
+
+/* ------------------------------------------------------------ typography */
+.display{font-family:var(--font-head);font-weight:900;text-transform:uppercase;line-height:.94;letter-spacing:-.025em}
+h1.display{font-size:clamp(1.95rem,7vw,4.3rem)}
+h2.display{font-size:clamp(1.85rem,4vw,2.9rem)}
+h3.display{font-size:clamp(1.1rem,1.9vw,1.35rem);line-height:1.12;font-weight:800;letter-spacing:-.012em}
+.kicker{font-family:var(--font-sub);font-weight:700;font-size:.85rem;text-transform:uppercase;
+  letter-spacing:.22em;color:var(--itf-orange);display:inline-flex;align-items:center;gap:10px}
+.kicker::before{content:"";width:22px;height:3px;background:var(--itf-grad);flex:none}
+.lede{font-size:clamp(1.03rem,1.6vw,1.17rem);color:var(--bone-dim);max-width:62ch}
+p + p{margin-top:1em}
+
+.wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,4vw,34px)}
+.section{padding:clamp(60px,8vw,104px) 0;position:relative}
+.head{max-width:66ch;margin-bottom:clamp(30px,4vw,48px)}
+.head h2{margin:14px 0 16px}
+
+/* --------------------------------------------------------------- buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  font-family:var(--font-sub);font-weight:700;font-size:1.03rem;text-transform:uppercase;
+  letter-spacing:.11em;white-space:nowrap;padding:16px 28px;border:2px solid var(--itf-orange);
+  background:var(--itf-grad);color:#fff;cursor:pointer;
+  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  transition:transform .15s var(--ease),box-shadow .2s var(--ease),filter .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 34px -12px rgba(255,111,32,.55);filter:saturate(1.1) brightness(1.06)}
+.btn svg{width:19px;height:19px;flex:none}
+.btn-ghost{background:none;background-color:rgba(255,255,255,.04);border-color:var(--rule-2);color:var(--bone)}
+.btn-ghost:hover{filter:none;border-color:var(--bone);background-color:rgba(255,255,255,.1)}
+.btn-sm{padding:10px 17px;font-size:.87rem}
+.btn-block{width:100%}
+.lbl-short{display:none}
+
+/* ---------------------------------------------------------------- header */
+.site-header{position:sticky;top:0;z-index:200;background:rgba(0,0,0,.92);
+  backdrop-filter:saturate(150%) blur(12px);-webkit-backdrop-filter:saturate(150%) blur(12px);
+  border-bottom:1px solid var(--rule)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:14px;height:68px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.mark{width:30px;height:35px;flex:none}
+.brand-type{font-family:var(--font-head);line-height:.85;text-transform:uppercase}
+.brand-type b{display:block;font-weight:900;font-size:1.12rem;letter-spacing:.01em;white-space:nowrap}
+.brand-type span{display:block;font-family:var(--font-sub);font-weight:600;font-size:.6rem;
+  letter-spacing:.24em;color:var(--bone-faint);white-space:nowrap}
+.header-right{display:flex;align-items:center;gap:20px}
+.navlink{font-family:var(--font-sub);font-weight:700;text-transform:uppercase;letter-spacing:.13em;
+  font-size:.85rem;color:var(--bone-dim);transition:color .2s}
+.navlink:hover{color:var(--bone)}
+@media (max-width:860px){.navlink{display:none}}
+@media (max-width:540px){
+  .header-inner{height:60px}
+  .mark{width:25px;height:29px}
+  .brand-type b{font-size:1rem}
+  .brand-type span{font-size:.53rem;letter-spacing:.2em}
+  .header-right .btn{padding:9px 13px;font-size:.8rem;letter-spacing:.06em}
+  .header-right .lbl-full{display:none}
+  .header-right .lbl-short{display:inline}
+}
+
+/* ------------------------------------------------------------------ hero */
+.hero{position:relative;min-height:min(92svh,780px);display:flex;align-items:flex-end;
+  padding:clamp(90px,14vh,150px) 0 clamp(34px,5vw,56px);overflow:hidden;isolation:isolate}
+.hero-media{position:absolute;inset:0;z-index:-2;background:#262626}
+.hero-media img{width:100%;height:100%;object-fit:cover;object-position:center 32%}
+.hero-scrim{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.58) 0%,rgba(0,0,0,.14) 26%,rgba(0,0,0,.62) 70%,rgba(0,0,0,.95) 100%),
+    linear-gradient(90deg,rgba(0,0,0,.8) 0%,rgba(0,0,0,.42) 42%,rgba(0,0,0,0) 78%)}
+.hero-inner{position:relative;z-index:2}
+.hero h1{margin:16px 0 20px;text-shadow:0 2px 22px rgba(0,0,0,.55)}
+.hero .lede{margin-bottom:26px;color:#fff;text-shadow:0 1px 14px rgba(0,0,0,.6)}
+.hero-actions{display:flex;flex-wrap:wrap;gap:13px;margin-bottom:28px}
+/* desktop-only line breaks: below 560px the headline sets itself */
+@media (max-width:560px){.wide-br{display:none}}
+/* On phones the copy is full width, so the left-to-right scrim only buries the
+   photograph. Drop it and carry legibility on the vertical layer alone. */
+@media (max-width:560px){
+  .hero-scrim{background:linear-gradient(180deg,rgba(0,0,0,.74) 0%,rgba(0,0,0,.5) 30%,
+    rgba(0,0,0,.6) 68%,rgba(0,0,0,.95) 100%)}
+}
+@media (max-width:560px){
+  .hero{min-height:auto;padding:clamp(64px,10vh,96px) 0 clamp(26px,5vw,40px)}
+  .hero-inner{display:flex;flex-direction:column}
+  .chips{order:4;margin-bottom:22px}
+  .hero-actions{order:5;flex-direction:column;align-items:stretch;margin-bottom:0}
+  .hero-perk{order:6;margin:18px 0 0;font-size:.82rem}
+  .hero-actions .btn{width:100%}
+  .hero h1{margin:12px 0 16px}
+  .hero .lede{margin-bottom:22px;font-size:1rem}
+  .hero .btn{font-size:.94rem;letter-spacing:.07em;padding:15px 18px}
+}
+
+/* offer chips: the three facts a visitor needs at a glance */
+/* the condition on the headline's claim, kept next to the CTA rather than in the
+   small print: shoes for both people, on a completed sign up. See the incentive
+   note in the campaign facts block at the top of this file before rewording. */
+.hero-perk{display:flex;align-items:flex-start;gap:9px;margin:0 0 24px;
+  font-family:var(--font-sub);font-weight:600;font-size:.87rem;letter-spacing:.04em;
+  color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.75)}
+.hero-perk svg{flex:0 0 auto;width:17px;height:17px;color:var(--itf-orange);margin-top:1px}
+
+.chips{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--rule-2);background:rgba(0,0,0,.5);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);width:fit-content;max-width:100%}
+.chip{padding:12px 20px;border-left:1px solid var(--rule)}
+.chip:first-child{border-left:0}
+.chip b{display:block;font-family:var(--font-head);font-weight:900;font-size:1.22rem;line-height:1.05}
+.chip span{display:block;font-family:var(--font-sub);font-weight:600;font-size:.7rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--bone-faint);margin-top:3px}
+@media (max-width:560px){
+  .chips{width:100%}
+  .chip{flex:1 1 33%;padding:11px 12px;text-align:center}
+  .chip b{font-size:1.02rem}
+  .chip span{font-size:.6rem;letter-spacing:.1em}
+}
+
+/* ----------------------------------------------------------- offer cards */
+.offer-grid{display:grid;gap:18px}
+@media (min-width:820px){.offer-grid{grid-template-columns:1fr 1fr}}
+.offer{position:relative;background:var(--ink-3);border:1px solid var(--rule);padding:clamp(24px,3vw,34px);
+  display:flex;flex-direction:column}
+.offer::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--itf-grad)}
+.offer-tag{font-family:var(--font-sub);font-weight:700;font-size:.74rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--itf-orange);margin-bottom:8px}
+.offer h3{margin-bottom:6px}
+.price{display:flex;align-items:baseline;gap:10px;margin:16px 0 4px}
+.price b{font-family:var(--font-head);font-weight:900;font-size:clamp(2.5rem,5vw,3.2rem);line-height:.85}
+.price em{font-style:normal;font-family:var(--font-sub);font-weight:600;text-transform:uppercase;
+  letter-spacing:.13em;font-size:.82rem;color:var(--bone-faint)}
+.offer ul{list-style:none;display:grid;gap:10px;margin:18px 0 22px}
+.offer li{display:flex;gap:11px;align-items:flex-start;font-size:.96rem;color:var(--bone-dim)}
+.offer li svg{width:16px;height:16px;flex:none;margin-top:5px;color:var(--itf-orange)}
+.offer .btn{margin-top:auto}
+
+.note{border:1px solid var(--rule);border-left:4px solid var(--itf-orange);background:var(--ink-2);
+  padding:clamp(18px,2.4vw,24px);margin-top:20px}
+.note b{font-family:var(--font-sub);font-weight:700;text-transform:uppercase;letter-spacing:.13em;
+  font-size:.8rem;color:var(--itf-orange);display:block;margin-bottom:7px}
+.note p{font-size:.95rem;color:var(--bone-dim)}
+
+/* ------------------------------------------------------------- the floor */
+.floor{background:var(--ink-2);border-block:1px solid var(--rule)}
+.floor-grid{display:grid;gap:clamp(26px,4vw,48px);align-items:center}
+@media (min-width:900px){.floor-grid{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)}}
+.shot{position:relative;overflow:hidden;background:#262626;aspect-ratio:4/3}
+.shot img{width:100%;height:100%;object-fit:cover}
+.shot figcaption{position:absolute;left:0;right:0;bottom:0;padding:10px 14px;
+  background:linear-gradient(0deg,rgba(0,0,0,.88),transparent);
+  font-family:var(--font-sub);font-weight:600;font-size:.76rem;letter-spacing:.11em;
+  text-transform:uppercase;color:rgba(255,255,255,.8)}
+/* full bleed photo band: breaks up the long mid page text run */
+.band{position:relative;overflow:hidden;height:clamp(200px,26vw,340px);background:#262626;
+  border-block:1px solid var(--rule)}
+.band img{width:100%;height:100%;object-fit:cover;object-position:center 42%}
+.band figcaption{position:absolute;left:0;right:0;bottom:0;padding:9px 18px;
+  background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);
+  font-family:var(--font-sub);font-weight:600;font-size:.72rem;letter-spacing:.11em;
+  text-transform:uppercase;color:rgba(255,255,255,.72)}
+.shot-row{display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:14px}
+.shot-row .shot{aspect-ratio:1}
+
+.beats{list-style:none;display:grid;gap:2px;margin-top:24px;border-top:1px solid var(--rule)}
+.beats li{display:grid;gap:4px 18px;padding:16px 0;border-bottom:1px solid var(--rule)}
+@media (min-width:640px){.beats li{grid-template-columns:120px minmax(0,1fr);align-items:baseline}}
+.beats b{font-family:var(--font-sub);font-weight:700;text-transform:uppercase;letter-spacing:.14em;
+  font-size:.8rem;color:var(--itf-orange)}
+.beats span{color:var(--bone-dim);font-size:.97rem}
+
+/* ----------------------------------------------------------------- video */
+.video-wrap{position:relative;background:var(--ink-3);border:1px solid var(--rule);
+  border-left:3px solid var(--itf-orange);display:flex;gap:15px;align-items:flex-start;
+  padding:clamp(19px,2.4vw,25px)}
+/* Once the footage exists, add the has-video class and the frame returns to 16:9.
+   Until then this stays a compact note rather than a large empty black rectangle. */
+.video-wrap.has-video{display:block;aspect-ratio:16/9;padding:0;border-left:1px solid var(--rule)}
+.video-wrap.has-video video{width:100%;height:100%;object-fit:cover}
+.video-wrap .vicon{flex:0 0 auto;width:23px;height:23px;color:var(--itf-orange);margin-top:1px}
+.video-todo{max-width:64ch}
+.video-todo b{display:block;font-family:var(--font-sub);font-weight:700;text-transform:uppercase;
+  letter-spacing:.16em;font-size:.78rem;color:var(--itf-orange);margin-bottom:8px}
+.video-todo p{font-size:.93rem;color:var(--bone-faint)}
+@media (max-width:560px){.video-wrap{gap:12px;padding:18px}.video-wrap .vicon{width:20px;height:20px}}
+
+/* ------------------------------------------------------------- reassure  */
+.reassure{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+@media (min-width:760px){.reassure{grid-template-columns:1fr 1fr}}
+.reassure div{background:var(--ink);padding:clamp(22px,2.8vw,30px)}
+.reassure h3{margin-bottom:9px}
+.reassure p{color:var(--bone-dim);font-size:.96rem}
+
+/* ---------------------------------------------------------------- steps  */
+.steps{list-style:none;counter-reset:s;display:grid;gap:2px;border-top:2px solid var(--itf-orange)}
+.steps li{counter-increment:s;display:grid;gap:5px 20px;padding:20px 0;border-bottom:1px solid var(--rule)}
+@media (min-width:700px){
+  .steps li{grid-template-columns:58px minmax(0,1fr)}
+  .steps li::before{grid-column:1;grid-row:1 / span 2}
+  .steps b,.steps span{grid-column:2}
+}
+.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--font-head);font-weight:900;
+  font-size:1.5rem;color:var(--itf-orange);line-height:1}
+.steps b{display:block;font-family:var(--font-head);font-weight:800;font-size:1.05rem;margin-bottom:3px}
+.steps span{color:var(--bone-dim);font-size:.96rem}
+
+/* ---------------------------------------------------------------- reward */
+.reward{display:grid;gap:16px}
+@media (min-width:720px){.reward{grid-template-columns:1fr 1fr}}
+.reward div{background:var(--ink-3);border:1px solid var(--rule);padding:clamp(20px,2.6vw,28px)}
+.reward h3{margin-bottom:8px}
+.reward p{color:var(--bone-dim);font-size:.95rem}
+.reward dl{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px}
+.reward dt{font-family:var(--font-sub);font-weight:600;font-size:.68rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone-faint)}
+.reward dd{font-family:var(--font-head);font-weight:900;font-size:1.3rem}
+
+/* ------------------------------------------------------------------ faq  */
+.faq{border-top:1px solid var(--rule)}
+.faq details{border-bottom:1px solid var(--rule)}
+.faq summary{list-style:none;cursor:pointer;padding:20px 40px 20px 0;position:relative;
+  font-family:var(--font-head);font-weight:800;font-size:clamp(1rem,1.7vw,1.13rem);transition:color .2s}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:hover{color:var(--itf-orange)}
+.faq summary::after{content:"";position:absolute;right:6px;top:50%;width:11px;height:11px;
+  border-right:2px solid var(--itf-orange);border-bottom:2px solid var(--itf-orange);
+  transform:translateY(-70%) rotate(45deg);transition:transform .25s var(--ease)}
+.faq details[open] summary::after{transform:translateY(-30%) rotate(-135deg)}
+.faq .a{padding:0 0 22px;color:var(--bone-dim);max-width:76ch;font-size:.97rem}
+
+/* -------------------------------------------------------------- location */
+.loc{background:var(--ink-2);border-block:1px solid var(--rule)}
+.loc-grid{display:grid;gap:clamp(24px,4vw,44px)}
+@media (min-width:860px){.loc-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.loc dl{display:grid;gap:16px;margin-top:20px}
+.loc dt{font-family:var(--font-sub);font-weight:700;font-size:.74rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--itf-orange);margin-bottom:3px}
+.loc dd{color:var(--bone-dim);font-size:.97rem}
+.todo{display:inline-block;font-family:var(--font-sub);font-weight:700;font-size:.72rem;
+  letter-spacing:.14em;text-transform:uppercase;color:#000;background:var(--itf-orange);
+  padding:2px 8px;margin-right:6px}
+
+/* --------------------------------------------------------------- closing */
+.closing{position:relative;text-align:center;overflow:hidden;isolation:isolate}
+.closing-media{position:absolute;inset:0;z-index:-2;background:#1a1a1a}
+.closing-media img{width:100%;height:100%;object-fit:cover;object-position:center 30%}
+.closing::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,#000 0%,rgba(0,0,0,.6) 38%,rgba(0,0,0,.76) 100%)}
+.closing h2{margin:14px 0 16px}
+.closing .lede{margin:0 auto 28px;color:#fff}
+.closing-actions{display:flex;flex-wrap:wrap;gap:13px;justify-content:center}
+@media (max-width:560px){.closing-actions{flex-direction:column;align-items:stretch}.closing-actions .btn{width:100%}}
+
+/* ---------------------------------------------------------------- footer */
+.site-footer{background:#000;border-top:1px solid var(--rule);padding:44px 0 40px;
+  font-size:.83rem;color:var(--bone-faint)}
+.foot-top{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center;
+  padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid var(--rule)}
+.foot-links{display:flex;flex-wrap:wrap;gap:10px 22px}
+.foot-links a:hover{color:var(--bone)}
+.terms{max-width:90ch;line-height:1.66}
+.credits{margin-top:14px;font-size:.76rem;color:rgba(255,255,255,.34)}
+.credits a{text-decoration:underline}
+
+/* ------------------------------------------------------- reveal on scroll */
+.js .rise{opacity:0;transform:translateY(22px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.js .rise.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+  .js .rise{opacity:1!important;transform:none!important}
+}
+</style>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top" aria-label="Iron Tribe Fitness">
+      <!-- PLACEHOLDER MARK. Replace with the official Iron Tribe logo asset.
+           The brand guide says prefer the gradient mark, or white on dark. -->
+      <svg class="mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#FF6F20"/><stop offset="1" stop-color="#EF4040"/></linearGradient></defs>
+        <path d="M15 1.5 28 6v11.5c0 8-5.4 13-13 15.2C8.4 30.5 3 25.5 3 17.5V6L15 1.5Z" fill="url(#g1)"/>
+        <path d="M11 11h8M15 11v12" stroke="#fff" stroke-width="2.4" stroke-linecap="square"/>
+      </svg>
+      <span class="brand-type"><b>Iron Tribe</b><span data-loc-short>Fitness</span></span>
+    </a>
+    <div class="header-right">
+      <a class="navlink" href="#offer">The offer</a>
+      <a class="navlink" href="#floor">A session</a>
+      <a class="navlink" href="#after">After you text</a>
+      <a class="navlink" href="#faq">FAQ</a>
+      <a class="btn btn-sm" data-sms href="#claim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.2-.6L3 21l1.8-5.1A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z"/></svg>
+        <span class="lbl-full">Text FRIEND</span><span class="lbl-short">Text</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ========================================================== HERO ==== -->
+  <section class="hero">
+    <div class="hero-media">
+      <!-- Adobe Stock 438478307, licensed. NOT this gym. Replace with location photography. -->
+      <img src="/img/rooted/hero-kettlebell-class.jpg"
+           alt="Three people side by side in a gym, each holding a kettlebell at the bottom of a squat."
+           width="1800" height="1200" fetchpriority="high" decoding="async" />
+    </div>
+    <div class="hero-scrim"></div>
+
+    <div class="wrap hero-inner">
+      <span class="kicker rise">Rooted &middot; Sept 21 to Oct 30</span>
+
+      <h1 class="display rise">
+        Bring a friend.<br class="wide-br" />
+        You both get<br class="wide-br" />
+        new shoes.
+      </h1>
+
+      <p class="lede rise">
+        Rooted is our fall six week trial at <span data-loc>Iron Tribe Fitness</span>. A coach scales
+        every movement to what you can do today, so you do not need to be in shape to start. Group
+        classes are $259, personal training is $499. Text us and we will help you pick.
+      </p>
+
+      <div class="hero-actions rise">
+        <a class="btn" data-sms href="#claim">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.2-.6L3 21l1.8-5.1A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z"/></svg>
+          Text FRIEND to <span data-phone>set the number</span>
+        </a>
+        <a class="btn btn-ghost" href="#floor">See what a session looks like</a>
+      </div>
+
+      <p class="hero-perk rise">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        Shoes for both of you when you complete sign up
+      </p>
+
+      <div class="chips rise">
+        <div class="chip"><b>6 weeks</b><span>Sept 21 to Oct&nbsp;30</span></div>
+        <div class="chip"><b>$259</b><span>Group classes</span></div>
+        <div class="chip"><b>$499</b><span>Personal training</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= OFFER ==== -->
+  <section class="section" id="offer">
+    <div class="wrap">
+      <div class="head rise">
+        <span class="kicker">What Rooted is</span>
+        <h2 class="display">Two ways to train<br />for six weeks.</h2>
+        <p class="lede">
+          Same six weeks either way, September 21 to October 30. The difference is how much of a
+          coach's attention you get and how the week is structured. If you are not sure which one
+          suits you, that is what the first conversation is for.
+        </p>
+      </div>
+
+      <div class="offer-grid">
+        <article class="offer rise">
+          <span class="offer-tag">Option one</span>
+          <h3 class="display">Iron Tribe class</h3>
+          <div class="price"><b>$259</b><em>for the six weeks</em></div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Coached group classes on the main floor</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>An InBody scan and an intake form before you start</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Your class schedule and goals set with a coach</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Entry to the body composition challenge</li>
+          </ul>
+          <a class="btn btn-block" data-sms href="#claim">Text FRIEND to start</a>
+        </article>
+
+        <article class="offer rise">
+          <span class="offer-tag">Option two</span>
+          <h3 class="display">Personal training</h3>
+          <div class="price"><b>$499</b><em>for the six weeks</em></div>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>One to one sessions built around you</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>A full assessment before your first session</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Programming adjusted as the six weeks go on</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Entry to the body composition challenge</li>
+          </ul>
+          <a class="btn btn-block" data-sms href="#claim">Text FRIEND to start</a>
+        </article>
+      </div>
+
+      <div class="note rise">
+        <b>Already a member?</b>
+        <p>
+          You can add a hybrid upgrade for $249, which is 12 personal training sessions at twice a
+          week alongside your classes. Bring a friend who is not a member and that upgrade is $219.
+          If your friend signs up for Rooted you both get new shoes, and you get the Rooted
+          shirt. Ask a coach at the gym or text us.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= FLOOR ==== -->
+  <section class="section floor" id="floor">
+    <div class="wrap">
+      <div class="head rise">
+        <span class="kicker">On the floor</span>
+        <h2 class="display">What actually<br />happens in a class.</h2>
+        <p class="lede">
+          You will not be handed a program and left to work it out. A coach runs the room from the
+          first minute to the last, and every movement has a version that matches what your body
+          can do right now.
+        </p>
+      </div>
+
+      <div class="floor-grid">
+        <div class="rise">
+          <figure class="shot">
+            <!-- Adobe Stock 584174268, licensed, cropped to remove another gym's signage. -->
+            <img src="/img/rooted/class-coaching.jpg"
+                 alt="A coach crouched beside a lifter, pointing at the barbell as she sets up to pull."
+                 width="1200" height="900" loading="lazy" decoding="async" />
+            <figcaption>Representative training photo, not this location</figcaption>
+          </figure>
+          <div class="shot-row">
+            <figure class="shot">
+              <!-- Adobe Stock 906164666, licensed. -->
+              <img src="/img/rooted/detail-kettlebell-rack.jpg"
+                   alt="A row of cast iron kettlebells racked under a shelf of wall balls."
+                   width="900" height="900" loading="lazy" decoding="async" />
+            </figure>
+            <figure class="shot">
+              <!-- Adobe Stock 482549678, licensed. -->
+              <img src="/img/rooted/detail-rower.jpg"
+                   alt="An athlete's hands and legs driving through a stroke on an indoor rower."
+                   width="900" height="900" loading="lazy" decoding="async" />
+            </figure>
+          </div>
+        </div>
+
+        <div class="rise">
+          <ul class="beats">
+            <li><b>Warm up</b><span>The coach walks the room through the movements you are about to do and shows you the version you will be using.</span></li>
+            <li><b>The work</b><span>Barbells, kettlebells, rowers and bodyweight movements, programmed for the day. Everyone works the same session at their own load.</span></li>
+            <li><b>Coaching</b><span>You get corrected while you are moving, not afterwards. If something hurts or does not feel right, the coach changes it on the spot.</span></li>
+            <li><b>Cool down</b><span>You finish together. Most people stay and talk for a few minutes, which is usually how the first friendships start.</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===================================================== VIDEO ==== -->
+      <div style="margin-top:clamp(34px,5vw,56px)" class="rise">
+        <h3 class="display" style="margin-bottom:14px">Your first visit, start to finish</h3>
+        <div class="video-wrap">
+          <!--
+            AWAITING FOOTAGE. Film at the gym, per the campaign document:
+            parking, front door, where you put your things, filling in the
+            waiver, walking into class, meeting the coaches. Keep it brief.
+            To publish: add poster + <source>, remove the hidden attribute from
+            the video, add class="video-wrap has-video" to the wrapper, and
+            delete the .vicon and .video-todo block.
+          -->
+          <video hidden controls preload="none" playsinline
+                 poster="" aria-label="Walkthrough of a first visit to the gym">
+            <source src="" type="video/mp4" />
+          </video>
+          <svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.9" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="6" width="13" height="12" rx="2"/><path d="m15 11 7-4v10l-7-4z"/>
+          </svg>
+          <div class="video-todo">
+            <b>Walkthrough video to come</b>
+            <p>
+              A short clip filmed at the gym showing where to park, where to put your things,
+              the waiver, and walking into your first class. Nothing generic has been put here
+              in its place.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== REASSURE ==== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="head rise">
+        <span class="kicker">Before you talk yourself out of it</span>
+        <h2 class="display">The things people<br />ask us quietly.</h2>
+      </div>
+      <div class="reassure rise">
+        <div>
+          <h3 class="display">I have not trained in years</h3>
+          <p>That describes a good share of the people who start Rooted. The first conversation and
+            the assessment exist so the coach knows where you are actually starting from, and the
+            first few weeks get built from there rather than from where someone else is.</p>
+        </div>
+        <div>
+          <h3 class="display">Everyone will be fitter than me</h3>
+          <p>Some will be, and they were where you are at some point. Because the session scales,
+            you are doing the same workout as the person next to you at a load that makes sense for
+            you. Nobody is keeping score of what anyone else lifted.</p>
+        </div>
+        <div>
+          <h3 class="display">I do not know how to do the movements</h3>
+          <p>That is the coach's job, not yours. You get shown the movement before you do it and
+            corrected while you do it. Ask questions in class. People do it constantly.</p>
+        </div>
+        <div>
+          <h3 class="display">I have an old injury</h3>
+          <p>Tell the coach during your assessment and again before class. Movements get swapped for
+            something that works around it. We are not medical providers, so if you are under care
+            for something, check with your provider first.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== REWARD ==== -->
+  <!-- ==================================================== PHOTO BAND ==== -->
+  <figure class="band">
+    <!-- Adobe Stock 453789215, licensed. NOT this gym. Replace with location photography. -->
+    <img src="/img/rooted/band-class-plank.jpg"
+         alt="Three people of different ages holding a plank on mats during a class."
+         width="2000" height="640" loading="lazy" decoding="async" />
+    <figcaption>Representative training photo, not this location</figcaption>
+  </figure>
+
+  <section class="section" style="background:var(--ink-2);border-block:1px solid var(--rule)">
+    <div class="wrap">
+      <div class="head rise">
+        <span class="kicker">Running alongside</span>
+        <h2 class="display">The six week<br />challenge.</h2>
+        <p class="lede">
+          Rooted runs with a body composition challenge. It is optional to care about, and plenty of
+          people just come to train. If you do want something to aim at, this is it.
+        </p>
+      </div>
+      <div class="reward">
+        <div class="rise">
+          <h3 class="display">How it is scored</h3>
+          <p>Two things: the change in your body fat percentage measured on the InBody scanner, and
+            how often you showed up. You get scanned at the start and again on October 26.</p>
+          <dl>
+            <div><dt>First</dt><dd>$500</dd></div>
+            <div><dt>Second</dt><dd>$250</dd></div>
+            <div><dt>Third</dt><dd>$100</dd></div>
+          </dl>
+        </div>
+        <div class="rise">
+          <h3 class="display">The root wall</h3>
+          <p>At the start everyone writes one thing they want to grow this fall on a paper leaf and
+            puts it on the wall. Energy, strength, patience, consistency, whatever it is for you.
+            As people hit milestones they add a second leaf with what they actually got. By the end
+            of October the wall is full of them.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= AFTER ==== -->
+  <section class="section" id="after">
+    <div class="wrap">
+      <div class="head rise">
+        <span class="kicker">No surprises</span>
+        <h2 class="display">What happens<br />after you text.</h2>
+        <p class="lede">
+          Texting does not sign you up for anything and does not take payment. It starts a
+          conversation. Here is the whole path so you know what you are agreeing to and when.
+        </p>
+      </div>
+      <ol class="steps rise">
+        <li><b>You text FRIEND</b><span>Send the word to <span data-phone>the number below</span>. A real person at the gym gets it.</span></li>
+        <li><b>We call you to book a time</b><span>Usually the same day. We are arranging a consultation, not selling you anything over the phone.</span></li>
+        <li><b>You come in and we talk it through</b><span>Your goals, your schedule, what you have done before. At the end of it you and the coach decide whether classes or personal training makes more sense.</span></li>
+        <li><b>Paperwork and payment</b><span>If you want to go ahead, that is a waiver and a six week agreement, and payment is taken then to hold your spot. This is the point where it becomes a commitment.</span></li>
+        <li><b>Your baseline</b><span>An InBody scan and intake form if you are doing classes, a full assessment if you are doing personal training. Then your schedule gets set.</span></li>
+        <li><b>You start on September 21</b><span>Six weeks, finishing October 30.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- =========================================================== FAQ ==== -->
+  <section class="section" id="faq">
+    <div class="wrap">
+      <div class="head rise">
+        <span class="kicker">Straight answers</span>
+        <h2 class="display">Anything else.</h2>
+      </div>
+      <div class="faq rise">
+        <details>
+          <summary>How much time does this take each week?</summary>
+          <div class="a">Class times and how many sessions a week you do get set with your coach at the
+            consultation, based on what you can realistically hold for six weeks. <span class="todo">Needs input</span>
+            Add this location's class schedule so people can check it against their week before they text.</div>
+        </details>
+        <details>
+          <summary>What should I bring on the first day?</summary>
+          <div class="a">Training shoes, a water bottle, and enough time to arrive about ten minutes early
+            so someone can show you round before class starts.</div>
+        </details>
+        <details>
+          <summary>Am I going to get a hard sell?</summary>
+          <div class="a">The consultation is a real conversation about whether this fits. If it does not,
+            that is a fine answer and you have not paid anything at that point.</div>
+        </details>
+        <details>
+          <summary>What happens when Rooted finishes on October 30?</summary>
+          <div class="a">The six week agreement covers you through October 30. If you want to carry on
+            after that, your coach will talk you through the membership options near the end of the
+            six weeks. <span class="todo">Needs input</span> Confirm the exact post Rooted pricing and
+            whether anything is held for participants.</div>
+        </details>
+        <details>
+          <summary>Can I do this with the friend who sent me here?</summary>
+          <div class="a">Yes. Tell us when you text and we will try to put you in the same classes.
+            Training next to someone you know is a good part of why this works.</div>
+        </details>
+        <details>
+          <summary>Is there an age requirement?</summary>
+          <div class="a"><span class="todo">Needs input</span> Confirm the minimum age and whether under
+            18s can take part with a guardian signature.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== LOCATION ==== -->
+  <section class="section loc" id="claim">
+    <div class="wrap loc-grid">
+      <div class="rise">
+        <span class="kicker">Where to find us</span>
+        <h2 class="display" style="margin:14px 0 16px"><span data-loc>Iron Tribe Fitness</span></h2>
+        <p class="lede">
+          Text the word FRIEND and we will get back to you to book your consultation. If you would
+          rather just turn up and look at the place first, that is fine too.
+        </p>
+        <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:13px">
+          <a class="btn" data-sms href="#claim">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.2-.6L3 21l1.8-5.1A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z"/></svg>
+            Text FRIEND to <span data-phone>set the number</span>
+          </a>
+        </div>
+      </div>
+      <div class="rise">
+        <dl>
+          <div><dt>Address</dt><dd><span class="todo">Needs input</span>Street address, suite and city for this location.</dd></div>
+          <div><dt>Parking</dt><dd><span class="todo">Needs input</span>Where people park and how long it takes to walk in.</dd></div>
+          <div><dt>Class times</dt><dd><span class="todo">Needs input</span>The published schedule for this location.</dd></div>
+          <div><dt>Coaches</dt><dd><span class="todo">Needs input</span>Who is coaching, with names, so a first timer knows who they are looking for.</dd></div>
+          <div><dt>Text us</dt><dd><span data-phone>Needs input: location phone number</span></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= CLOSING ==== -->
+  <section class="section closing">
+    <div class="closing-media">
+      <!-- Adobe Stock 139254492, licensed. NOT this gym. Replace with location photography. -->
+      <img src="/img/rooted/closing-deadlift-pair.jpg"
+           alt="Two people training together, each standing at the top of a barbell deadlift."
+           width="1800" height="1200" loading="lazy" decoding="async" />
+    </div>
+    <div class="wrap rise" style="position:relative;z-index:2;max-width:760px">
+      <span class="kicker" style="justify-content:center">Rooted &middot; Sept 21 to Oct 30</span>
+      <h2 class="display">Someone thought<br />you'd like it here.</h2>
+      <p class="lede">Six weeks, a coach, and a room that will know your name by the second week.</p>
+      <div class="closing-actions">
+        <a class="btn" data-sms href="#claim">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.2-.6L3 21l1.8-5.1A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z"/></svg>
+          Text FRIEND to <span data-phone>set the number</span>
+        </a>
+        <a class="btn btn-ghost" href="#offer">Look at the offer again</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+          <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#FF6F20"/><stop offset="1" stop-color="#EF4040"/></linearGradient></defs>
+          <path d="M15 1.5 28 6v11.5c0 8-5.4 13-13 15.2C8.4 30.5 3 25.5 3 17.5V6L15 1.5Z" fill="url(#g2)"/>
+          <path d="M11 11h8M15 11v12" stroke="#fff" stroke-width="2.4" stroke-linecap="square"/>
+        </svg>
+        <span class="brand-type"><b>Iron Tribe</b><span>Fitness</span></span>
+      </div>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="#offer">The offer</a><a href="#floor">A session</a>
+        <a href="#after">After you text</a><a href="#faq">FAQ</a><a href="#top">Back to top</a>
+      </nav>
+    </div>
+    <p class="terms">
+      Rooted runs 21 September to 30 October 2026. Six weeks for $259 in group classes or $499 in
+      personal training. A waiver and a six week agreement are signed at sign up and payment is
+      taken at that point to hold the place. Final InBody scans are on 26 October. Shoes for both people and
+      the member shirt are issued on a completed sign up. Body composition challenge prizes are
+      $500, $250 and $100. Training is not medical advice; speak to your own provider if you have a
+      condition or injury. <span class="todo">Needs input</span> Have this reviewed and add
+      eligibility, age and participating location wording for your market.
+    </p>
+    <p class="credits">
+      Photography on this page is licensed Adobe Stock standing in for location photography and
+      does not show this gym. Adobe Stock files 438478307, 584174268, 906164666, 482549678,
+      453789215 and 139254492, licensed to this account under the
+      <a href="https://stock.adobe.com/license-terms" rel="nofollow noopener">Adobe Stock standard licence</a>.
+    </p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ======================================================== CONFIG =======
+     Fill these two in and the whole page updates: every Text FRIEND button
+     becomes a real sms: link, the number renders everywhere it appears, and
+     the location name replaces the generic fallback.
+
+     PHONE must be digits only, with country code. Example: '12055550142'.
+     Leave PHONE empty and the buttons stay inert and visibly unset rather
+     than pretending to work.
+     ==================================================================== */
+  var CONFIG = {
+    PHONE: '',                       // NEEDS INPUT: location text number
+    PHONE_DISPLAY: '',               // NEEDS INPUT: e.g. '(205) 555-0142'
+    LOCATION: '',                    // NEEDS INPUT: e.g. 'Iron Tribe Fitness Homewood'
+    LOCATION_SHORT: '',              // NEEDS INPUT: e.g. 'Homewood'
+    SMS_BODY: 'FRIEND'
+  };
+
+  var showAll = function () {
+    document.querySelectorAll('.rise').forEach(function (el) {
+      el.style.transitionDelay = '0ms'; el.classList.add('in');
+    });
+  };
+
+  try { main(); }
+  catch (err) {
+    if (window.console && console.error) console.error('[rooted]', err);
+    showAll();
+  }
+
+  function main() {
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ------------------------------------------------ offer + location */
+    if (CONFIG.PHONE_DISPLAY) {
+      document.querySelectorAll('[data-phone]').forEach(function (el) {
+        el.textContent = CONFIG.PHONE_DISPLAY;
+      });
+    }
+    if (CONFIG.LOCATION) {
+      document.querySelectorAll('[data-loc]').forEach(function (el) {
+        el.textContent = CONFIG.LOCATION;
+      });
+    }
+    if (CONFIG.LOCATION_SHORT) {
+      document.querySelectorAll('[data-loc-short]').forEach(function (el) {
+        el.textContent = CONFIG.LOCATION_SHORT;
+      });
+    }
+
+    /* The CTA is an SMS deep link. iOS wants ?&body=, everything else ?body=.
+       Without a number configured the links stay as in-page anchors so they
+       never look like a working action that silently fails. */
+    if (CONFIG.PHONE) {
+      var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      var sep = ios ? '&' : '?';
+      var href = 'sms:' + CONFIG.PHONE + sep + 'body=' + encodeURIComponent(CONFIG.SMS_BODY);
+      document.querySelectorAll('[data-sms]').forEach(function (a) {
+        a.setAttribute('href', href);
+        a.addEventListener('click', function () {
+          // Tracking hook. Wire to GA4 / Meta here if the property is set up.
+          if (typeof window.gtag === 'function') {
+            window.gtag('event', 'sms_cta_click', { campaign: 'rooted_fall_2026' });
+          }
+        });
+      });
+    }
+
+    /* ------------------------------------------------------- reveals */
+    var items = document.querySelectorAll('.rise');
+    if (!('IntersectionObserver' in window) || reduced) { showAll(); }
+    else {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          var el = e.target;
+          var sibs = Array.prototype.slice.call(el.parentNode.children)
+            .filter(function (n) { return n.classList && n.classList.contains('rise'); });
+          el.style.transitionDelay = Math.min(Math.max(0, sibs.indexOf(el)) * 70, 320) + 'ms';
+          el.classList.add('in');
+          io.unobserve(el);
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+      items.forEach(function (el) { io.observe(el); });
+    }
+
+    /* Safety net so no section is ever stranded invisible. */
+    window.setTimeout(function () {
+      document.querySelectorAll('.rise:not(.in)').forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight && r.bottom > 0) el.classList.add('in');
+      });
+    }, 3000);
+  }
+})();
+</script>
+</body>
+</html>
