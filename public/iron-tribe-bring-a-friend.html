@@ -29,7 +29,6 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="preconnect" href="https://images.unsplash.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Barlow+Semi+Condensed:wght@500;600;700&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
 <!--
@@ -81,18 +80,21 @@
   IMAGERY
   ---------------------------------------------------------------------------
   No Iron Tribe photography was supplied and no location photography exists
-  in this repo. The photographs here are licensed Unsplash stock that shows
-  the correct KIND of training (barbell, kettlebell, coached group floor).
-  They are served from the Unsplash CDN, which this app's CSP permits under
-  img-src https:.
+  in this repo. The six photographs here are Adobe Stock, licensed to this
+  account, downloaded, cropped and committed to /public/img/rooted/. They are
+  served from this origin, so they need no third party host and satisfy the
+  CSP under img-src 'self'.
 
-  They are NOT photographs of this gym and no caption claims otherwise.
-  Replace every one with real location photography before launch. The shot
-  list is in docs/brand/rooted-asset-list.md.
+  Every one was opened and looked at before it went in. Each shows training
+  this program actually runs (barbell, kettlebell, rower, bodyweight work on
+  a coached floor), safe technique, and real equipment. The coached class
+  photo is cropped to cut another gym's wall signage out of the left of frame.
 
-  The build environment could not reach images.unsplash.com, so these files
-  were selected from API metadata and have NOT been viewed. Check each one
-  renders correctly and shows safe technique before publishing.
+  They are NOT photographs of this gym and no caption claims otherwise. The
+  class photo and the mid page band each carry a visible "not this location"
+  caption. Replace all six with real location photography before launch; the
+  shot list, and the asset IDs, licences and crops, are in
+  docs/brand/rooted-asset-list.md.
 
   VIDEO: the campaign document asks for a walkthrough video (parking, front
   door, where you put your things, waiver, into class, meet the coaches).
@@ -200,6 +202,14 @@ p + p{margin-top:1em}
 .hero h1{margin:16px 0 20px;text-shadow:0 2px 22px rgba(0,0,0,.55)}
 .hero .lede{margin-bottom:26px;color:#fff;text-shadow:0 1px 14px rgba(0,0,0,.6)}
 .hero-actions{display:flex;flex-wrap:wrap;gap:13px;margin-bottom:28px}
+/* desktop-only line breaks: below 560px the headline sets itself */
+@media (max-width:560px){.wide-br{display:none}}
+/* On phones the copy is full width, so the left-to-right scrim only buries the
+   photograph. Drop it and carry legibility on the vertical layer alone. */
+@media (max-width:560px){
+  .hero-scrim{background:linear-gradient(180deg,rgba(0,0,0,.74) 0%,rgba(0,0,0,.5) 30%,
+    rgba(0,0,0,.6) 68%,rgba(0,0,0,.95) 100%)}
+}
 @media (max-width:560px){
   .hero{min-height:auto;padding:clamp(64px,10vh,96px) 0 clamp(26px,5vw,40px)}
   .hero-inner{display:flex;flex-direction:column}
@@ -260,6 +270,14 @@ p + p{margin-top:1em}
   background:linear-gradient(0deg,rgba(0,0,0,.88),transparent);
   font-family:var(--font-sub);font-weight:600;font-size:.76rem;letter-spacing:.11em;
   text-transform:uppercase;color:rgba(255,255,255,.8)}
+/* full bleed photo band: breaks up the long mid page text run */
+.band{position:relative;overflow:hidden;height:clamp(200px,26vw,340px);background:#262626;
+  border-block:1px solid var(--rule)}
+.band img{width:100%;height:100%;object-fit:cover;object-position:center 42%}
+.band figcaption{position:absolute;left:0;right:0;bottom:0;padding:9px 18px;
+  background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);
+  font-family:var(--font-sub);font-weight:600;font-size:.72rem;letter-spacing:.11em;
+  text-transform:uppercase;color:rgba(255,255,255,.72)}
 .shot-row{display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:14px}
 .shot-row .shot{aspect-ratio:1}
 
@@ -271,13 +289,19 @@ p + p{margin-top:1em}
 .beats span{color:var(--bone-dim);font-size:.97rem}
 
 /* ----------------------------------------------------------------- video */
-.video-wrap{position:relative;background:var(--ink-3);border:1px solid var(--rule);aspect-ratio:16/9;
-  display:grid;place-content:center;text-align:center;padding:26px}
-.video-wrap video{width:100%;height:100%;object-fit:cover}
-.video-todo{max-width:46ch}
+.video-wrap{position:relative;background:var(--ink-3);border:1px solid var(--rule);
+  border-left:3px solid var(--itf-orange);display:flex;gap:15px;align-items:flex-start;
+  padding:clamp(19px,2.4vw,25px)}
+/* Once the footage exists, add the has-video class and the frame returns to 16:9.
+   Until then this stays a compact note rather than a large empty black rectangle. */
+.video-wrap.has-video{display:block;aspect-ratio:16/9;padding:0;border-left:1px solid var(--rule)}
+.video-wrap.has-video video{width:100%;height:100%;object-fit:cover}
+.video-wrap .vicon{flex:0 0 auto;width:23px;height:23px;color:var(--itf-orange);margin-top:1px}
+.video-todo{max-width:64ch}
 .video-todo b{display:block;font-family:var(--font-sub);font-weight:700;text-transform:uppercase;
-  letter-spacing:.16em;font-size:.78rem;color:var(--itf-orange);margin-bottom:10px}
+  letter-spacing:.16em;font-size:.78rem;color:var(--itf-orange);margin-bottom:8px}
 .video-todo p{font-size:.93rem;color:var(--bone-faint)}
+@media (max-width:560px){.video-wrap{gap:12px;padding:18px}.video-wrap .vicon{width:20px;height:20px}}
 
 /* ------------------------------------------------------------- reassure  */
 .reassure{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
@@ -337,8 +361,8 @@ p + p{margin-top:1em}
 
 /* --------------------------------------------------------------- closing */
 .closing{position:relative;text-align:center;overflow:hidden;isolation:isolate}
-.closing-media{position:absolute;inset:0;z-index:-2;background:#0c2626}
-.closing-media img{width:100%;height:100%;object-fit:cover}
+.closing-media{position:absolute;inset:0;z-index:-2;background:#1a1a1a}
+.closing-media img{width:100%;height:100%;object-fit:cover;object-position:center 30%}
 .closing::before{content:"";position:absolute;inset:0;z-index:-1;
   background:linear-gradient(180deg,#000 0%,rgba(0,0,0,.6) 38%,rgba(0,0,0,.76) 100%)}
 .closing h2{margin:14px 0 16px}
@@ -401,10 +425,10 @@ p + p{margin-top:1em}
   <!-- ========================================================== HERO ==== -->
   <section class="hero">
     <div class="hero-media">
-      <!-- Licensed Unsplash stock. NOT this gym. Replace with location photography. -->
-      <img src="https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?fm=jpg&q=72&w=1900&fit=max&cs=tinysrgb"
-           alt="An athlete pressing a kettlebell overhead during a strength session."
-           width="1900" height="1520" fetchpriority="high" decoding="async" />
+      <!-- Adobe Stock 438478307, licensed. NOT this gym. Replace with location photography. -->
+      <img src="/img/rooted/hero-kettlebell-class.jpg"
+           alt="Three people side by side in a gym, each holding a kettlebell at the bottom of a squat."
+           width="1800" height="1200" fetchpriority="high" decoding="async" />
     </div>
     <div class="hero-scrim"></div>
 
@@ -412,8 +436,8 @@ p + p{margin-top:1em}
       <span class="kicker rise">Rooted &middot; Sept 21 to Oct 30</span>
 
       <h1 class="display rise">
-        Six weeks of coaching.<br />
-        You don't have to be in<br />
+        Six weeks of coaching.<br class="wide-br" />
+        You don't have to be in<br class="wide-br" />
         shape to start.
       </h1>
 
@@ -432,7 +456,7 @@ p + p{margin-top:1em}
       </div>
 
       <div class="chips rise">
-        <div class="chip"><b>6 weeks</b><span>Sept 21 to Oct 30</span></div>
+        <div class="chip"><b>6 weeks</b><span>Sept 21 to Oct&nbsp;30</span></div>
         <div class="chip"><b>$259</b><span>Group classes</span></div>
         <div class="chip"><b>$499</b><span>Personal training</span></div>
       </div>
@@ -508,22 +532,24 @@ p + p{margin-top:1em}
       <div class="floor-grid">
         <div class="rise">
           <figure class="shot">
-            <!-- Licensed Unsplash stock. NOT this gym. Replace with location photography. -->
-            <img src="https://images.unsplash.com/photo-1517130038641-a774d04afb3c?fm=jpg&q=72&w=1200&fit=max&cs=tinysrgb"
-                 alt="A coached group training session in progress on a gym floor."
+            <!-- Adobe Stock 584174268, licensed, cropped to remove another gym's signage. -->
+            <img src="/img/rooted/class-coaching.jpg"
+                 alt="A coach crouched beside a lifter, pointing at the barbell as she sets up to pull."
                  width="1200" height="900" loading="lazy" decoding="async" />
             <figcaption>Representative training photo, not this location</figcaption>
           </figure>
           <div class="shot-row">
             <figure class="shot">
-              <img src="https://images.unsplash.com/photo-1706029831387-fd8bc3d27d01?fm=jpg&q=72&w=760&fit=max&cs=tinysrgb"
-                   alt="An athlete holding a kettlebell at chest height before a set."
-                   width="760" height="760" loading="lazy" decoding="async" />
+              <!-- Adobe Stock 906164666, licensed. -->
+              <img src="/img/rooted/detail-kettlebell-rack.jpg"
+                   alt="A row of cast iron kettlebells racked under a shelf of wall balls."
+                   width="900" height="900" loading="lazy" decoding="async" />
             </figure>
             <figure class="shot">
-              <img src="https://images.unsplash.com/photo-1620188500179-32ac33c60848?fm=jpg&q=72&w=760&fit=max&cs=tinysrgb"
-                   alt="An athlete setting up over a loaded barbell."
-                   width="760" height="760" loading="lazy" decoding="async" />
+              <!-- Adobe Stock 482549678, licensed. -->
+              <img src="/img/rooted/detail-rower.jpg"
+                   alt="An athlete's hands and legs driving through a stroke on an indoor rower."
+                   width="900" height="900" loading="lazy" decoding="async" />
             </figure>
           </div>
         </div>
@@ -546,13 +572,18 @@ p + p{margin-top:1em}
             AWAITING FOOTAGE. Film at the gym, per the campaign document:
             parking, front door, where you put your things, filling in the
             waiver, walking into class, meeting the coaches. Keep it brief.
-            To publish: add poster + <source>, then remove the hidden
-            attribute from the video and delete the .video-todo block.
+            To publish: add poster + <source>, remove the hidden attribute from
+            the video, add class="video-wrap has-video" to the wrapper, and
+            delete the .vicon and .video-todo block.
           -->
           <video hidden controls preload="none" playsinline
                  poster="" aria-label="Walkthrough of a first visit to the gym">
             <source src="" type="video/mp4" />
           </video>
+          <svg class="vicon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.9" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="6" width="13" height="12" rx="2"/><path d="m15 11 7-4v10l-7-4z"/>
+          </svg>
           <div class="video-todo">
             <b>Walkthrough video to come</b>
             <p>
@@ -602,6 +633,15 @@ p + p{margin-top:1em}
   </section>
 
   <!-- ======================================================== REWARD ==== -->
+  <!-- ==================================================== PHOTO BAND ==== -->
+  <figure class="band">
+    <!-- Adobe Stock 453789215, licensed. NOT this gym. Replace with location photography. -->
+    <img src="/img/rooted/band-class-plank.jpg"
+         alt="Three people of different ages holding a plank on mats during a class."
+         width="2000" height="640" loading="lazy" decoding="async" />
+    <figcaption>Representative training photo, not this location</figcaption>
+  </figure>
+
   <section class="section" style="background:var(--ink-2);border-block:1px solid var(--rule)">
     <div class="wrap">
       <div class="head rise">
@@ -733,9 +773,9 @@ p + p{margin-top:1em}
   <!-- ======================================================= CLOSING ==== -->
   <section class="section closing">
     <div class="closing-media">
-      <!-- Licensed Unsplash stock. NOT this gym. Replace with location photography. -->
-      <img src="https://images.unsplash.com/photo-1558611848-73f7eb4001a1?fm=jpg&q=70&w=1800&fit=max&cs=tinysrgb"
-           alt="A loaded barbell resting on a rack in a training gym."
+      <!-- Adobe Stock 139254492, licensed. NOT this gym. Replace with location photography. -->
+      <img src="/img/rooted/closing-deadlift-pair.jpg"
+           alt="Two people training together, each standing at the top of a barbell deadlift."
            width="1800" height="1200" loading="lazy" decoding="async" />
     </div>
     <div class="wrap rise" style="position:relative;z-index:2;max-width:760px">
@@ -781,9 +821,10 @@ p + p{margin-top:1em}
       eligibility, age and participating location wording for your market.
     </p>
     <p class="credits">
-      Photography on this page is licensed stock standing in for location photography and does not
-      show this gym. Images via <a href="https://unsplash.com/license" rel="nofollow noopener">Unsplash</a>
-      by Alonso Reyes, Geert Pieters, Ambitious Studio, Eduardo Cano Photo Co. and Jelmer Assink.
+      Photography on this page is licensed Adobe Stock standing in for location photography and
+      does not show this gym. Adobe Stock files 438478307, 584174268, 906164666, 482549678,
+      453789215 and 139254492, licensed to this account under the
+      <a href="https://stock.adobe.com/license-terms" rel="nofollow noopener">Adobe Stock standard licence</a>.
     </p>
   </div>
 </footer>
