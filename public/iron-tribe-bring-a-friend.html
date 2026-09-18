@@ -15,7 +15,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Iron Tribe Fitness" />
 <meta property="og:title" content="Rooted: Six Week Trial | Iron Tribe Fitness" />
-<meta property="og:description" content="Six weeks of coached training, September 21 to October 30. Group classes $259, personal training $499." />
+<meta property="og:description" content="Six weeks of coached training, September 21 to October 30. Group classes $259, personal training $499. Sign up together and you both get a shoe voucher." />
 <meta property="og:image" content="/og-bring-a-friend.jpg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
@@ -215,6 +215,7 @@ p + p{margin-top:1em}
   .hero-inner{display:flex;flex-direction:column}
   .chips{order:4;margin-bottom:22px}
   .hero-actions{order:5;flex-direction:column;align-items:stretch;margin-bottom:0}
+  .hero-perk{order:6;margin:18px 0 0;font-size:.82rem}
   .hero-actions .btn{width:100%}
   .hero h1{margin:12px 0 16px}
   .hero .lede{margin-bottom:22px;font-size:1rem}
@@ -222,6 +223,13 @@ p + p{margin-top:1em}
 }
 
 /* offer chips: the three facts a visitor needs at a glance */
+/* the incentive, stated exactly as the campaign document states it: a voucher,
+   for both people, conditional on a completed sign up */
+.hero-perk{display:flex;align-items:center;gap:9px;margin:0 0 24px;
+  font-family:var(--font-sub);font-weight:600;font-size:.87rem;letter-spacing:.04em;
+  color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.75)}
+.hero-perk svg{flex:0 0 auto;width:17px;height:17px;color:var(--itf-orange)}
+
 .chips{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--rule-2);background:rgba(0,0,0,.5);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);width:fit-content;max-width:100%}
 .chip{padding:12px 20px;border-left:1px solid var(--rule)}
@@ -436,15 +444,15 @@ p + p{margin-top:1em}
       <span class="kicker rise">Rooted &middot; Sept 21 to Oct 30</span>
 
       <h1 class="display rise">
-        Six weeks of coaching.<br class="wide-br" />
-        You don't have to be in<br class="wide-br" />
-        shape to start.
+        Six weeks.<br class="wide-br" />
+        Bring someone<br class="wide-br" />
+        with you.
       </h1>
 
       <p class="lede rise">
-        Rooted is our fall six week trial at <span data-loc>Iron Tribe Fitness</span>. You train with a
-        coach who scales every movement to what you can do today. Pick group classes at $259 or
-        one to one personal training at $499. Text us and we will help you work out which one fits.
+        Rooted is our fall six week trial at <span data-loc>Iron Tribe Fitness</span>. A coach scales
+        every movement to what you can do today, so you do not need to be in shape to start. Group
+        classes are $259, personal training is $499. Text us and we will help you pick.
       </p>
 
       <div class="hero-actions rise">
@@ -454,6 +462,11 @@ p + p{margin-top:1em}
         </a>
         <a class="btn btn-ghost" href="#floor">See what a session looks like</a>
       </div>
+
+      <p class="hero-perk rise">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        Sign up together and you both get a shoe voucher
+      </p>
 
       <div class="chips rise">
         <div class="chip"><b>6 weeks</b><span>Sept 21 to Oct&nbsp;30</span></div>
