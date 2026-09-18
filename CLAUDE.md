@@ -33,6 +33,13 @@ training, running 21 Sep to 30 Oct 2026, with the call to action being a text of
 FRIEND to the location's phone number. The campaign document is the source of truth for every
 offer fact. Do not restate the offer from memory and do not soften or sharpen it to suit copy.
 
+One documented exception. The campaign document calls the incentive a "shoe voucher". The
+client confirmed on 18 Sep 2026 that it is a full pair of shoes for both the member and the
+friend, and asked the headline to lead on it. The page says "new shoes" on that authority, and
+records the departure in its own comment block. Everything else still tracks the document, and
+the condition on the shoes, a completed sign up, is unchanged. If the campaign document is
+reissued, reconcile this first.
+
 Two values must be set in the CONFIG block at the top of that page's script before it can go
 live: the location phone number and the location name. Assets and the outstanding shot list
 are in `docs/brand/rooted-asset-list.md`.
