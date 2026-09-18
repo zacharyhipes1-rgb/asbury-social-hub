@@ -1,6 +1,17 @@
 # Rebuilding the Rooted page in the GoHighLevel page builder
 
-Two pastes and six image swaps. About 20 minutes.
+Two routes. Pick one.
+
+| Route | File | Time | You get |
+|---|---|---|---|
+| **Drag and drop, native widgets** | `DRAG-AND-DROP-BUILD.md` | ~2 hours | A page your team can edit in the builder. Close to the original, not identical. |
+| **Paste the real page as code** | this file | ~20 minutes | Pixel-exact. Not editable by dragging. |
+
+Most people want the first one. The rest of this file covers the second.
+
+---
+
+## The code route: two pastes and six image swaps
 
 | File | Goes into |
 |---|---|
